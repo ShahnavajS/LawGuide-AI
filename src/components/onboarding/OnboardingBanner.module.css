@@ -1,0 +1,219 @@
+.banner {
+  background: linear-gradient(135deg, var(--color-brand-50) 0%, #f0f9ff 100%);
+  border: 1px solid var(--color-brand-200);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  margin-bottom: var(--space-8);
+  overflow: hidden;
+  position: relative;
+}
+
+.banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-brand-500), var(--color-brand-700));
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+}
+
+.bannerHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.bannerTitleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.bannerEyebrow {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-brand-600);
+}
+
+.bannerTitle {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.bannerSubtitle {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.bannerHeaderRight {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  flex-shrink: 0;
+}
+
+.progressGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 160px;
+}
+
+.progressLabel {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.progressTrack {
+  height: 6px;
+  background-color: var(--color-brand-100);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-brand-500), var(--color-brand-700));
+  border-radius: var(--radius-full);
+  transition: width 0.4s ease;
+}
+
+.dismissBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-medium);
+  background: var(--bg-surface);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.dismissBtn:hover {
+  background-color: var(--bg-surface-subtle);
+  color: var(--text-secondary);
+}
+
+/* Steps Grid */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+}
+
+.step {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.stepComplete {
+  border-color: var(--status-fact-border);
+  background-color: var(--status-fact-bg);
+}
+
+.stepCurrent {
+  border-color: var(--color-brand-200);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+
+.stepIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-brand-50);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-brand-600);
+  flex-shrink: 0;
+}
+
+.stepComplete .stepIcon {
+  background-color: var(--status-fact-bg);
+  color: var(--status-fact-text);
+}
+
+.stepContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.stepNum {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.stepComplete .stepNum {
+  color: var(--status-fact-text);
+}
+
+.stepTitle {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: var(--line-height-tight);
+}
+
+.stepDesc {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  line-height: var(--line-height-relaxed);
+}
+
+.stepLink {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-brand-600);
+  text-decoration: none;
+  margin-top: var(--space-1);
+  transition: color var(--transition-fast);
+}
+
+.stepLink:hover {
+  color: var(--color-brand-700);
+}
+
+@media (max-width: 900px) {
+  .steps {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .steps {
+    grid-template-columns: 1fr;
+  }
+
+  .bannerHeader {
+    flex-direction: column;
+  }
+
+  .progressGroup {
+    min-width: unset;
+    width: 100%;
+  }
+}

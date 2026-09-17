@@ -1,0 +1,1 @@
+ALTER TABLE `analyses` ADD `analysis_data_json` text;

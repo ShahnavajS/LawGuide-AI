@@ -1,0 +1,219 @@
+/* ==========================================================================
+   LexiGuide AI - Design System Tokens & Global Styles
+   Aesthetic: Trustworthy, Modern, Calm, Professional, Accessible
+   ========================================================================== */
+
+:root {
+  /* Color Palette - Light Mode (Default) */
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-200: #bfdbfe;
+  --color-brand-500: #2563eb;
+  --color-brand-600: #1d4ed8;
+  --color-brand-700: #1e40af;
+  --color-brand-800: #1e3a8a;
+
+  /* Surfaces & Backgrounds */
+  --bg-primary: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-surface-subtle: #f1f5f9;
+  --bg-surface-elevated: #ffffff;
+  --bg-overlay: rgba(15, 23, 42, 0.6);
+
+  /* Text Colors */
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --text-inverse: #ffffff;
+
+  /* Borders & Dividers */
+  --border-subtle: #e2e8f0;
+  --border-medium: #cbd5e1;
+  --border-strong: #94a3b8;
+  --border-brand: #bfdbfe;
+
+  /* Semantic Status Colors (WCAG Compliant) */
+  --status-fact-bg: #ecfdf5;
+  --status-fact-text: #065f46;
+  --status-fact-border: #a7f3d0;
+  --status-fact-badge: #10b981;
+
+  --status-interp-bg: #eff6ff;
+  --status-interp-text: #1e40af;
+  --status-interp-border: #bfdbfe;
+  --status-interp-badge: #3b82f6;
+
+  --status-general-bg: #f8fafc;
+  --status-general-text: #334155;
+  --status-general-border: #e2e8f0;
+  --status-general-badge: #64748b;
+
+  --status-review-bg: #fffbeb;
+  --status-review-text: #92400e;
+  --status-review-border: #fde68a;
+  --status-review-badge: #d97706;
+
+  --status-risk-high-bg: #fff1f2;
+  --status-risk-high-text: #9f1239;
+  --status-risk-high-border: #fecdd3;
+
+  /* Typography */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.875rem;   /* 14px */
+  --font-size-base: 1rem;     /* 16px */
+  --font-size-lg: 1.125rem;   /* 18px */
+  --font-size-xl: 1.25rem;    /* 20px */
+  --font-size-2xl: 1.5rem;    /* 24px */
+  --font-size-3xl: 1.875rem;  /* 30px */
+  --font-size-4xl: 2.25rem;   /* 36px */
+  --font-size-5xl: 3rem;      /* 48px */
+
+  --line-height-tight: 1.2;
+  --line-height-snug: 1.35;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.65;
+
+  /* Spacing */
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-5: 1.25rem;  /* 20px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-10: 2.5rem;  /* 40px */
+  --space-12: 3rem;    /* 48px */
+  --space-16: 4rem;    /* 64px */
+  --space-20: 5rem;    /* 80px */
+
+  /* Border Radii */
+  --radius-sm: 0.25rem;  /* 4px */
+  --radius-md: 0.5rem;   /* 8px */
+  --radius-lg: 0.75rem;  /* 12px */
+  --radius-xl: 1rem;     /* 16px */
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.03);
+  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+  --shadow-focus: 0 0 0 3px rgba(37, 99, 235, 0.35);
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dark Mode Tokens */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #090d16;
+    --bg-surface: #0f172a;
+    --bg-surface-subtle: #141e33;
+    --bg-surface-elevated: #1e293b;
+    --bg-overlay: rgba(0, 0, 0, 0.75);
+
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+
+    --border-subtle: #1e293b;
+    --border-medium: #334155;
+    --border-strong: #475569;
+    --border-brand: #1e3a8a;
+
+    --status-fact-bg: rgba(6, 95, 70, 0.2);
+    --status-fact-text: #6ee7b7;
+    --status-fact-border: rgba(16, 185, 129, 0.3);
+
+    --status-interp-bg: rgba(30, 64, 175, 0.2);
+    --status-interp-text: #93c5fd;
+    --status-interp-border: rgba(59, 130, 246, 0.3);
+
+    --status-general-bg: rgba(51, 65, 85, 0.3);
+    --status-general-text: #cbd5e1;
+    --status-general-border: rgba(100, 116, 139, 0.3);
+
+    --status-review-bg: rgba(146, 64, 14, 0.2);
+    --status-review-text: #fcd34d;
+    --status-review-border: rgba(217, 119, 6, 0.3);
+
+    --status-risk-high-bg: rgba(159, 18, 57, 0.2);
+    --status-risk-high-text: #fda4af;
+    --status-risk-high-border: rgba(225, 29, 72, 0.3);
+
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+    --shadow-focus: 0 0 0 3px rgba(96, 165, 250, 0.4);
+  }
+}
+
+/* CSS Reset & Global Baseline */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: var(--font-family);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: var(--line-height-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* Accessibility: Visible Focus Indicators */
+:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+}
+
+/* Accessibility: Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Layout Container Utilities */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--space-6);
+  padding-right: var(--space-6);
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+  }
+}

@@ -1,0 +1,16 @@
+.git
+.github
+.next
+node_modules
+npm-debug.log
+yarn-error.log
+.env.local
+.env*.local
+data
+uploads
+uploads_*
+tests
+coverage
+*.log
+.DS_Store
+Thumbs.db

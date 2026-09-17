@@ -1,0 +1,759 @@
+/* ============================================================
+   Preparation Workspace — Executive Obsidian & Gold Dossier
+   ============================================================ */
+
+.workspaceContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 4rem 1.25rem;
+  min-height: calc(100vh - 80px);
+}
+
+/* ------------------------------------------------------------
+   Top Selection Bar
+   ------------------------------------------------------------ */
+.selectionBar {
+  background: rgba(18, 22, 31, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(200, 162, 86, 0.25);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+.selectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-gold, #c8a256);
+  margin-bottom: 1rem;
+}
+
+.selectorsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+  .selectorsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.inputLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+}
+
+.selectInput,
+.textInput,
+.textArea {
+  background: rgba(13, 17, 23, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #f3f4f6;
+  font-size: 0.875rem;
+  padding: 0.6rem 0.85rem;
+  outline: none;
+  transition: all 0.2s ease;
+  width: 100%;
+  font-family: inherit;
+}
+
+.selectInput:focus,
+.textInput:focus,
+.textArea:focus {
+  border-color: var(--color-gold, #c8a256);
+  box-shadow: 0 0 0 2px rgba(200, 162, 86, 0.2);
+}
+
+.textArea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.chipsRow {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.4rem;
+}
+
+.chipButton {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  color: #9ca3af;
+  font-size: 0.72rem;
+  padding: 0.2rem 0.65rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chipButton:hover {
+  background: rgba(200, 162, 86, 0.15);
+  border-color: rgba(200, 162, 86, 0.35);
+  color: var(--color-gold, #c8a256);
+}
+
+.actionRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.generateBtn {
+  background: linear-gradient(135deg, #d4af37, #aa8214);
+  color: #0b0f17;
+  border: none;
+  border-radius: 8px;
+  padding: 0.65rem 1.4rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 14px rgba(212, 175, 55, 0.3);
+  transition: all 0.2s ease;
+}
+
+.generateBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.45);
+}
+
+.generateBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ------------------------------------------------------------
+   Main Dossier Workspace
+   ------------------------------------------------------------ */
+.workspaceBody {
+  display: grid;
+  grid-template-columns: 1fr 480px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 1150px) {
+  .workspaceBody {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dossierPane {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ------------------------------------------------------------
+   Header Card
+   ------------------------------------------------------------ */
+.headerCard {
+  background: rgba(18, 22, 31, 0.9);
+  border: 1px solid rgba(200, 162, 86, 0.25);
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.brandOverline {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-gold, #c8a256);
+}
+
+.dossierTitle {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #f9fafb;
+  margin: 0.2rem 0;
+  line-height: 1.3;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.printBtn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(200, 162, 86, 0.3);
+  color: var(--color-gold, #c8a256);
+  border-radius: 6px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
+}
+
+.printBtn:hover {
+  background: rgba(200, 162, 86, 0.15);
+  border-color: var(--color-gold, #c8a256);
+  color: #ffffff;
+}
+
+.purposeBanner {
+  background: rgba(200, 162, 86, 0.08);
+  border-left: 3px solid var(--color-gold, #c8a256);
+  padding: 0.75rem 1rem;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.875rem;
+  color: #e5e7eb;
+  line-height: 1.5;
+}
+
+.metaPillsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.metaPill {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+/* Evidence Verification Health Bar */
+.healthBarContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 0.65rem 0.85rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.healthBarHeader {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.healthBarTrack {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.healthBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #34d399);
+  border-radius: 9999px;
+  transition: width 0.4s ease;
+}
+
+/* ------------------------------------------------------------
+   Tab Navigation Bar
+   ------------------------------------------------------------ */
+.tabBar {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  scrollbar-width: thin;
+}
+
+.tabBtn {
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #9ca3af;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
+}
+
+.tabBtn:hover {
+  color: #f3f4f6;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tabBtnActive {
+  color: #0b0f17;
+  background: var(--color-gold, #c8a256);
+  font-weight: 700;
+}
+
+.tabCount {
+  background: rgba(0, 0, 0, 0.25);
+  color: inherit;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 9999px;
+}
+
+.tabBtnActive .tabCount {
+  background: rgba(0, 0, 0, 0.35);
+  color: #0b0f17;
+}
+
+/* ------------------------------------------------------------
+   Section Cards & Finding Items
+   ------------------------------------------------------------ */
+.sectionCard {
+  background: rgba(18, 22, 31, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 0.6rem;
+}
+
+.sectionTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f9fafb;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.itemCard {
+  background: rgba(13, 17, 23, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: border-color 0.2s ease;
+}
+
+.itemCard:hover {
+  border-color: rgba(200, 162, 86, 0.25);
+}
+
+.itemHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.itemTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #f3f4f6;
+  margin: 0;
+}
+
+.itemParty {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-gold, #c8a256);
+}
+
+.plainLangBox {
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 2px solid rgba(200, 162, 86, 0.5);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.82rem;
+  color: #d1d5db;
+  line-height: 1.45;
+}
+
+/* ------------------------------------------------------------
+   Citation Buttons & Seals
+   ------------------------------------------------------------ */
+.citationBar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.2rem;
+}
+
+.citationBtn {
+  background: rgba(200, 162, 86, 0.1);
+  border: 1px solid rgba(200, 162, 86, 0.25);
+  color: var(--color-gold, #c8a256);
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: all 0.15s ease;
+}
+
+.citationBtn:hover {
+  background: rgba(200, 162, 86, 0.22);
+  border-color: var(--color-gold, #c8a256);
+}
+
+.quoteExcerpt {
+  font-style: italic;
+  font-size: 0.78rem;
+  color: #9ca3af;
+  margin: 0.2rem 0 0 0;
+  line-height: 1.4;
+}
+
+.unverifiedNotice {
+  font-size: 0.72rem;
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.1);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+/* ------------------------------------------------------------
+   Lawyer Questions Cards
+   ------------------------------------------------------------ */
+.questionCard {
+  background: rgba(13, 17, 23, 0.75);
+  border: 1px solid rgba(200, 162, 86, 0.2);
+  border-radius: 8px;
+  padding: 1rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.questionTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.questionNum {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-gold, #c8a256);
+  letter-spacing: 0.08em;
+}
+
+.copyBtn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: #9ca3af;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.copyBtn:hover {
+  color: #f3f4f6;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.questionText {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.whyItMatters {
+  font-size: 0.8rem;
+  color: #d1d5db;
+  line-height: 1.45;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+}
+
+/* ------------------------------------------------------------
+   Actionable Checklist UI
+   ------------------------------------------------------------ */
+.checklistGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.checklistGroupTitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-gold, #c8a256);
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.checkItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.6rem 0.8rem;
+  background: rgba(13, 17, 23, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.checkItem:hover {
+  border-color: rgba(200, 162, 86, 0.3);
+}
+
+.checkboxInput {
+  margin-top: 0.2rem;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-gold, #c8a256);
+  cursor: pointer;
+}
+
+.checkItemText {
+  font-size: 0.84rem;
+  color: #f3f4f6;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.checkItemCompleted {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+.checkWhy {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-top: 0.2rem;
+}
+
+/* ------------------------------------------------------------
+   Right Pane: Integrated Document Viewer
+   ------------------------------------------------------------ */
+.viewerPane {
+  background: rgba(18, 22, 31, 0.85);
+  border: 1px solid rgba(200, 162, 86, 0.2);
+  border-radius: 12px;
+  padding: 1rem;
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow: hidden;
+}
+
+.viewerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 0.5rem;
+}
+
+.viewerHeaderTitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #f3f4f6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 320px;
+}
+
+.viewerBody {
+  flex: 1;
+  overflow: hidden;
+  min-height: 520px;
+}
+
+/* ------------------------------------------------------------
+   Disclaimer Footer
+   ------------------------------------------------------------ */
+.disclaimerFooter {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  line-height: 1.5;
+  margin-top: 1rem;
+}
+
+/* ------------------------------------------------------------
+   PRINT STYLESHEET (@media print)
+   Generates a crisp, clean executive document ready for counsel.
+   ------------------------------------------------------------ */
+@media print {
+  :global(body) {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 10pt !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  }
+
+  /* Hide UI chrome, interactive controls, and dark background elements */
+  .selectionBar,
+  .actionRow,
+  .printBtn,
+  .tabBar,
+  .viewerPane,
+  .copyBtn,
+  :global(header),
+  :global(footer),
+  :global(nav) {
+    display: none !important;
+  }
+
+  .workspaceContainer {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .workspaceBody {
+    display: block !important;
+  }
+
+  .dossierPane {
+    display: block !important;
+  }
+
+  .headerCard {
+    background: #ffffff !important;
+    border: 2px solid #000000 !important;
+    color: #000000 !important;
+    padding: 12pt !important;
+    box-shadow: none !important;
+    margin-bottom: 14pt !important;
+    page-break-inside: avoid !important;
+  }
+
+  .brandOverline {
+    color: #000000 !important;
+    font-size: 9pt !important;
+  }
+
+  .dossierTitle {
+    color: #000000 !important;
+    font-size: 16pt !important;
+  }
+
+  .purposeBanner {
+    background: #f4f4f5 !important;
+    border-left: 3pt solid #000000 !important;
+    color: #000000 !important;
+    padding: 8pt !important;
+  }
+
+  .sectionCard,
+  .questionCard,
+  .itemCard,
+  .checkItem {
+    background: #ffffff !important;
+    border: 1px solid #d4d4d8 !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    margin-bottom: 8pt !important;
+    page-break-inside: avoid !important;
+  }
+
+  .sectionTitle {
+    color: #000000 !important;
+    font-size: 12pt !important;
+  }
+
+  .itemTitle,
+  .questionText,
+  .checkItemText {
+    color: #000000 !important;
+  }
+
+  .plainLangBox,
+  .whyItMatters {
+    background: #fafafa !important;
+    color: #18181b !important;
+    border: 1px solid #e4e4e7 !important;
+  }
+
+  .disclaimerFooter {
+    background: #ffffff !important;
+    border: 1px solid #000000 !important;
+    color: #27272a !important;
+    page-break-inside: avoid !important;
+  }
+
+  .citationBtn {
+    border: 1px solid #71717a !important;
+    color: #000000 !important;
+    background: none !important;
+  }
+}

@@ -1,0 +1,56 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  line-height: 1.4;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.default {
+  background-color: var(--bg-surface-subtle);
+  color: var(--text-secondary);
+  border-color: var(--border-subtle);
+}
+
+/* Legal Evidence Classifications */
+.fact {
+  background-color: var(--status-fact-bg);
+  color: var(--status-fact-text);
+  border-color: var(--status-fact-border);
+}
+
+.interpretation {
+  background-color: var(--status-interp-bg);
+  color: var(--status-interp-text);
+  border-color: var(--status-interp-border);
+}
+
+.general {
+  background-color: var(--status-general-bg);
+  color: var(--status-general-text);
+  border-color: var(--status-general-border);
+}
+
+.review {
+  background-color: var(--status-review-bg);
+  color: var(--status-review-text);
+  border-color: var(--status-review-border);
+}
+
+.risk {
+  background-color: var(--status-risk-high-bg);
+  color: var(--status-risk-high-text);
+  border-color: var(--status-risk-high-border);
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+}

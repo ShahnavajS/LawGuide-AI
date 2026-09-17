@@ -1,0 +1,59 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getMatterService } from '@/lib/matter/service';
+import { formatSafeError, AppError, ValidationError } from '@/lib/utils/errors';
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ matterId: string; itemId: string }> }
+) {
+  try {
+    const { matterId, itemId } = await params;
+    if (!matterId || !itemId) {
+      throw new ValidationError('Matter ID and Item ID are required.');
+    }
+
+    let body: Record<string, unknown>;
+    try {
+      body = await request.json();
+    } catch {
+      throw new ValidationError('Invalid JSON request body.');
+    }
+
+    const service = getMatterService();
+    const item = await service.updateActionItem(
+      matterId,
+      itemId,
+      body as unknown as import('@/lib/ai/schemas').UpdateActionItemInput
+    );
+
+    return NextResponse.json({ item }, { status: 200 });
+  } catch (error) {
+    const safe = formatSafeError(error);
+    const status = error instanceof AppError ? error.statusCode : 500;
+    return NextResponse.json(safe, { status });
+  }
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ matterId: string; itemId: string }> }
+) {
+  try {
+    const { matterId, itemId } = await params;
+    if (!matterId || !itemId) {
+      throw new ValidationError('Matter ID and Item ID are required.');
+    }
+
+    const service = getMatterService();
+    await service.deleteActionItem(matterId, itemId);
+
+    return NextResponse.json(
+      { success: true, message: 'Action item deleted successfully.' },
+      { status: 200 }
+    );
+  } catch (error) {
+    const safe = formatSafeError(error);
+    const status = error instanceof AppError ? error.statusCode : 500;
+    return NextResponse.json(safe, { status });
+  }
+}

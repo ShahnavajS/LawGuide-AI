@@ -1,0 +1,23 @@
+CREATE TABLE `matter_evidence` (
+	`id` text PRIMARY KEY NOT NULL,
+	`matter_id` text NOT NULL,
+	`evidence_type` text NOT NULL,
+	`document_id` text,
+	`page_number` integer,
+	`quoted_text` text,
+	`normalized_quote` text,
+	`classification` text DEFAULT 'DOCUMENT_FACT' NOT NULL,
+	`verification_status` text DEFAULT 'VERIFIED' NOT NULL,
+	`confidence_category` text DEFAULT 'HIGH' NOT NULL,
+	`source_reference` text,
+	`target_document_id` text,
+	`target_page_number` integer,
+	`target_quote` text,
+	`used_by_json` text,
+	`metadata_json` text,
+	`created_at` text NOT NULL,
+	`updated_at` text NOT NULL,
+	FOREIGN KEY (`matter_id`) REFERENCES `matters`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`document_id`) REFERENCES `documents`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`target_document_id`) REFERENCES `documents`(`id`) ON UPDATE no action ON DELETE set null
+);

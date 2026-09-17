@@ -1,0 +1,707 @@
+.workspaceContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 120px);
+  background: var(--bg-primary, #0b0d10);
+  color: var(--text-primary, #f1f3f7);
+}
+
+/* Document Selection Bar */
+.selectionBar {
+  background: var(--bg-secondary, #12151b);
+  border-bottom: 1px solid var(--border-color, rgba(200, 162, 86, 0.2));
+  padding: 1.25rem 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+.selectionTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-gold, #c8a256);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.selectorsGrid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto;
+  gap: 1.25rem;
+  align-items: center;
+}
+
+.selectGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.selectLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary, #9aa0a6);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.selectInput {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color, rgba(200, 162, 86, 0.25));
+  border-radius: 8px;
+  color: var(--text-primary, #f1f3f7);
+  padding: 0.65rem 0.9rem;
+  font-size: 0.9rem;
+  outline: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.selectInput:focus {
+  border-color: var(--color-gold, #c8a256);
+  box-shadow: 0 0 0 2px rgba(200, 162, 86, 0.2);
+}
+
+.swapBtn {
+  margin-top: 1.25rem;
+  background: rgba(200, 162, 86, 0.1);
+  border: 1px solid rgba(200, 162, 86, 0.3);
+  color: var(--color-gold, #c8a256);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.swapBtn:hover {
+  background: rgba(200, 162, 86, 0.2);
+  transform: rotate(180deg);
+}
+
+.actionBtnWrapper {
+  margin-top: 1.25rem;
+}
+
+.compareBtn {
+  background: linear-gradient(135deg, #c8a256 0%, #a68138 100%);
+  color: #0b0d10;
+  font-weight: 700;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(200, 162, 86, 0.3);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.compareBtn:hover:not(:disabled) {
+  box-shadow: 0 4px 18px rgba(200, 162, 86, 0.5);
+  transform: translateY(-1px);
+}
+
+.compareBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Two-Pane Workspace Layout */
+.workspaceBody {
+  display: grid;
+  grid-template-columns: 46% 54%;
+  flex: 1;
+  overflow: hidden;
+  height: calc(100vh - 180px);
+}
+
+/* Left Pane: Differences & Dossier */
+.dossierPane {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  border-right: 1px solid var(--border-color, rgba(200, 162, 86, 0.2));
+  background: var(--bg-primary, #0b0d10);
+  padding: 1.5rem 1.75rem;
+  gap: 1.25rem;
+}
+
+/* Summary Card */
+.summaryCard {
+  background: rgba(18, 21, 27, 0.85);
+  border: 1px solid rgba(200, 162, 86, 0.25);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  position: relative;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.summaryHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.summaryTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-gold, #c8a256);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.summaryText {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--text-secondary, #d1d5db);
+  margin-bottom: 0.85rem;
+}
+
+.governingLawTag {
+  font-size: 0.8rem;
+  color: var(--text-muted, #9ca3af);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.4rem 0.7rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Statistics Bar */
+.statsBar {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
+.statPill {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.statPillAdded {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #4ade80;
+}
+
+.statPillRemoved {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+.statPillModified {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+}
+
+.statPillUnchanged {
+  background: rgba(148, 163, 184, 0.12);
+  border-color: rgba(148, 163, 184, 0.25);
+  color: #cbd5e1;
+}
+
+/* Health Bar */
+.healthBarContainer {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.healthBarHeader {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted, #9ca3af);
+  margin-bottom: 0.35rem;
+}
+
+.healthBarTrack {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.healthBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #c8a256 0%, #22c55e 100%);
+  transition: width 0.4s ease;
+}
+
+/* Filter Toolbar */
+.filterToolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: rgba(18, 21, 27, 0.6);
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.filterPillsRow {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.filterPill {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary, #9ca3af);
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.filterPillActive {
+  background: rgba(200, 162, 86, 0.2);
+  border-color: var(--color-gold, #c8a256);
+  color: var(--color-gold, #c8a256);
+}
+
+.filterSelectRow {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.categorySelect {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary, #f1f3f7);
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+  outline: none;
+  cursor: pointer;
+}
+
+/* Difference Cards */
+.differenceCard {
+  background: rgba(18, 21, 27, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  transition: border-color 0.2s ease, transform 0.15s ease;
+}
+
+.differenceCard:hover {
+  border-color: rgba(200, 162, 86, 0.4);
+  transform: translateY(-1px);
+}
+
+.cardTopHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.cardBadges {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.typeBadge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.typeAdded {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.typeRemoved {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.typeModified {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.typeUnchanged {
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.attentionBadge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.attHigh {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #f87171;
+}
+
+.attMedium {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+}
+
+.attLow {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.4);
+  color: #60a5fa;
+}
+
+.attInfo {
+  background: rgba(148, 163, 184, 0.1);
+  border-color: rgba(148, 163, 184, 0.2);
+  color: #94a3b8;
+}
+
+.cardTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary, #f1f3f7);
+  margin-top: 0.2rem;
+}
+
+/* Dual Evidence Box */
+.evidenceGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 8px;
+  padding: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.evidenceBox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.evidenceHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.evidenceLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted, #9ca3af);
+}
+
+.citationSeal {
+  background: rgba(200, 162, 86, 0.12);
+  border: 1px solid rgba(200, 162, 86, 0.35);
+  color: var(--color-gold, #c8a256);
+  border-radius: 12px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.citationSeal:hover {
+  background: rgba(200, 162, 86, 0.25);
+  border-color: var(--color-gold, #c8a256);
+  transform: translateY(-1px);
+}
+
+.evidenceQuote {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--text-secondary, #d1d5db);
+  background: rgba(255, 255, 255, 0.02);
+  border-left: 2px solid rgba(200, 162, 86, 0.4);
+  padding: 0.4rem 0.6rem;
+  border-radius: 0 4px 4px 0;
+  line-height: 1.4;
+}
+
+.unverifiedNotice {
+  font-size: 0.72rem;
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+}
+
+/* What Changed & Semantic Field Changes */
+.changeSummaryBlock {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 6px;
+  padding: 0.65rem 0.8rem;
+  border-left: 3px solid var(--color-gold, #c8a256);
+}
+
+.changeSummaryLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-gold, #c8a256);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.25rem;
+}
+
+.changeSummaryText {
+  font-size: 0.85rem;
+  color: var(--text-primary, #f1f3f7);
+  line-height: 1.45;
+}
+
+/* Semantic Deltas */
+.semanticDeltasTable {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+}
+
+.semanticRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+}
+
+.semanticField {
+  font-weight: 700;
+  color: var(--color-gold, #c8a256);
+  text-transform: uppercase;
+  font-size: 0.7rem;
+}
+
+.semanticBefore {
+  color: #f87171;
+  text-decoration: line-through;
+}
+
+.semanticArrow {
+  color: var(--text-muted, #9ca3af);
+}
+
+.semanticAfter {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+/* Practical Implications */
+.implicationsBlock {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #9ca3af);
+  line-height: 1.4;
+}
+
+.implicationsLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted, #9ca3af);
+  text-transform: uppercase;
+  margin-bottom: 0.15rem;
+}
+
+/* Lawyer Question Box */
+.lawyerQuestionBlock {
+  background: rgba(200, 162, 86, 0.07);
+  border: 1px solid rgba(200, 162, 86, 0.25);
+  border-radius: 6px;
+  padding: 0.6rem 0.8rem;
+}
+
+.lawyerQuestionLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-gold, #c8a256);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.lawyerQuestionText {
+  font-size: 0.82rem;
+  color: var(--text-primary, #f1f3f7);
+  font-style: italic;
+  line-height: 1.4;
+}
+
+/* Right Pane: Dual Viewer */
+.viewerPane {
+  display: flex;
+  flex-direction: column;
+  background: #0d0f14;
+  overflow: hidden;
+  height: 100%;
+}
+
+.viewerTabs {
+  display: flex;
+  border-bottom: 1px solid rgba(200, 162, 86, 0.2);
+  background: var(--bg-secondary, #12151b);
+}
+
+.viewerTab {
+  padding: 0.75rem 1.25rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary, #9ca3af);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.viewerTabActive {
+  color: var(--color-gold, #c8a256);
+  border-bottom-color: var(--color-gold, #c8a256);
+  background: rgba(200, 162, 86, 0.05);
+}
+
+.viewersGrid {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  height: 100%;
+}
+
+.viewerColumn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.viewerColumn:last-child {
+  border-right: none;
+}
+
+.viewerHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background: rgba(18, 21, 27, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.viewerHeaderTitle {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary, #f1f3f7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.viewerHeaderBadge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+
+.emptyStateContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  gap: 1rem;
+  color: var(--text-secondary, #9ca3af);
+}
+
+.emptyStateIcon {
+  font-size: 3rem;
+  opacity: 0.7;
+}
+
+.emptyStateTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary, #f1f3f7);
+}
+
+.emptyStateText {
+  font-size: 0.9rem;
+  max-width: 480px;
+  line-height: 1.5;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .workspaceBody {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+  .selectorsGrid {
+    grid-template-columns: 1fr;
+  }
+  .swapBtn {
+    margin: 0 auto;
+  }
+  .evidenceGrid {
+    grid-template-columns: 1fr;
+  }
+  .viewersGrid {
+    flex-direction: column;
+    height: 600px;
+  }
+}
