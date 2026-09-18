@@ -4,7 +4,17 @@ import { rateLimiter } from '@/lib/security/rate-limiter';
 
 export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  if (pathname.startsWith('/_next/') || pathname === '/favicon.ico' || pathname === '/api/health') return NextResponse.next();
+  if (
+    pathname.startsWith('/_next/') ||
+    pathname === '/favicon.ico' ||
+    pathname === '/api/health' ||
+    pathname === '/pdf.worker.min.mjs' ||
+    pathname.endsWith('.svg') ||
+    pathname.endsWith('.png') ||
+    pathname.endsWith('.ico')
+  ) {
+    return NextResponse.next();
+  }
 
   const auth = authConfiguration();
   if (!auth.required) return NextResponse.next();

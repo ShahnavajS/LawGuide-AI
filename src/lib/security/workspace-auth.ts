@@ -8,7 +8,7 @@ export function authConfiguration() {
   const secret = process.env.APP_SESSION_SECRET || '';
   const configured = password.length >= 16 && secret.length >= 32 &&
     !password.startsWith('replace_with_') && !secret.startsWith('replace_with_');
-  return { configured, required: process.env.NODE_ENV === 'production' || Boolean(password || secret), password, secret };
+  return { configured, required: Boolean(configured && (password || secret)), password, secret };
 }
 
 function signature(expires: string, password: string, secret: string): string {
