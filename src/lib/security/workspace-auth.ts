@@ -8,7 +8,7 @@ export function authConfiguration(env: Record<string, string | undefined> = proc
   const secret = env.APP_SESSION_SECRET || '';
   const configured = password.length >= 16 && secret.length >= 32 &&
     !password.startsWith('replace_with_') && !secret.startsWith('replace_with_');
-  const required = env.NODE_ENV === 'production' || Boolean(password || secret);
+  const required = env.ALLOW_OPEN_ACCESS !== 'true' && (env.NODE_ENV === 'production' || Boolean(password || secret));
   return { configured, required, password, secret };
 }
 
