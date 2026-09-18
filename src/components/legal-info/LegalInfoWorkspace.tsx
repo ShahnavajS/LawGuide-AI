@@ -175,7 +175,7 @@ export const LegalInfoWorkspace: React.FC<LegalInfoWorkspaceProps> = ({
 
         {/* Jurisdiction Status & Selector */}
         <div className={styles.jurisdictionRow}>
-          <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600 }}>Jurisdiction:</span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Jurisdiction:</span>
           {dossier && (
             <span
               className={`${styles.jurisdictionBadge} ${
@@ -244,7 +244,7 @@ export const LegalInfoWorkspace: React.FC<LegalInfoWorkspaceProps> = ({
         </aside>
 
         {/* Right: Dossier Content */}
-        <main className={styles.mainDossier}>
+        <section className={styles.mainDossier} aria-label="Legal information">
           {isLoading && (
             <div className={styles.card} style={{ textAlign: 'center', padding: '3rem' }}>
               <p style={{ color: '#d4af37', fontWeight: 600 }}>Loading educational legal dossier...</p>
@@ -254,7 +254,7 @@ export const LegalInfoWorkspace: React.FC<LegalInfoWorkspaceProps> = ({
           {loadError && (
             <div className={styles.card} style={{ borderColor: '#ef4444' }}>
               <h3 style={{ color: '#f87171', margin: '0 0 0.5rem 0' }}>Could Not Retrieve Concept</h3>
-              <p style={{ color: '#cbd5e1', margin: 0 }}>{loadError}</p>
+              <p style={{ color: 'var(--text-secondary)', margin: 0 }}>{loadError}</p>
             </div>
           )}
 
@@ -297,7 +297,7 @@ export const LegalInfoWorkspace: React.FC<LegalInfoWorkspaceProps> = ({
                     </span>
                   </div>
 
-                  <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0 0 1rem 0' }}>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '0 0 1rem 0' }}>
                     The following text was verified directly from your uploaded document. Click to view citations.
                   </p>
 
@@ -349,7 +349,7 @@ export const LegalInfoWorkspace: React.FC<LegalInfoWorkspaceProps> = ({
                     <span>🏛️</span>
                     <span>Authoritative Sources &amp; Public Portals</span>
                   </h3>
-                  <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     Checked on {dossier.retrievedAt.split('T')[0]}
                   </span>
                 </div>
@@ -409,7 +409,7 @@ export const LegalInfoWorkspace: React.FC<LegalInfoWorkspaceProps> = ({
                     <span>💬</span>
                     <span>Recommended Questions for Your Attorney</span>
                   </h3>
-                  <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Grounded in standard practice</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Grounded in standard practice</span>
                 </div>
 
                 {dossier.questionsForCounsel.map((q, idx) => (
@@ -490,12 +490,12 @@ export const LegalInfoWorkspace: React.FC<LegalInfoWorkspaceProps> = ({
                     )}
 
                     <div className={styles.qaSectionHeader}>General Legal Explanation:</div>
-                    <p style={{ color: '#cbd5e1', lineHeight: 1.6, margin: '0 0 1rem 0' }}>
+                    <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 1rem 0' }}>
                       {qaResult.generalLegalInfo.text}
                     </p>
 
                     <div className={styles.qaSectionHeader}>Questions to Discuss with Counsel:</div>
-                    <ul style={{ margin: '0 0 0 1.25rem', padding: 0, color: '#e2e8f0' }}>
+                    <ul style={{ margin: '0 0 0 1.25rem', padding: 0, color: 'var(--text-secondary)' }}>
                       {qaResult.questionsForCounsel.map((item, idx) => (
                         <li key={idx} style={{ marginBottom: '0.35rem' }}>{item}</li>
                       ))}
@@ -514,7 +514,7 @@ export const LegalInfoWorkspace: React.FC<LegalInfoWorkspaceProps> = ({
                   <span style={{ fontSize: '0.75rem', color: '#d4af37' }}>Statutory Organizations</span>
                 </div>
 
-                <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: '0 0 1rem 0' }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '0 0 1rem 0' }}>
                   LexiGuide helps you prepare and organize your documents. For legal advice and representation, you can consult qualified private counsel or public legal aid authorities if eligible.
                 </p>
 
@@ -522,7 +522,7 @@ export const LegalInfoWorkspace: React.FC<LegalInfoWorkspaceProps> = ({
                   <div className={styles.legalAidCard}>
                     <h4 className={styles.legalAidTitle}>National Legal Services Authority (NALSA)</h4>
                     <div className={styles.legalAidBasis}>Statutory Body · Legal Services Authorities Act, 1987</div>
-                    <p style={{ color: '#cbd5e1', fontSize: '0.85rem', margin: '0 0 0.75rem 0' }}>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0 0 0.75rem 0' }}>
                       Free legal aid, Lok Adalats, and legal advice for eligible individuals across India.
                     </p>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
@@ -536,7 +536,7 @@ export const LegalInfoWorkspace: React.FC<LegalInfoWorkspaceProps> = ({
                   <div className={styles.legalAidCard}>
                     <h4 className={styles.legalAidTitle}>Department of Justice — Tele-Law</h4>
                     <div className={styles.legalAidBasis}>Government Initiative · Ministry of Law &amp; Justice</div>
-                    <p style={{ color: '#cbd5e1', fontSize: '0.85rem', margin: '0 0 0.75rem 0' }}>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0 0 0.75rem 0' }}>
                       Connects citizens with panel lawyers for pre-litigation consultation via video conference.
                     </p>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
@@ -550,7 +550,7 @@ export const LegalInfoWorkspace: React.FC<LegalInfoWorkspaceProps> = ({
               </section>
             </>
           )}
-        </main>
+        </section>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { LegalInformationService } from '@/lib/legal-info/service';
+import { formatSafeError, AppError } from '@/lib/utils/errors';
 
 export async function GET(
   req: NextRequest,
@@ -36,13 +37,11 @@ export async function GET(
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Failed to retrieve legal topic dossier.';
-    const status = msg.includes('Unknown legal topic') ? 404 : 500;
-    return NextResponse.json(
-      {
-        success: false,
-        error: msg,
-      },
-      { status }
-    );
+    const unknownTopic = msg.includes('Unknown legal topic');
+    const status = unknownTopic ? 404 : err instanceof AppError ? err.statusCode : 500;
+    const payload = unknownTopic
+      ? { error: { message: 'The requested legal topic was not found.', code: 'NOT_FOUND' } }
+      : formatSafeError(err);
+    return NextResponse.json({ success: false, ...payload }, { status });
   }
 }

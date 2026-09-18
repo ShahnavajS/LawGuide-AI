@@ -12,6 +12,8 @@
 }
 
 .modal {
+  margin: auto;
+  padding: 0;
   background-color: var(--bg-surface);
   border-radius: var(--radius-xl);
   border: 1px solid var(--border-subtle);
@@ -23,6 +25,15 @@
   flex-direction: column;
   overflow: hidden;
   animation: scaleIn 200ms ease-out;
+}
+
+.modal:not([open]) {
+  display: none;
+}
+
+.modal::backdrop {
+  background-color: var(--bg-overlay);
+  backdrop-filter: blur(4px);
 }
 
 .header {

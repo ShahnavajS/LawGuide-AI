@@ -10,6 +10,13 @@
   animation: fadeIn 0.15s ease-out;
 }
 
+.backdrop::backdrop {
+  background: rgba(3, 7, 18, 0.85);
+  backdrop-filter: blur(4px);
+}
+
+.backdrop:not([open]) { display: none; }
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }

@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { LegalInformationService } from '@/lib/legal-info/service';
 import { ConceptQuestionRequestSchema } from '@/lib/legal-info/schemas';
+import { formatSafeError, AppError, ValidationError } from '@/lib/utils/errors';
 
 export async function POST(req: NextRequest) {
   try {
+    if (Number(req.headers.get('content-length') || 0) > 16 * 1024) {
+      throw new ValidationError('Question request is too large.');
+    }
     const rawBody = await req.json();
     const parseResult = ConceptQuestionRequestSchema.safeParse(rawBody);
 
@@ -36,14 +40,11 @@ export async function POST(req: NextRequest) {
       data: response,
     });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Failed to process concept question.';
-    const status = msg.includes('Unknown topic') ? 404 : 500;
-    return NextResponse.json(
-      {
-        success: false,
-        error: msg,
-      },
-      { status }
-    );
+    const unknownTopic = err instanceof Error && err.message.startsWith('Unknown topic');
+    const status = unknownTopic ? 404 : err instanceof AppError ? err.statusCode : 500;
+    const payload = unknownTopic
+      ? { error: { message: 'The requested legal topic was not found.', code: 'NOT_FOUND' } }
+      : formatSafeError(err);
+    return NextResponse.json({ success: false, ...payload }, { status });
   }
 }

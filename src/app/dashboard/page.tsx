@@ -5,7 +5,6 @@ import styles from './dashboard.module.css';
 import { DocumentUpload } from '@/components/document/DocumentUpload';
 import { DocumentList } from '@/components/document/DocumentList';
 import { OnboardingBanner } from '@/components/onboarding/OnboardingBanner';
-import { Badge } from '@/components/ui/Badge/Badge';
 import { DocumentDto } from '@/lib/document/types';
 import { LEGAL_DISCLAIMERS } from '@/lib/ai/safety';
 import Link from 'next/link';
@@ -77,15 +76,14 @@ export default function DashboardPage() {
       {/* Dashboard Header */}
       <div className={styles.headerSection}>
         <div className={styles.titleGroup}>
-          <h1 className={styles.title}>Document Workspace</h1>
+          <p className={styles.eyebrow}>YOUR DOCUMENTS</p>
+          <h1 className={styles.title}>A closer read starts here.</h1>
           <p className={styles.subtitle}>
-            Upload, manage, and analyze your contracts, leases, and legal agreements.
+            Add a PDF to understand its terms, ask questions, or compare it with another version.
           </p>
         </div>
 
-        <Badge variant="fact" showDot>
-          AI-Powered Analysis Ready
-        </Badge>
+        <span className={styles.headerAside}>DOCUMENT WORKSPACE <span aria-hidden="true">/</span> 01</span>
       </div>
 
       {/* Safety Notice Banner */}
@@ -173,7 +171,7 @@ export default function DashboardPage() {
           <div>
             <h3 className={styles.workflowTitle}>Legal Navigator</h3>
             <p className={styles.workflowText}>
-              Browse legal topic explanations grounded in authoritative sources — no hallucinations, full citations.
+              Browse educational legal topics with curated source links, clear jurisdiction limits, and counsel questions.
             </p>
             <span className={styles.workflowLink}>Explore Topics →</span>
           </div>

@@ -248,8 +248,9 @@ export class CitationValidator {
       return { reconciledType: sourceType };
     }
 
-    // If unverified, never allow DOCUMENT_FACT
-    if (sourceType === 'DOCUMENT_FACT') {
+    // Neither a purported fact nor an interpretation can retain an evidence
+    // label when its quoted source cannot be found.
+    if (sourceType === 'DOCUMENT_FACT' || sourceType === 'AI_INTERPRETATION') {
       return {
         reconciledType: 'NEEDS_REVIEW',
         discrepancyNote:

@@ -7,6 +7,7 @@
  */
 
 import { getDb, schema } from '@/lib/db';
+import { assertModelCollections } from '@/lib/ai/validate-output';
 import { getDocumentService, DocumentService } from '@/lib/document/service';
 import { getAnalysisService, AnalysisService } from '@/lib/analysis/service';
 import { getComparisonService, ComparisonService } from '@/lib/comparison/service';
@@ -392,6 +393,7 @@ ${prompt}
           'RawPreparationOutput',
           { systemInstruction: SYSTEM_PREPARATION_ANALYST_PROMPT }
         );
+        assertModelCollections(rawOutput, ['keyFacts', 'keyDates', 'missingInformation', 'documentsToBring', 'lawyerQuestions', 'checklist']);
       } catch {
         rawOutput = this.buildOfflinePreparation(
           documentsUnderReview,
@@ -789,6 +791,18 @@ ${prompt}
           value: p.name,
           pageNumber: p.pageNumber,
           quotedText: p.quotedText,
+          documentId: primaryDoc?.documentId,
+        });
+      }
+    }
+    if (keyFacts.length === 0 && analysis?.materialClauses?.length) {
+      for (const clause of analysis.materialClauses.slice(0, 3)) {
+        keyFacts.push({
+          id: `fact_${clause.id}`,
+          label: `Source excerpt, Page ${clause.pageNumber}`,
+          value: clause.quotedText,
+          pageNumber: clause.pageNumber,
+          quotedText: clause.quotedText,
           documentId: primaryDoc?.documentId,
         });
       }

@@ -44,7 +44,7 @@ const STEPS: OnboardingStep[] = [
   {
     id: 3,
     title: 'Ask Your Document',
-    description: 'Use the Q&A tab to ask natural-language questions. Every answer cites the exact page.',
+    description: 'Use the Q&A tab to ask natural-language questions. Supported answers show the exact page and quote used.',
     actionLabel: 'See How',
     actionHref: '/dashboard',
     icon: (

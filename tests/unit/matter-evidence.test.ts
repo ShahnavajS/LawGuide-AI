@@ -10,6 +10,8 @@ import { MatterService } from '@/lib/matter/service';
 import { CitationValidator } from '@/lib/evidence/validator';
 import { GeminiService } from '@/lib/ai/gemini';
 import { NotFoundError } from '@/lib/utils/errors';
+import { getDb, schema } from '@/lib/db';
+import { eq } from 'drizzle-orm';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -141,6 +143,20 @@ describe('Phase 10: Matter Evidence Intelligence & Ledger', () => {
     // Verify ledger count matches sync count
     const ledger = await matterService.getMatterEvidenceLedger(matter.id);
     expect(ledger.totalItems).toBe(firstSync.length);
+  });
+
+  it('keeps ledger and source-map reads free of database writes', async () => {
+    const matter = await matterService.createMatter({ title: 'Read-only evidence test' });
+    await matterService.addNote(matter.id, 'Question', 'Please review the notice period.');
+    const db = getDb();
+    const counts = () => ({
+      evidence: db.select().from(schema.matterEvidence).where(eq(schema.matterEvidence.matterId, matter.id)).all().length,
+      activity: db.select().from(schema.matterActivity).where(eq(schema.matterActivity.matterId, matter.id)).all().length,
+    });
+    const before = counts();
+    await matterService.getMatterEvidenceLedger(matter.id);
+    await matterService.getMatterSourceMap(matter.id);
+    expect(counts()).toEqual(before);
   });
 
   it('filters evidence ledger by classification, verificationStatus, and search term', async () => {

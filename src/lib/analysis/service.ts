@@ -25,6 +25,7 @@ import { LEGAL_DISCLAIMERS, EvidenceSourceType } from '@/lib/ai/safety';
 import { generateId } from '@/lib/utils/id';
 import { AppError, NotFoundError, ValidationError } from '@/lib/utils/errors';
 import { eq } from 'drizzle-orm';
+import { assertCitedModelItems, assertModelCollections } from '@/lib/ai/validate-output';
 
 interface RawLegalXRayOutput {
   overview?: {
@@ -191,7 +192,7 @@ export class AnalysisService {
 
     // 4. Generate structured analysis from Gemini (or deterministic fallback in test/offline mode)
     let raw: RawLegalXRayOutput;
-    if (this.gemini.isConfigured()) {
+    if (this.gemini.isConfigured() && pages.reduce((total, page) => total + page.text.length, 0) <= 120_000) {
       const promptContent = buildPageAwareDocumentPrompt(pages);
       const userPrompt = `
 Analyze the legal document provided below and generate a comprehensive Legal X-Ray analysis adhering strictly to all safety and grounding rules.
@@ -239,8 +240,13 @@ ${promptContent}
         raw = await this.gemini.generateStructured<RawLegalXRayOutput>(
           userPrompt,
           'RawLegalXRayOutput',
-          { systemInstruction: SYSTEM_LEGAL_ANALYST_PROMPT }
+          { systemInstruction: SYSTEM_LEGAL_ANALYST_PROMPT, timeout: 120_000 }
         );
+        assertCitedModelItems(raw, ['parties', 'keyDates', 'obligations', 'rights', 'financialTerms', 'materialClauses', 'attentionAreas'], pages.length);
+        assertModelCollections(raw, ['lawyerQuestions']);
+        if (!raw.overview || typeof raw.overview !== 'object' || typeof raw.overview.summary !== 'string') {
+          throw new Error('Model output is missing a structured overview.');
+        }
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'AI generation error';
         throw new AppError(`Analysis generation failed: ${msg}`, 502, 'AI_ANALYSIS_FAILED');
@@ -333,7 +339,7 @@ ${promptContent}
         pageNumber: o.pageNumber || 1,
         quotedText: o.quotedText || '',
         sectionReference: o.sectionReference,
-        classification: 'DOCUMENT_FACT' as const,
+        classification: 'AI_INTERPRETATION' as const,
       })
     );
 
@@ -345,7 +351,7 @@ ${promptContent}
         explanation: r.explanation || '',
         pageNumber: r.pageNumber || 1,
         quotedText: r.quotedText || '',
-        classification: 'DOCUMENT_FACT' as const,
+        classification: 'AI_INTERPRETATION' as const,
       })
     );
 
@@ -371,7 +377,7 @@ ${promptContent}
         sectionReference: c.sectionReference,
         pageNumber: c.pageNumber || 1,
         quotedText: c.quotedText || '',
-        classification: 'DOCUMENT_FACT' as const,
+        classification: 'AI_INTERPRETATION' as const,
       })
     );
 
@@ -385,7 +391,7 @@ ${promptContent}
         whyItMatters: a.whyItMatters || '',
         pageNumber: a.pageNumber || 1,
         quotedText: a.quotedText || '',
-        classification: 'DOCUMENT_FACT' as const,
+        classification: 'AI_INTERPRETATION' as const,
       })
     );
 
@@ -429,40 +435,41 @@ ${promptContent}
     const now = new Date().toISOString();
     const analysisId = generateId('analysis');
 
-    // Clean up any previous analysis and citations for docId
-    await db.delete(schema.analyses).where(eq(schema.analyses.documentId, docId));
-    await db.delete(schema.citations).where(eq(schema.citations.documentId, docId));
+    // Analysis deletion cascades only its own citations; comparison and
+    // preparation citations for this document must survive reanalysis.
+    db.transaction((tx) => {
+      tx.delete(schema.analyses).where(eq(schema.analyses.documentId, docId)).run();
+      tx.insert(schema.analyses).values({
+        id: analysisId,
+        documentId: docId,
+        summary: overview.summary,
+        documentType: overview.documentType,
+        governingLaw: overview.governingLaw,
+        keyClausesJson: JSON.stringify(materialClauses),
+        obligationsJson: JSON.stringify(obligations),
+        risksJson: JSON.stringify(attentionAreas),
+        analysisDataJson: JSON.stringify(finalAnalysis),
+        status: 'COMPLETED',
+        createdAt: now,
+        updatedAt: now,
+      }).run();
 
-    await db.insert(schema.analyses).values({
-      id: analysisId,
-      documentId: docId,
-      summary: overview.summary,
-      documentType: overview.documentType,
-      governingLaw: overview.governingLaw,
-      keyClausesJson: JSON.stringify(materialClauses),
-      obligationsJson: JSON.stringify(obligations),
-      risksJson: JSON.stringify(attentionAreas),
-      analysisDataJson: JSON.stringify(finalAnalysis),
-      status: 'COMPLETED',
-      createdAt: now,
-      updatedAt: now,
+      if (validatedCitationsToInsert.length > 0) {
+        tx.insert(schema.citations).values(
+          validatedCitationsToInsert.map((c) => ({
+            id: c.id,
+            documentId: docId,
+            analysisId,
+            sourceType: c.sourceType,
+            pageNumber: c.pageNumber,
+            sectionReference: c.sectionReference || null,
+            quotedText: c.quotedText,
+            confidenceScore: c.confidenceScore,
+            createdAt: now,
+          }))
+        ).run();
+      }
     });
-
-    if (validatedCitationsToInsert.length > 0) {
-      await db.insert(schema.citations).values(
-        validatedCitationsToInsert.map((c) => ({
-          id: c.id,
-          documentId: docId,
-          analysisId: analysisId,
-          sourceType: c.sourceType,
-          pageNumber: c.pageNumber,
-          sectionReference: c.sectionReference || null,
-          quotedText: c.quotedText,
-          confidenceScore: c.confidenceScore,
-          createdAt: now,
-        }))
-      );
-    }
 
     return finalAnalysis;
   }
@@ -475,128 +482,37 @@ ${promptContent}
     title: string,
     pages: Array<{ pageNumber: number; text: string }>
   ): RawLegalXRayOutput {
-    const fullText = pages.map((p) => p.text).join(' ');
-
-    // Extract first page text for basic grounding
-    const firstPage = pages[0] || { pageNumber: 1, text: title };
-    const firstPageQuote = firstPage.text.substring(0, Math.min(60, firstPage.text.length)).trim() || title;
-
-    // Check for termination mention
-    const terminationPage = pages.find((p) => /termination|notice/i.test(p.text)) || firstPage;
-    const termQuote =
-      terminationPage.text.match(/[^.!?]*thirty days[^.!?]*/i)?.[0]?.trim() ||
-      terminationPage.text.match(/[^.!?]*notice[^.!?]*/i)?.[0]?.trim() ||
-      terminationPage.text.substring(0, 40).trim();
-
-    // Check for confidentiality mention
-    const confPage = pages.find((p) => /confidential/i.test(p.text)) || firstPage;
-    const confQuote =
-      confPage.text.match(/[^.!?]*confidential[^.!?]*/i)?.[0]?.trim() ||
-      confPage.text.substring(0, 40).trim();
-
-    // Check for governing law
-    const lawMatch = fullText.match(/governing law[^.\n]*/i)?.[0];
-    const governingLaw = lawMatch ? lawMatch.trim() : 'Governing law was not identified in this document.';
+    const firstTextPage = pages.find((p) => p.text.trim());
+    const preview = firstTextPage?.text.trim().slice(0, 400) || '';
 
     return {
       overview: {
-        documentType: 'Legal Agreement',
+        documentType: 'Unclassified document',
         title,
-        summary: `This document outlines mutual obligations, terms, and conditions established between the parties across ${pages.length} pages.`,
-        governingLaw,
-        purpose: 'Establish contractual commitments and operating parameters.',
+        summary: `AI analysis is unavailable. Source text preview (Page ${firstTextPage?.pageNumber || 1}): ${preview}`,
+        governingLaw: 'Governing law was not identified in this document.',
+        purpose: 'Not determined in offline mode.',
       },
-      parties: [
-        {
-          id: 'p1',
-          name: 'Named Contracting Parties',
-          role: 'Parties to Agreement',
-          pageNumber: firstPage.pageNumber,
-          quotedText: firstPageQuote,
-        },
-      ],
-      keyDates: [
-        {
-          id: 'd1',
-          label: 'Term / Notice Period',
-          dateValue: 'As specified in provisions',
-          description: 'Applicable timeline for notice or operational milestones.',
-          pageNumber: terminationPage.pageNumber,
-          quotedText: termQuote,
-        },
-      ],
-      obligations: [
-        {
-          id: 'ob1',
-          party: 'Contracting Party',
-          obligation: 'Comply with stated terms and notice requirements.',
-          explanation: 'The agreement requires formal adherence to written notice timelines.',
-          conditionOrDeadline: 'Prior to termination or amendment.',
-          attentionLevel: 'MEDIUM',
-          pageNumber: terminationPage.pageNumber,
-          quotedText: termQuote,
-          sectionReference: 'Termination Clause',
-        },
-      ],
-      rights: [
-        {
-          id: 'r1',
-          party: 'Either Party',
-          right: 'Exercise rights subject to terms specified.',
-          explanation: 'Parties retain statutory and contractual rights under the agreement.',
-          pageNumber: firstPage.pageNumber,
-          quotedText: firstPageQuote,
-        },
-      ],
+      parties: [],
+      keyDates: [],
+      obligations: [],
+      rights: [],
       financialTerms: [],
-      materialClauses: [
-        {
-          id: 'c1',
-          category: 'TERMINATION',
-          title: 'Termination Provisions',
-          summary: 'Outlines the requirements and notice period for ending the contract.',
-          plainLanguage: 'Requires advance notice before ending the agreement.',
-          sectionReference: 'Termination',
-          pageNumber: terminationPage.pageNumber,
-          quotedText: termQuote,
-        },
-        {
-          id: 'c2',
-          category: 'CONFIDENTIALITY',
-          title: 'Confidentiality Provisions',
-          summary: 'Governs non-disclosure and protection of sensitive information.',
-          plainLanguage: 'Parties must maintain secrecy of non-public shared details.',
-          sectionReference: 'Confidentiality',
-          pageNumber: confPage.pageNumber,
-          quotedText: confQuote,
-        },
-      ],
-      attentionAreas: [
-        {
-          id: 'att1',
-          category: 'TERMINATION',
-          attentionLevel: 'MEDIUM',
-          title: 'Notice Period Requirements',
-          description: 'Specific written notice deadlines apply to termination.',
-          whyItMatters: 'Missing a notice window could result in unintended contract continuation or dispute.',
-          pageNumber: terminationPage.pageNumber,
-          quotedText: termQuote,
-        },
-      ],
-      lawyerQuestions: [
-        {
-          id: 'q1',
-          category: 'Termination',
-          question: 'Are there any circumstances under which the notice period is waived or shortened?',
-          groundedContext: `Termination provision on Page ${terminationPage.pageNumber}`,
-        },
-        {
-          id: 'q2',
-          category: 'Confidentiality',
-          question: 'Does the confidentiality obligation survive termination, and if so, for how long?',
-          groundedContext: `Confidentiality provision on Page ${confPage.pageNumber}`,
-        },
-      ],
+      materialClauses: pages.filter((p) => p.text.trim()).slice(0, 10).map((p) => {
+        const quote = p.text.trim().slice(0, 200);
+        const category = /termination|notice/i.test(p.text) ? 'TERMINATION' : /confidential/i.test(p.text) ? 'CONFIDENTIALITY' : 'OTHER';
+        return {
+          id: `source_${p.pageNumber}`,
+          category,
+          title: `Source excerpt on Page ${p.pageNumber}`,
+          summary: quote,
+          plainLanguage: quote,
+          pageNumber: p.pageNumber,
+          quotedText: quote,
+        };
+      }),
+      attentionAreas: [],
+      lawyerQuestions: [],
     };
   }
 }

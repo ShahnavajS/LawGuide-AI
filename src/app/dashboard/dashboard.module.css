@@ -1,12 +1,10 @@
-.dashboardWrapper {
-  padding: var(--space-8) 0 var(--space-16);
-}
+.dashboardWrapper { padding-top: clamp(2.5rem, 5vw, 5rem); padding-bottom: 5rem; }
 
 .headerSection {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-8);
   flex-wrap: wrap;
   gap: var(--space-4);
 }
@@ -18,11 +16,16 @@
 }
 
 .title {
-  font-size: var(--font-size-3xl);
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 4vw, 4.5rem);
+  font-weight: 400;
   color: var(--text-primary);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.055em;
+  line-height: 1.1;
 }
+.eyebrow { color: var(--color-brand-700); font-size: .7rem; letter-spacing: .14em; font-weight: 750; margin-bottom: .7rem; }
+.headerAside { color: var(--text-muted); border-top: 1px solid var(--color-gold); padding-top: .55rem; font-size: .68rem; font-weight: 700; letter-spacing: .1em; white-space: nowrap; }
+.headerAside span { color: var(--color-gold); margin-inline: .4rem; }
 
 .subtitle {
   font-size: var(--font-size-sm);
@@ -32,7 +35,7 @@
 .banner {
   background-color: var(--bg-surface-subtle);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  border-radius: 0;
   padding: var(--space-3) var(--space-4);
   font-size: var(--font-size-xs);
   color: var(--text-secondary);
@@ -69,7 +72,7 @@
 .workflowCard {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
+  border-radius: 0;
   padding: var(--space-5);
   display: flex;
   gap: var(--space-4);
@@ -79,7 +82,7 @@
 
 .workflowCard:hover {
   border-color: var(--color-brand-200);
-  box-shadow: 0 4px 16px rgba(29, 78, 216, 0.08);
+  box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
 
@@ -87,7 +90,7 @@
   width: 44px;
   height: 44px;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--color-brand-50), var(--color-brand-100));
+  background: var(--color-brand-50);
   display: flex;
   align-items: center;
   justify-content: center;

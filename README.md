@@ -2,10 +2,12 @@
 
 > **"Legal language, made human."**
 
-LexiGuide AI is a GenAI-powered legal information and document-assistance platform designed to demystify complex contracts, agreements, and policies. It provides structured breakdowns, obligation tracking, and evidence citations that anchor every insight directly to verifiable source text.
+LexiGuide AI is a GenAI-powered legal information and document-assistance platform designed to demystify complex contracts, agreements, and policies. It provides structured breakdowns, comparison, and source citations that users can inspect against document text.
 
 > **Important Legal Safety Notice:**  
 > LexiGuide AI provides legal information and document analysis tools, **not legal advice**. The platform does not form an attorney-client relationship and is not a substitute for consultation with a licensed attorney.
+
+**Current implementation:** This is a single private workspace protected by one shared password in production. Everyone with that password sees the same documents and matters. The original PDF remains local; extracted document text is sent to Gemini when AI analysis is requested. A matching source quote verifies its location, not the legal correctness of an interpretation. See [current implementation status](./docs/implementation-status.md) for deployment and remaining limitations. The phase log below is historical and may describe earlier behavior.
 
 ---
 
@@ -17,7 +19,7 @@ UNDERSTAND  →  COMPARE  →  ASK  →  PREPARE
 
 1. **Understand (Legal X-Ray)**: Plain-language translation of complex clauses, obligations, and non-standard risks.
 2. **Compare**: Semantic comparison between document versions highlighting shifts in balance and added liabilities.
-3. **Ask (Evidence Q&A)**: Natural language document queries with precise, clickable page and paragraph citations.
+3. **Ask (Evidence Q&A)**: Natural language document questions with clickable page quotes; unsupported answers abstain.
 4. **Prepare (Consultation Brief)**: Evidence-grounded briefing dossier, prioritized attorney questions, and actionable checklist with native print/PDF export.
 5. **Matter Workspace**: Multi-document case context organizing related agreements, amendments, notices, and schedules with cross-document relationship discovery, consistency checks, timeline generation, and anti-adjudication safety.
 
@@ -25,7 +27,7 @@ UNDERSTAND  →  COMPARE  →  ASK  →  PREPARE
 
 ## 5-Tier Evidence Classification
 
-To eliminate AI hallucinations and ensure complete user transparency, all findings are tagged using a strict 5-tier model:
+Findings use five labels to show their source and review status. Labels do not eliminate model errors:
 
 | Classification | Badge | Meaning |
 |:---|:---|:---|
@@ -40,7 +42,7 @@ To eliminate AI hallucinations and ensure complete user transparency, all findin
 ## Technology Stack
 
 - **Framework**: Next.js 16 (App Router, Turbopack, React 19, Strict TypeScript)
-- **Styling**: Vanilla CSS & CSS Modules with comprehensive CSS custom property design tokens (No Tailwind)
+- **Styling**: Vanilla CSS and CSS Modules with paper-and-ink design tokens (no Tailwind or graphics runtime). See [design system](./DESIGN.md) and [frontend research](./docs/frontend-research.md).
 - **AI Engine**: Google Gemini via `@google/genai` (Configurable model, default `gemini-2.5-flash`)
 - **Database**: SQLite with Write-Ahead Logging (`better-sqlite3` + `drizzle-orm`)
 - **Document Persistence**: Decoupled filesystem storage abstraction (`LocalStorageService`)
@@ -66,8 +68,8 @@ To eliminate AI hallucinations and ensure complete user transparency, all findin
 │   │   ├── legal-info/          # Legal Information Navigator
 │   │   ├── matters/             # Matter Hub & Workspace (/matters/[matterId])
 │   │   ├── prepare/             # Lawyer consultation brief & checklist
-│   │   ├── globals.css          # Design tokens, dark mode, resets
-│   │   ├── layout.tsx           # Inter font, header, footer
+│   │   ├── globals.css          # Design tokens and resets
+│   │   ├── layout.tsx           # System font, header, footer
 │   │   └── page.tsx             # Landing page
 │   ├── components/
 │   │   ├── analysis/            # Legal X-Ray dossier & viewer components
@@ -87,11 +89,11 @@ To eliminate AI hallucinations and ensure complete user transparency, all findin
 │       ├── matter/              # Matter domain service, cross-document intelligence, Q&A
 │       ├── preparation/         # Brief synthesis, checklist engine, service
 │       └── utils/               # Secure ID and error handling utilities
-├── tests/                       # Unit and integration test suites (232 passing tests across 38 suites)
+├── tests/                       # Vitest unit and route tests with isolated in-memory SQLite
 │   └── unit/
 ├── .env.example                 # Environment variable templates
 ├── drizzle.config.ts            # Drizzle ORM configuration
-├── next.config.ts               # Security headers (CSP, FrameGuard, NoSniff)
+├── next.config.ts               # Security headers and proxy body budget
 └── vitest.config.mts            # Unit testing configuration
 ```
 
@@ -129,13 +131,11 @@ GEMINI_MODEL=gemini-2.5-flash
 DATABASE_URL=./data/lexiguide.db
 STORAGE_DIR=./uploads
 NODE_ENV=development
+APP_ACCESS_PASSWORD=replace_with_a_long_private_password
+APP_SESSION_SECRET=replace_with_at_least_32_random_characters
 ```
 
-### 3. Run Migrations
-
-```bash
-npm run db:generate
-```
+Existing migrations are applied when the database connection opens. `npm run db:generate` creates new migrations after a schema change; it is not required for first startup.
 
 ### 4. Start Development Server
 
@@ -162,6 +162,8 @@ Open [http://localhost:3000](http://localhost:3000) to view the landing page and
 ---
 
 ## Implementation Status
+
+The phase checklist below is historical. Current security boundaries, limitations, and verification results are maintained in [docs/implementation-status.md](./docs/implementation-status.md).
 
 - [x] **Phase 0: Architecture & Planning** (Complete)
 - [x] **Phase 1: Engineering Foundation** (Complete)
@@ -197,7 +199,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the landing page and
   - Safe error handling without raw stack traces or confidential content leakage
   - Interactive client-side PDF viewer (`DocumentViewer`) with zoom, page navigation, and keyboard controls
   - Two-pane analysis workspace at `/analyze/[docId]`
-  - Gemini Files API upload abstraction with graceful offline fallback
+  - Local PDF extraction with a graceful offline fallback; original PDFs are not uploaded to Gemini by the current implementation
   - 54 passing unit and integration tests across 8 suites
 - [x] **Phase 4: Legal X-Ray & Evidence Citations** (Complete)
   - GenAI legal extraction prompt with XML spotlighting (`<untrusted_legal_document>`) and injection defenses
@@ -257,11 +259,11 @@ Open [http://localhost:3000](http://localhost:3000) to view the landing page and
   - 211 passing unit and integration tests across 32 suites with zero TypeScript and zero ESLint errors
 - [x] **Phase 10: Evidence Intelligence, Source Map & Traceable Legal Record** (Complete)
   - Materialized Evidence Intelligence Ledger (`matter_evidence`) anchoring assertions, findings, questions, and action items
-  - Complete 4-tier Source Map hierarchy (Documents → Pages → Evidence → UsedBy) with evidence coverage metrics
+  - Evidence ledger and source-map views connecting documents, pages, evidence, and downstream uses
   - Extended `CitationValidator` with exactMatch, normalizedMatch, wrongPage, and verification status metadata
   - Searchable & filterable Evidence Ledger with multi-attribute filtering (classification, verification status, docId, search query)
   - In-depth action item provenance (`whyThisExists`), evidence chain, and multi-tenant cross-matter security isolation
-  - 232 passing unit and integration tests across 38 suites with zero TypeScript and zero ESLint errors
+  - Historical phase count; see the current verification in [docs/implementation-status.md](./docs/implementation-status.md)
 - [x] **Phase 11: Product UX, Onboarding & Hackathon Demo Experience** (Complete)
   - Refined landing page with core pillars (`UNDERSTAND • COMPARE • PREPARE`), clear disclaimers, and 6 capability showcase cards
   - Accessible `<Breadcrumb />` integrated across Legal X-Ray and Matter Workspaces
@@ -297,7 +299,7 @@ LexiGuide AI operates on a **single-tenant / private-workspace model**:
    - Node.js v20+ LTS or v24+ on Linux, macOS, or Windows Server.
    - For containerized deployments (Docker), ensure the `data` and `uploads` folders are mounted as external persistent volumes:
      ```bash
-     docker run -d -p 3000:3000 \
+     docker run -d -p 3000:8080 \
        -v /var/data/lexiguide:/app/data \
        -v /var/uploads/lexiguide:/app/uploads \
        --env-file .env.production \
@@ -322,8 +324,8 @@ LexiGuide AI operates on a **single-tenant / private-workspace model**:
 
 ### Abuse Prevention & Rate Limiting
 - Built-in sliding-window in-memory limiter:
-  - **Heavy AI Operations** (Analysis, Comparison, Matter Brief, Ask My Matter): 20 requests per minute per IP.
-  - **Standard API Operations**: 100 requests per minute per IP.
+  - **Heavy AI Operations** (Analysis, Comparison, Matter Brief, Ask My Matter): 20 requests per minute per signed session.
+  - **Standard API Operations**: 100 requests per minute per signed session.
   - Exceeding requests receive `429 Too Many Requests` with a `Retry-After: <seconds>` response header.
 
 ---
@@ -333,7 +335,5 @@ LexiGuide AI operates on a **single-tenant / private-workspace model**:
 LexiGuide AI is built from the ground up around strict legal safety guardrails:
 1. **Not a Lawyer**: Does not provide legal advice, legal strategy, or form an attorney-client relationship.
 2. **Not a Judge**: Strictly refuses to declare contract "winners", legal enforceability, or litigation outcome probabilities.
-3. **Evidence-Grounded**: Every document-derived assertion is verified against verbatim document excerpts using `CitationValidator`.
+3. **Evidence Review**: The app checks whether cited quotes occur on the claimed pages; users must still evaluate whether the interpretation follows.
 4. **Jurisdiction-Conscious**: Never guesses or infers governing law from IP, language, or addresses; only explicit contract text or direct user specification establishes jurisdiction.
-
-

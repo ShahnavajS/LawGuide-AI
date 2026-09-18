@@ -1,0 +1,21 @@
+.panel {
+  padding: var(--space-5);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+.panel h2 { font-size: var(--font-size-lg); margin-bottom: var(--space-2); }
+.panel p { line-height: 1.5; margin-bottom: var(--space-3); }
+.panel form { display: grid; gap: var(--space-2); }
+.panel label { font-weight: 600; }
+.panel textarea { width: 100%; resize: vertical; padding: var(--space-3); border: 1px solid var(--border-medium); border-radius: var(--radius-sm); font: inherit; color: var(--text-primary); background: var(--bg-surface); }
+.panel textarea:focus-visible, .citations button:focus-visible { outline: 3px solid var(--color-brand-500); outline-offset: 2px; }
+.result { margin-top: var(--space-4); }
+.citations { list-style: none; margin: var(--space-3) 0; padding: 0; display: grid; gap: var(--space-3); }
+.citations li { border-left: 3px solid var(--color-brand-500); padding-left: var(--space-3); }
+.citations button { border: 0; background: none; color: var(--color-brand-700); text-decoration: underline; cursor: pointer; font: inherit; }
+.citations blockquote { margin: var(--space-2) 0; color: var(--text-secondary); overflow-wrap: anywhere; }
+.note { font-size: var(--font-size-xs); color: var(--text-secondary); }
+.error { color: var(--status-risk-high-text); }

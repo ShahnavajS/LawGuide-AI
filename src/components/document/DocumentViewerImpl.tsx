@@ -1,15 +1,43 @@
 'use client';
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import styles from './DocumentViewer.module.css';
 import { Button } from '@/components/ui/Button/Button';
 
-// Configure pdfjs worker to unpkg CDN matching the current pdfjs version only on the client
+// Use locally hosted static worker from public directory matching CSP 'self'
 if (typeof window !== 'undefined') {
-  pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+  pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+}
+
+const pdfBytesCache = new Map<string, Promise<Uint8Array>>();
+
+function getPdfBytes(fileUrl: string): Promise<Uint8Array> {
+  const cached = pdfBytesCache.get(fileUrl);
+  if (cached) return cached;
+
+  const request = (async () => {
+    const response = await fetch(fileUrl);
+    if (!response.ok) {
+      throw new Error(response.status === 404
+        ? 'The stored PDF is missing. Remove this record and upload a new copy.'
+        : 'The PDF could not be loaded. Please try again.');
+    }
+
+    const data = new Uint8Array(await response.arrayBuffer());
+    if (new TextDecoder().decode(data.subarray(0, 5)) !== '%PDF-') {
+      throw new Error('The stored file is not a valid PDF. Upload a new copy.');
+    }
+    return data;
+  })();
+
+  pdfBytesCache.set(fileUrl, request);
+  void request.catch(() => {
+    if (pdfBytesCache.get(fileUrl) === request) pdfBytesCache.delete(fileUrl);
+  });
+  return request;
 }
 
 export interface DocumentViewerProps {
@@ -30,26 +58,71 @@ export const DocumentViewerImpl: React.FC<DocumentViewerProps> = ({
   className,
 }) => {
   const [numPages, setNumPages] = useState<number | null>(null);
-  const [pageNumber, setPageNumber] = useState<number>(initialPage);
+  const [localPageNumber, setLocalPageNumber] = useState<number>(initialPage);
   const [scale, setScale] = useState<number>(1.0);
-  const [pageInputValue, setPageInputValue] = useState<string>(String(initialPage));
-  const [prevActivePage, setPrevActivePage] = useState<number | undefined>(activePage);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [pdfData, setPdfData] = useState<Uint8Array | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const pageInputRef = useRef<HTMLInputElement>(null);
+  const loadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pdfFile = useMemo(() => pdfData ? { data: pdfData } : null, [pdfData]);
+  const pageNumber = Math.max(1, Math.min(activePage ?? localPageNumber, numPages ?? Number.MAX_SAFE_INTEGER));
 
-  // Adjust state directly during rendering when activePage prop changes (React recommended pattern)
-  if (activePage !== prevActivePage) {
-    setPrevActivePage(activePage);
-    if (activePage != null && numPages != null && activePage > 0) {
-      const valid = Math.max(1, Math.min(activePage, numPages));
-      setPageNumber(valid);
-      setPageInputValue(String(valid));
+  useEffect(() => {
+    let active = true;
+
+    async function loadPdf() {
+      setPdfData(null);
+      setNumPages(null);
+      setIsLoading(true);
+      setErrorMessage(null);
+      try {
+        const data = await getPdfBytes(fileUrl);
+        if (active) setPdfData(data);
+      } catch (error) {
+        if (active) {
+          setIsLoading(false);
+          setErrorMessage(error instanceof Error ? error.message : 'The PDF could not be loaded.');
+        }
+      }
     }
-  }
+
+    void loadPdf();
+    return () => {
+      active = false;
+    };
+  }, [fileUrl, retryKey]);
+
+  // Keep the uncontrolled page field in sync with citation navigation without
+  // updating React state during render.
+  useEffect(() => {
+    if (activePage == null || !pageInputRef.current) return;
+    pageInputRef.current.value = String(pageNumber);
+  }, [activePage, pageNumber]);
+
+  useEffect(() => {
+    if (!pdfFile) return;
+    loadTimeoutRef.current = setTimeout(() => {
+      setIsLoading((loading) => {
+        if (loading) setErrorMessage('The PDF renderer is taking too long to respond. Try loading it again.');
+        return false;
+      });
+    }, 45000);
+
+    return () => {
+      if (loadTimeoutRef.current) clearTimeout(loadTimeoutRef.current);
+      loadTimeoutRef.current = null;
+    };
+  }, [pdfFile]);
 
   const handleDocumentLoadSuccess = useCallback(
     ({ numPages: total }: { numPages: number }) => {
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+        loadTimeoutRef.current = null;
+      }
       setNumPages(total);
       setIsLoading(false);
       setErrorMessage(null);
@@ -60,31 +133,21 @@ export const DocumentViewerImpl: React.FC<DocumentViewerProps> = ({
     [onLoadSuccess]
   );
 
-  const handleDocumentLoadError = useCallback((err: Error) => {
+  const handleDocumentLoadError = useCallback(() => {
+    if (loadTimeoutRef.current) {
+      clearTimeout(loadTimeoutRef.current);
+      loadTimeoutRef.current = null;
+    }
     setIsLoading(false);
-    setErrorMessage(err.message || 'Failed to load PDF document.');
+    setErrorMessage('The PDF could not be displayed. Upload a new copy if the problem persists.');
   }, []);
-
-  const changePage = useCallback(
-    (offset: number) => {
-      setPageNumber((prev) => {
-        const next = Math.max(1, Math.min(prev + offset, numPages || 1));
-        setPageInputValue(String(next));
-        if (onPageChange && numPages) {
-          onPageChange(next, numPages);
-        }
-        return next;
-      });
-    },
-    [numPages, onPageChange]
-  );
 
   const goToPage = useCallback(
     (targetPage: number) => {
       if (!numPages) return;
       const valid = Math.max(1, Math.min(targetPage, numPages));
-      setPageNumber(valid);
-      setPageInputValue(String(valid));
+      setLocalPageNumber(valid);
+      if (pageInputRef.current) pageInputRef.current.value = String(valid);
       if (onPageChange) {
         onPageChange(valid, numPages);
       }
@@ -92,13 +155,18 @@ export const DocumentViewerImpl: React.FC<DocumentViewerProps> = ({
     [numPages, onPageChange]
   );
 
+  const changePage = useCallback(
+    (offset: number) => goToPage(pageNumber + offset),
+    [goToPage, pageNumber]
+  );
+
   const handlePageInputSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = parseInt(pageInputValue, 10);
+    const parsed = parseInt(pageInputRef.current?.value || '', 10);
     if (!isNaN(parsed)) {
       goToPage(parsed);
     } else {
-      setPageInputValue(String(pageNumber));
+      if (pageInputRef.current) pageInputRef.current.value = String(pageNumber);
     }
   };
 
@@ -168,9 +236,11 @@ export const DocumentViewerImpl: React.FC<DocumentViewerProps> = ({
                 pattern="[0-9]*"
                 aria-label="Current page number"
                 className={styles.pageInput}
-                value={pageInputValue}
-                onChange={(e) => setPageInputValue(e.target.value)}
-                onBlur={() => setPageInputValue(String(pageNumber))}
+                defaultValue={String(initialPage)}
+                ref={pageInputRef}
+                onBlur={() => {
+                  if (pageInputRef.current) pageInputRef.current.value = String(pageNumber);
+                }}
                 disabled={isLoading || !numPages}
               />
             </form>
@@ -236,47 +306,54 @@ export const DocumentViewerImpl: React.FC<DocumentViewerProps> = ({
               size="sm"
               variant="outline"
               onClick={() => {
-                setErrorMessage(null);
+                pdfBytesCache.delete(fileUrl);
+                setPdfData(null);
+                setNumPages(null);
                 setIsLoading(true);
+                setErrorMessage(null);
+                setRetryKey((key) => key + 1);
               }}
             >
               Retry
             </Button>
           </div>
-        ) : (
-          <Document
-            file={fileUrl}
-            onLoadSuccess={handleDocumentLoadSuccess}
-            onLoadError={handleDocumentLoadError}
-            loading={
-              <div className={styles.loadingContainer} aria-live="polite">
+        ) : pdfFile ? (
+          <div className={styles.documentStage}>
+            <Document
+              file={pdfFile}
+              onLoadSuccess={handleDocumentLoadSuccess}
+              onLoadError={handleDocumentLoadError}
+              loading={null}
+              error={null}
+            >
+              {numPages && (
+                <div className={styles.pageWrapper}>
+                  <Page
+                    pageNumber={pageNumber}
+                    scale={scale}
+                    renderAnnotationLayer={true}
+                    renderTextLayer={true}
+                    loading={
+                      <div className={styles.loadingContainer}>
+                        <div className={styles.spinner} />
+                      </div>
+                    }
+                  />
+                </div>
+              )}
+            </Document>
+            {isLoading && (
+              <div className={styles.loadingOverlay} role="status" aria-live="polite">
                 <div className={styles.spinner} />
-                <span className={styles.loadingText}>Loading PDF document...</span>
-              </div>
-            }
-            error={
-              <div className={styles.errorContainer} role="alert">
-                <h4 className={styles.errorTitle}>Error loading PDF</h4>
-                <p className={styles.errorMessage}>Failed to load document content.</p>
-              </div>
-            }
-          >
-            {numPages && (
-              <div className={styles.pageWrapper}>
-                <Page
-                  pageNumber={pageNumber}
-                  scale={scale}
-                  renderAnnotationLayer={true}
-                  renderTextLayer={true}
-                  loading={
-                    <div className={styles.loadingContainer}>
-                      <div className={styles.spinner} />
-                    </div>
-                  }
-                />
+                <span className={styles.loadingText}>Rendering PDF document...</span>
               </div>
             )}
-          </Document>
+          </div>
+        ) : (
+          <div className={styles.loadingContainer} aria-live="polite">
+            <div className={styles.spinner} />
+            <span className={styles.loadingText}>Loading PDF document...</span>
+          </div>
         )}
       </div>
     </div>

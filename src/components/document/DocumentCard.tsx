@@ -53,7 +53,7 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
 
   return (
     <>
-      <div className={styles.card} tabIndex={0} aria-label={`Document card for ${document.title}`}>
+      <article className={styles.card} aria-label={`Document: ${document.title}`}>
         <div className={styles.header}>
           <div className={styles.titleRow}>
             <div className={styles.docIcon} aria-hidden="true">
@@ -94,25 +94,13 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
             <span>Uploaded:</span>
             <strong>{formatDate(document.createdAt)}</strong>
           </div>
-          <div className={styles.metaItem}>
-            <span>Status:</span>
-            <Badge
-              variant={
-                document.status === 'READY'
-                  ? 'fact'
-                  : document.status === 'FAILED'
-                  ? 'risk'
-                  : 'review'
-              }
-            >
-              {document.status}
-            </Badge>
-          </div>
         </div>
 
         <div className={styles.actionsRow}>
           <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>
-            {document.status === 'READY'
+            {document.fileAvailable === false
+              ? 'PDF missing — remove this record and upload a new copy'
+              : document.status === 'READY'
               ? 'Ready — open workspace to analyze'
               : document.status === 'PROCESSING'
               ? 'Processing document pages…'
@@ -120,22 +108,15 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
           </span>
 
           <div className={styles.actionButtons}>
-            <a
-              href={`/analyze/${document.id}`}
-              aria-label={`Open ${document.title} in document workspace`}
-            >
-              <Button size="sm" variant="primary">
-                Open Workspace
-              </Button>
-            </a>
-            <Button
+            {document.fileAvailable !== false && <a className={styles.openLink} href={`/analyze/${document.id}`} aria-label={`Open ${document.title} in document workspace`}>Open document <span aria-hidden="true">↗</span></a>}
+            {document.fileAvailable !== false && <Button
               size="sm"
               variant="secondary"
               onClick={() => setIsAddToMatterOpen(true)}
               aria-label={`Add ${document.title} to a legal matter`}
             >
               + Add to Matter
-            </Button>
+            </Button>}
             <Button
               size="sm"
               variant="ghost"
@@ -146,7 +127,7 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
             </Button>
           </div>
         </div>
-      </div>
+      </article>
 
       {/* Delete Confirmation Modal */}
       <Modal

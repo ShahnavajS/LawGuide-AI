@@ -3,7 +3,6 @@
 import React, { useState, useRef } from 'react';
 import styles from './DocumentUpload.module.css';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
-import { Badge } from '@/components/ui/Badge/Badge';
 import { DocumentDto } from '@/lib/document/types';
 import { MAX_DOCUMENT_FILE_SIZE_BYTES } from '@/lib/document/validation';
 
@@ -74,7 +73,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
 
     // 3. Upload to server
     setState('UPLOADING');
-    setStatusMessage('Uploading securely...');
+    setStatusMessage('Uploading document...');
 
     try {
       const formData = new FormData();
@@ -195,17 +194,12 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
 
             <div>
               <p className={styles.primaryText}>
-                <span className={styles.highlightText}>Click to browse</span> or drag and drop your document
+                <span className={styles.highlightText}>Choose a PDF</span> or drag it here
               </p>
               <p className={styles.secondaryText}>PDF documents only &bull; Up to 20 MB</p>
             </div>
 
-            <div className={styles.badgeRow}>
-              <Badge variant="fact" showDot>
-                Private &amp; Secure
-              </Badge>
-              <Badge variant="general">Isolated Storage</Badge>
-            </div>
+            <p className={styles.uploadNote}>Review the document before relying on any AI explanation.</p>
           </>
         )}
       </div>

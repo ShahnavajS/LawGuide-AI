@@ -10,6 +10,25 @@
   position: relative;
 }
 
+.viewerPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  min-height: 600px;
+  height: 100%;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  text-align: center;
+}
+
+.viewerPlaceholder small {
+  color: var(--text-muted);
+}
+
 .toolbar {
   display: flex;
   align-items: center;
@@ -81,6 +100,26 @@
   position: relative;
 }
 
+.documentStage {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  min-height: 400px;
+}
+
+.loadingOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  min-height: 400px;
+  background: rgba(17, 20, 24, 0.94);
+}
+
 .canvasWrapper:focus-visible {
   outline: 2px solid var(--color-gold-400);
   outline-offset: -2px;
@@ -127,7 +166,7 @@
 }
 
 .errorTitle {
-  color: var(--color-danger);
+  color: var(--status-risk-high-text);
   font-weight: 600;
   font-size: var(--font-size-md);
 }

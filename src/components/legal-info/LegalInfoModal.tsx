@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { LegalInfoWorkspace } from './LegalInfoWorkspace';
 
 export interface LegalInfoModalProps {
@@ -20,20 +20,19 @@ export const LegalInfoModal: React.FC<LegalInfoModalProps> = ({
   comparisonId,
   onNavigateToDocument,
 }) => {
+  const dialogRef = useRef<HTMLDialogElement>(null);
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
+    const dialog = dialogRef.current;
+    if (isOpen && dialog && !dialog.open) dialog.showModal();
+    if (!isOpen && dialog?.open) dialog.close();
+    return () => { if (dialog?.open) dialog.close(); };
+  }, [isOpen]);
 
   return (
-    <div
+    <dialog
+      ref={dialogRef}
+      onCancel={(event) => { event.preventDefault(); onClose(); }}
+      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
       style={{
         position: 'fixed',
         top: 0,
@@ -42,15 +41,12 @@ export const LegalInfoModal: React.FC<LegalInfoModalProps> = ({
         bottom: 0,
         backgroundColor: 'rgba(3, 7, 18, 0.85)',
         backdropFilter: 'blur(8px)',
-        zIndex: 1000,
-        display: 'flex',
+        display: isOpen ? 'flex' : 'none',
         justifyContent: 'center',
         alignItems: 'flex-start',
         overflowY: 'auto',
         padding: '2rem 1rem',
       }}
-      role="dialog"
-      aria-modal="true"
       aria-label="Legal Concept Information"
     >
       <div
@@ -97,6 +93,6 @@ export const LegalInfoModal: React.FC<LegalInfoModalProps> = ({
           }}
         />
       </div>
-    </div>
+    </dialog>
   );
 };

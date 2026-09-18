@@ -135,9 +135,9 @@ export function createConsistencySourceReference(params: {
     documentId: params.sourceDocId,
     documentTitle: params.sourceDocTitle,
     pageNumber: params.sourcePage,
-    classification: 'DOCUMENT_FACT',
-    verificationStatus: 'VERIFIED',
-    confidenceCategory: 'HIGH',
+    classification: 'NEEDS_REVIEW',
+    verificationStatus: 'NEEDS_REVIEW',
+    confidenceCategory: 'UNVERIFIED',
     navigationTarget: {
       tab: 'consistency',
       itemId: params.findingId,

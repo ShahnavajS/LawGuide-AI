@@ -1,5 +1,15 @@
 # LexiGuide AI — Development Steps
 
+## 2026-09-17 review status
+
+**2026-09-18 implementation update:** The prioritized fixes and verification are recorded in [implementation-status.md](./implementation-status.md). The 2026-09-17 status below is the earlier audit snapshot.
+
+**2026-09-18 frontend update:** The consumer-facing redesign is documented in [frontend-research.md](./frontend-research.md) and [DESIGN.md](../DESIGN.md). The landing page, navigation, dashboard, demo, login, and core workspaces now share a paper-and-ink system; nested link/button controls and mobile header overflow were corrected. Desktop and 390px browser checks, lint, TypeScript, 288 tests, and the production build passed.
+
+The historical phases below record work already attempted and include outdated counts and claims. The independent baseline and prioritized corrections are in [independent-research.md](./independent-research.md) and [review-findings.md](./review-findings.md). Current verification: **288 tests across 44 files**, TypeScript, lint, and the production build passed on 2026-09-18. Docker container smoke testing was unavailable because the local Docker engine was not running.
+
+Before adding another feature: establish real access control or a strictly private deployment boundary; correct AI provider disclosures and remove the unused PDF upload; make citations and derived evidence genuinely verifiable; isolate test data and make read endpoints side-effect free; fix Docker mapping and complete an accessibility check. The review report gives exact code locations and acceptance checks.
+
 ## Phase-by-Phase Implementation Roadmap
 
 This document outlines the exact implementation steps for each development phase. Each step includes deliverables, verification criteria, and dependencies.
@@ -557,5 +567,3 @@ npm run build       # Clean Next.js 16.3.5 Turbopack production build
 ```
 
 **Dependencies:** Phase 9
-
-

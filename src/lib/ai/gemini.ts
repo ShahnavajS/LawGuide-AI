@@ -15,12 +15,7 @@ export interface GenerateOptions {
   systemInstruction?: string;
   temperature?: number;
   maxOutputTokens?: number;
-}
-
-export interface GeminiUploadedFile {
-  uri: string;
-  name: string;
-  mimeType: string;
+  timeout?: number;
 }
 
 export class GeminiService {
@@ -38,30 +33,54 @@ export class GeminiService {
    */
   public isConfigured(): boolean {
     const { gemini } = getServerConfig();
-    return Boolean(gemini.apiKey && gemini.apiKey !== 'mock_dev_key');
+    return Boolean(gemini.apiKey && !['mock_dev_key', 'mock_build_key', 'your_gemini_api_key_here'].includes(gemini.apiKey));
   }
 
   /**
    * Generates free-form text response using the configured Gemini model.
+   * Uses a generous default timeout (120s) for large legal documents and retries transient issues.
    */
   public async generateText(prompt: string, options?: GenerateOptions): Promise<string> {
-    try {
-      const client = getGeminiClient();
-      const response = await client.models.generateContent({
-        model: this.config.model,
-        contents: prompt,
-        config: {
-          systemInstruction: options?.systemInstruction || SYSTEM_LEGAL_ANALYST_PROMPT,
-          temperature: options?.temperature ?? this.config.temperature,
-          maxOutputTokens: options?.maxOutputTokens ?? this.config.maxOutputTokens,
-        },
-      });
+    const timeout = options?.timeout ?? 120_000;
+    const client = getGeminiClient();
 
-      return response.text || '';
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown Gemini error';
-      throw new AIServiceError(`Gemini generation failed: ${sanitizeErrorString(errorMessage)}`);
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const response = await client.models.generateContent({
+          model: this.config.model,
+          contents: prompt,
+          config: {
+            systemInstruction: options?.systemInstruction || SYSTEM_LEGAL_ANALYST_PROMPT,
+            temperature: options?.temperature ?? this.config.temperature,
+            maxOutputTokens: options?.maxOutputTokens ?? this.config.maxOutputTokens,
+            httpOptions: { timeout },
+          },
+        });
+
+        return response.text || '';
+      } catch (error: unknown) {
+        lastError = error;
+        const errorMessage = error instanceof Error ? error.message : 'Unknown Gemini error';
+        const isTimeoutOrTransient =
+          errorMessage.includes('504') ||
+          errorMessage.includes('503') ||
+          errorMessage.includes('DEADLINE_EXCEEDED') ||
+          errorMessage.includes('timeout') ||
+          errorMessage.includes('timed out') ||
+          errorMessage.includes('overloaded');
+
+        if (isTimeoutOrTransient && attempt < 2) {
+          console.warn(`Gemini call encountered transient issue on attempt ${attempt} (${errorMessage}), retrying with backoff...`);
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          continue;
+        }
+        break;
+      }
     }
+
+    const finalErrorMessage = lastError instanceof Error ? lastError.message : 'Unknown Gemini error';
+    throw new AIServiceError(`Gemini generation failed: ${sanitizeErrorString(finalErrorMessage)}`);
   }
 
   /**
@@ -82,7 +101,11 @@ export class GeminiService {
 
       // Strip markdown code fences if returned by model
       const cleaned = text.replace(/```json\s*/gi, '').replace(/```\s*$/gi, '').trim();
-      return JSON.parse(cleaned) as T;
+      const parsed: unknown = JSON.parse(cleaned);
+      if (!parsed || typeof parsed !== 'object') {
+        throw new Error('Model response must be a JSON object or array.');
+      }
+      return parsed as T;
     } catch (error: unknown) {
       if (error instanceof AIServiceError) {
         throw error;
@@ -92,43 +115,6 @@ export class GeminiService {
     }
   }
 
-  /**
-   * Uploads a document file to Gemini Files API for multimodal/PDF grounding.
-   * Gracefully returns null if Gemini API key is unconfigured or in offline/test mode.
-   */
-  public async uploadFile(
-    buffer: Buffer,
-    mimeType: string,
-    displayName?: string
-  ): Promise<GeminiUploadedFile | null> {
-    if (!this.isConfigured()) {
-      return null;
-    }
-
-    try {
-      const client = getGeminiClient();
-      const blob = new Blob([new Uint8Array(buffer)], { type: mimeType });
-      const response = await client.files.upload({
-        file: blob,
-        config: {
-          mimeType,
-          displayName: displayName || 'document.pdf',
-        },
-      });
-
-      return {
-        uri: response.uri || '',
-        name: response.name || '',
-        mimeType: response.mimeType || mimeType,
-      };
-    } catch (error: unknown) {
-      if (error instanceof AIServiceError) {
-        throw error;
-      }
-      const errorMessage = error instanceof Error ? error.message : 'File upload failed';
-      throw new AIServiceError(`Gemini file upload failed: ${sanitizeErrorString(errorMessage)}`);
-    }
-  }
 }
 
 // Global default service instance

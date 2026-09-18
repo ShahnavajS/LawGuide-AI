@@ -38,7 +38,7 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--color-gold, #c8a256);
-  background: rgba(200, 162, 86, 0.12);
+  background: var(--bg-surface);
   border: 1px solid rgba(200, 162, 86, 0.3);
   padding: 0.25rem 0.65rem;
   border-radius: 9999px;
@@ -48,14 +48,14 @@
 .heroTitle {
   font-size: 2.2rem;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--text-primary);
   letter-spacing: -0.02em;
   margin: 0;
 }
 
 .heroSubtitle {
   font-size: 1rem;
-  color: #94a3b8;
+  color: var(--text-primary);
   max-width: 680px;
   margin: 0;
   line-height: 1.6;
@@ -67,7 +67,7 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 1rem;
-  background: rgba(18, 22, 31, 0.7);
+  background: var(--bg-surface);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
@@ -82,7 +82,7 @@
 .tabBtn {
   background: transparent;
   border: 1px solid transparent;
-  color: #94a3b8;
+  color: var(--text-primary);
   font-size: 0.85rem;
   font-weight: 600;
   padding: 0.45rem 1rem;
@@ -92,19 +92,19 @@
 }
 
 .tabBtn:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  background: var(--bg-surface);
 }
 
 .tabBtnActive {
-  background: rgba(200, 162, 86, 0.18);
+  background: var(--bg-surface);
   border-color: rgba(200, 162, 86, 0.4);
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .statsText {
   font-size: 0.85rem;
-  color: #64748b;
+  color: var(--text-primary);
   font-weight: 500;
 }
 
@@ -127,7 +127,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  background: rgba(18, 22, 31, 0.9);
+  background: var(--bg-surface);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
   padding: 1.5rem;
@@ -154,7 +154,7 @@
 .cardTitle {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
   margin: 0;
   line-height: 1.35;
 }
@@ -174,14 +174,14 @@
 }
 
 .jurisdictionNotEstablished {
-  background: rgba(245, 158, 11, 0.1);
+  background: var(--bg-surface);
   border-color: rgba(245, 158, 11, 0.25);
-  color: #f59e0b;
+  color: var(--text-primary);
 }
 
 .cardDescription {
   font-size: 0.88rem;
-  color: #94a3b8;
+  color: var(--text-primary);
   margin: 0 0 1.25rem 0;
   line-height: 1.5;
   display: -webkit-box;
@@ -194,7 +194,7 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 0.75rem;
-  background: rgba(13, 17, 23, 0.6);
+  background: var(--bg-surface);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 8px;
   padding: 0.75rem 1rem;
@@ -212,13 +212,13 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #64748b;
+  color: var(--text-primary);
 }
 
 .metricValue {
   font-size: 1.05rem;
   font-weight: 700;
-  color: #e2e8f0;
+  color: var(--text-primary);
 }
 
 .cardFooter {
@@ -232,7 +232,7 @@
 
 .dateText {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--text-primary);
 }
 
 .emptyState {
@@ -241,7 +241,7 @@
   align-items: center;
   justify-content: center;
   padding: 3.5rem 2rem;
-  background: rgba(18, 22, 31, 0.6);
+  background: var(--bg-surface);
   border: 1px dashed rgba(255, 255, 255, 0.12);
   border-radius: 16px;
   gap: 2.5rem;
@@ -256,13 +256,13 @@
 .emptyTitle {
   font-size: 1.3rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .emptyDesc {
   font-size: 0.92rem;
-  color: #94a3b8;
+  color: var(--text-primary);
   max-width: 480px;
   margin: 0;
   line-height: 1.5;
@@ -283,7 +283,7 @@
   display: flex;
   gap: 1rem;
   align-items: flex-start;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-surface);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   padding: 1.25rem;
@@ -297,7 +297,7 @@
   width: 44px;
   height: 44px;
   border-radius: 10px;
-  background: rgba(200, 162, 86, 0.12);
+  background: var(--bg-surface);
   border: 1px solid rgba(200, 162, 86, 0.25);
   display: flex;
   align-items: center;
@@ -309,13 +309,13 @@
 .emptyStepTitle {
   font-size: 0.9rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
   margin-bottom: 0.3rem;
 }
 
 .emptyStepDesc {
   font-size: 0.8rem;
-  color: #94a3b8;
+  color: var(--text-primary);
   line-height: 1.5;
   margin-bottom: 0.5rem;
 }
@@ -366,8 +366,15 @@
   padding: 1rem;
 }
 
+.modalBackdrop::backdrop {
+  background: rgba(5, 8, 15, 0.75);
+  backdrop-filter: blur(8px);
+}
+
+.modalBackdrop:not([open]) { display: none; }
+
 .modalContent {
-  background: #111622;
+  background: var(--bg-surface);
   border: 1px solid rgba(200, 162, 86, 0.35);
   border-radius: 14px;
   width: 100%;
@@ -386,21 +393,21 @@
 .modalTitle {
   font-size: 1.3rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .closeBtn {
   background: transparent;
   border: none;
-  color: #94a3b8;
+  color: var(--text-primary);
   font-size: 1.25rem;
   cursor: pointer;
   padding: 0.25rem;
 }
 
 .closeBtn:hover {
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .formGroup {
@@ -415,17 +422,17 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #94a3b8;
+  color: var(--text-primary);
 }
 
 .formInput,
 .formTextArea,
 .formSelect {
-  background: rgba(13, 17, 23, 0.95);
+  background: var(--bg-surface);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
   padding: 0.65rem 0.85rem;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 0.9rem;
   outline: none;
   transition: border-color 0.2s;

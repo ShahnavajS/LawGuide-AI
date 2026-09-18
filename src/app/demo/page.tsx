@@ -1,7 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { Button } from '@/components/ui/Button/Button';
 import { Badge } from '@/components/ui/Badge/Badge';
 import { Card } from '@/components/ui/Card/Card';
 import { LEGAL_DISCLAIMERS } from '@/lib/ai/safety';
@@ -17,21 +16,21 @@ const DEMO_STEPS = [
   {
     step: '01',
     title: 'Upload Any Legal Document',
-    desc: 'Drag-and-drop a PDF contract, lease, NDA, or policy. The document stays in your private workspace — it is never used to train AI models.',
-    badge: 'Secure & Private',
+    desc: 'Upload a text-based PDF contract, lease, NDA, or policy. The original PDF stays in your private workspace; extracted text is sent to the configured AI provider when you request AI analysis.',
+    badge: 'Document workspace',
     badgeVariant: 'fact' as const,
   },
   {
     step: '02',
     title: 'Run Legal X-Ray Analysis',
-    desc: 'One click runs Gemini 2.5 Flash over the full document. Parties, obligations, key dates, governing law, and non-standard risk clauses are extracted and classified.',
+    desc: 'Run analysis to identify parties, obligations, key dates, governing law, and clauses that may deserve a closer look.',
     badge: 'AI-Powered',
     badgeVariant: 'interpretation' as const,
   },
   {
     step: '03',
-    title: 'Verify Every Claim',
-    desc: 'Every insight is grounded in a specific page number and verbatim quote. No hallucinations. Open the inline viewer to inspect the cited text yourself.',
+    title: 'Inspect the Evidence',
+    desc: 'Inspect page numbers and source quotes for document findings. A matching quote does not prove every interpretation, so review important conclusions with a legal professional.',
     badge: 'Evidence-Grounded',
     badgeVariant: 'fact' as const,
   },
@@ -47,19 +46,19 @@ const DEMO_STEPS = [
 const SCENARIO_FEATURES = [
   {
     title: 'Cross-Document Intelligence',
-    desc: 'Upload both the original SaaS agreement and the amended version. LexiGuide AI identifies every changed clause, detects payment term inconsistencies, and maps obligation conflicts.',
+    desc: 'Compare an original agreement with a proposed revision to inspect changed clauses and possible shifts in obligations.',
   },
   {
     title: 'Evidence Source Map',
-    desc: 'Every finding — from an inconsistency to a timeline event — is linked back to the exact document, page, and quoted text. Fully traceable, zero inference.',
+    desc: 'Inspect source quotes for supported findings and see which items need review. Some summaries and suggested questions involve interpretation.',
   },
   {
     title: 'Questions for Counsel',
-    desc: 'The system generates targeted questions grounded in factual discrepancies, so your attorney can focus on strategic issues instead of document orientation.',
+    desc: 'Collect questions linked to the documents so you can discuss uncertain points with counsel.',
   },
   {
     title: 'Consultation Brief',
-    desc: 'Export a structured legal brief separating verified document facts from areas needing professional interpretation — maximising billable hour efficiency.',
+    desc: 'Create a structured brief that separates supported document facts from areas needing professional interpretation.',
   },
 ];
 
@@ -70,21 +69,17 @@ export default function DemoPage() {
       <section className={styles.hero}>
         <div className={`container ${styles.heroContent}`}>
           <Badge variant="fact" showDot style={{ marginBottom: 'var(--space-4)' }}>
-            Evaluator Demo Experience
+            THE WORKFLOW
           </Badge>
           <h1 className={styles.heroTitle}>
-            LexiGuide AI in Action
+            A guided look at LexiGuide
           </h1>
           <p className={styles.heroSubtitle}>
-            See how the platform transforms impenetrable legal documents into clear, verifiable, attorney-ready intelligence — in four steps.
+            See how a document moves from upload to plain-language review, source checking, and questions for counsel.
           </p>
           <div className={styles.heroCtas}>
-            <Link href="/dashboard">
-              <Button size="lg" variant="primary">Try It — Upload a Document</Button>
-            </Link>
-            <Link href="/matters">
-              <Button size="lg" variant="outline">View Matters Workspace</Button>
-            </Link>
+            <Link href="/dashboard" className={styles.primaryLink}>Upload a document <span aria-hidden="true">↗</span></Link>
+            <Link href="/matters" className={styles.secondaryLink}>View matters <span aria-hidden="true">→</span></Link>
           </div>
         </div>
       </section>
@@ -94,7 +89,7 @@ export default function DemoPage() {
         <div className="container">
           <div className={styles.sectionHeader}>
             <span className={styles.eyebrow}>How It Works</span>
-            <h2 className={styles.sectionTitle}>Four steps from upload to attorney-ready</h2>
+            <h2 className={styles.sectionTitle}>Four steps toward a clearer conversation</h2>
           </div>
           <div className={styles.stepsGrid}>
             {DEMO_STEPS.map((s) => (
@@ -125,9 +120,7 @@ export default function DemoPage() {
                 This scenario is representative of typical use — individuals and small teams navigating complex document changes without immediate access to legal counsel.
               </p>
               <div className={styles.scenarioCta}>
-                <Link href="/matters">
-                  <Button variant="primary">Create Your Own Matter →</Button>
-                </Link>
+                <Link href="/matters" className={styles.primaryLink}>Create a matter <span aria-hidden="true">↗</span></Link>
               </div>
             </div>
             <div className={styles.scenarioFeatures}>
@@ -147,15 +140,15 @@ export default function DemoPage() {
         <div className="container">
           <div className={styles.sectionHeader}>
             <span className={styles.eyebrow}>Trust & Transparency</span>
-            <h2 className={styles.sectionTitle}>Every insight is classified and traceable</h2>
+            <h2 className={styles.sectionTitle}>Inspect the source behind findings</h2>
             <p className={styles.sectionDesc}>
-              LexiGuide AI uses a four-tier evidence classification system so you always know the source and reliability of every statement.
+              LexiGuide AI labels the source and evidence status of statements so you can inspect them before relying on a conclusion.
             </p>
           </div>
           <div className={styles.evidenceGrid}>
             <div className={styles.evidenceItem}>
               <Badge variant="fact">DOCUMENT FACT</Badge>
-              <p className={styles.evidenceDesc}>Verbatim quote from the document, verified against the source page. Highest confidence.</p>
+              <p className={styles.evidenceDesc}>A quote found on the cited page. Read the passage to assess whether the explanation follows.</p>
             </div>
             <div className={styles.evidenceItem}>
               <Badge variant="interpretation">AI INTERPRETATION</Badge>
@@ -180,12 +173,8 @@ export default function DemoPage() {
           <h2 className={styles.sectionTitle}>Legal Information, Not Legal Advice</h2>
           <p className={styles.disclaimerText}>{LEGAL_DISCLAIMERS.GLOBAL_FOOTER}</p>
           <div style={{ marginTop: 'var(--space-6)', display: 'flex', gap: 'var(--space-3)', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/dashboard">
-              <Button size="lg" variant="primary">Start Analyzing →</Button>
-            </Link>
-            <Link href="/matters">
-              <Button size="lg" variant="outline">Explore Matters</Button>
-            </Link>
+            <Link href="/dashboard" className={styles.primaryLink}>Start with a document <span aria-hidden="true">↗</span></Link>
+            <Link href="/matters" className={styles.secondaryLink}>Explore matters <span aria-hidden="true">→</span></Link>
           </div>
         </div>
       </section>

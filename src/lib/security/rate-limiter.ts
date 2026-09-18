@@ -20,7 +20,7 @@ export interface RateLimitResult {
   retryAfterSeconds: number;
 }
 
-export type RateLimitTier = 'heavy_ai' | 'standard_api';
+export type RateLimitTier = 'heavy_ai' | 'standard_api' | 'login';
 
 const TIER_CONFIGS: Record<RateLimitTier, RateLimitConfig> = {
   heavy_ai: {
@@ -30,6 +30,10 @@ const TIER_CONFIGS: Record<RateLimitTier, RateLimitConfig> = {
   standard_api: {
     maxRequests: 100,
     windowMs: 60 * 1000, // 100 requests per minute
+  },
+  login: {
+    maxRequests: 10,
+    windowMs: 15 * 60 * 1000,
   },
 };
 
@@ -43,7 +47,7 @@ class InMemoryRateLimiter {
   private cleanupInterval: NodeJS.Timeout | null = null;
 
   constructor() {
-    // Periodically clean up entries older than 5 minutes to prevent memory leaks
+    // Keep records through the longest configured window.
     if (typeof setInterval !== 'undefined') {
       this.cleanupInterval = setInterval(() => {
         this.pruneStaleRecords();
@@ -110,7 +114,7 @@ class InMemoryRateLimiter {
    */
   private pruneStaleRecords() {
     const now = Date.now();
-    const maxAge = 5 * 60 * 1000;
+    const maxAge = 20 * 60 * 1000;
     for (const [key, record] of this.stores.entries()) {
       if (now - record.lastAccess > maxAge) {
         this.stores.delete(key);
@@ -143,13 +147,10 @@ export const rateLimiter = new InMemoryRateLimiter();
  * Extracts a client identifier from incoming request headers.
  */
 export function getClientIdentifier(request: Request): string {
-  const forwarded = request.headers.get('x-forwarded-for');
-  if (forwarded) {
-    return forwarded.split(',')[0].trim();
-  }
-  const realIp = request.headers.get('x-real-ip');
-  if (realIp) {
-    return realIp.trim();
-  }
-  return 'local-user';
+  // Network forwarding headers are client-controlled unless a trusted proxy
+  // explicitly strips/replaces them. This is one private workspace, so key
+  // expensive operations by the signed session instead of an untrusted IP.
+  const cookie = request.headers.get('cookie') || '';
+  const session = cookie.split(';').map((part) => part.trim()).find((part) => part.startsWith('lexiguide_session='));
+  return session ? session.slice(0, 120) : 'local-user';
 }

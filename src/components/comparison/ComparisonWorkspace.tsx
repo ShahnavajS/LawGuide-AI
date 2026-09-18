@@ -1,5 +1,7 @@
 'use client';
 
+import { LinkButton } from '@/components/ui/Button/LinkButton';
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { DocumentDto } from '@/lib/document/types';
 import {
@@ -10,8 +12,6 @@ import {
 } from '@/lib/ai/schemas';
 import { DocumentViewer } from '@/lib/../components/document/DocumentViewer';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
-import { Button } from '@/components/ui/Button/Button';
-import Link from 'next/link';
 import { LegalInfoModal } from '@/components/legal-info/LegalInfoModal';
 import styles from './ComparisonWorkspace.module.css';
 
@@ -56,7 +56,7 @@ export const ComparisonWorkspace: React.FC<ComparisonWorkspaceProps> = ({
           const data = await res.json();
           if (ignore) return;
           const readyDocs: DocumentDto[] = (data.documents || []).filter(
-            (d: DocumentDto) => d.status === 'READY'
+            (d: DocumentDto) => d.status === 'READY' && d.fileAvailable !== false
           );
           setDocuments(readyDocs);
           setBaseDocId((prev) => prev || (readyDocs[0] ? readyDocs[0].id : ''));
@@ -206,8 +206,7 @@ export const ComparisonWorkspace: React.FC<ComparisonWorkspaceProps> = ({
       {/* Top Document Selector Bar */}
       <section className={styles.selectionBar} aria-label="Document Version Selection">
         <div className={styles.selectionTitle}>
-          <span>⚖️</span>
-          <span>Legal Document Version Intelligence</span>
+          <span>Compare versions</span>
         </div>
 
         <div className={styles.selectorsGrid}>
@@ -286,7 +285,7 @@ export const ComparisonWorkspace: React.FC<ComparisonWorkspaceProps> = ({
                 </>
               ) : (
                 <>
-                  <span>✦</span>
+                  <span aria-hidden="true">→</span>
                   <span>Compare Versions</span>
                 </>
               )}
@@ -313,7 +312,7 @@ export const ComparisonWorkspace: React.FC<ComparisonWorkspaceProps> = ({
 
       {/* Main Workspace Body */}
       {comparison ? (
-        <main className={styles.workspaceBody}>
+        <section className={styles.workspaceBody} aria-label="Comparison results">
           {/* Left Pane: Differences Dossier */}
           <section className={styles.dossierPane} aria-label="Comparison Differences Dossier">
             {/* Executive Summary Card */}
@@ -444,7 +443,7 @@ export const ComparisonWorkspace: React.FC<ComparisonWorkspaceProps> = ({
 
               {availableCategories.length > 0 && (
                 <div className={styles.filterSelectRow}>
-                  <label htmlFor="category-select" style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
+                  <label htmlFor="category-select" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     Category:
                   </label>
                   <select
@@ -466,7 +465,7 @@ export const ComparisonWorkspace: React.FC<ComparisonWorkspaceProps> = ({
 
             {/* Difference Cards List */}
             {filteredDifferences.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af', fontSize: '0.9rem' }}>
+              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                 No clauses match the selected filter criteria.
               </div>
             ) : (
@@ -497,7 +496,7 @@ export const ComparisonWorkspace: React.FC<ComparisonWorkspaceProps> = ({
                         <span className={`${styles.attentionBadge} ${attStyle}`}>
                           {diff.attentionLevel} ATTENTION
                         </span>
-                        <span style={{ fontSize: '0.7rem', color: '#9ca3af', fontWeight: 600 }}>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>
                           [{diff.category}]
                         </span>
                       </div>
@@ -714,11 +713,11 @@ export const ComparisonWorkspace: React.FC<ComparisonWorkspaceProps> = ({
               )}
             </div>
           </section>
-        </main>
+        </section>
       ) : (
         /* Empty State when no comparison loaded */
         <div className={styles.emptyStateContainer}>
-          <div className={styles.emptyStateIcon}>⚖️</div>
+          <div className={styles.emptyStateIcon} aria-hidden="true">01 / 02</div>
           {documents.length < 2 ? (
             <>
               <h2 className={styles.emptyStateTitle}>No comparisons yet</h2>
@@ -726,16 +725,12 @@ export const ComparisonWorkspace: React.FC<ComparisonWorkspaceProps> = ({
                 Upload at least two versions of a contract or agreement to begin side-by-side comparison, substantive diff detection, and obligation shifts.
               </p>
               <div style={{ marginTop: '1.25rem' }}>
-                <Link href="/dashboard">
-                  <Button variant="primary">
-                    Upload Documents to Compare &rarr;
-                  </Button>
-                </Link>
+                <LinkButton href="/dashboard" variant="primary">Upload Documents to Compare &rarr;</LinkButton>
               </div>
             </>
           ) : (
             <>
-              <h2 className={styles.emptyStateTitle}>Select Two Processed Documents to Compare</h2>
+              <h2 className={styles.emptyStateTitle}>What changed between these documents?</h2>
               <p className={styles.emptyStateText}>
                 Choose an original contract and its revised version above, then click &ldquo;Compare Versions&rdquo;
                 to extract clause modifications, detect notice period and numerical shifts, and inspect verified evidence.
@@ -755,4 +750,3 @@ export const ComparisonWorkspace: React.FC<ComparisonWorkspaceProps> = ({
     </div>
   );
 };
-

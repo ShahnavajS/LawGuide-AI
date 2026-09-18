@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { LegalInformationService } from '@/lib/legal-info/service';
+import { formatSafeError } from '@/lib/utils/errors';
 
 export async function GET(req: NextRequest) {
   try {
@@ -20,12 +21,6 @@ export async function GET(req: NextRequest) {
       topics,
     });
   } catch (err: unknown) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: err instanceof Error ? err.message : 'Failed to retrieve legal topics.',
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, ...formatSafeError(err) }, { status: 500 });
   }
 }

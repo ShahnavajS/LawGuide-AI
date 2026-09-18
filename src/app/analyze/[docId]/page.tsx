@@ -1,9 +1,11 @@
 'use client';
 
+import { LinkButton } from '@/components/ui/Button/LinkButton';
+
 import React, { useState, useEffect, use } from 'react';
-import Link from 'next/link';
 import styles from './analyze.module.css';
 import { DocumentViewer } from '@/components/document/DocumentViewer';
+import { DocumentQuestionPanel } from '@/components/document/DocumentQuestionPanel';
 import { LegalXRay } from '@/components/analysis/LegalXRay';
 import { Badge } from '@/components/ui/Badge/Badge';
 import { Button } from '@/components/ui/Button/Button';
@@ -54,7 +56,7 @@ export default function AnalyzePage({ params }: AnalyzePageProps) {
           setDocument(data.document);
 
           // If document is newly uploaded, trigger initial preparation automatically
-          if (data.document.status === 'UPLOADED') {
+          if (data.document.status === 'UPLOADED' && data.document.fileAvailable !== false) {
             setIsProcessing(true);
             try {
               const procRes = await fetch(`/api/documents/${docId}/process`, {
@@ -180,9 +182,19 @@ export default function AnalyzePage({ params }: AnalyzePageProps) {
         <p style={{ color: 'var(--text-muted)' }}>
           The requested document could not be found or has been removed from your workspace.
         </p>
-        <Link href="/dashboard">
-          <Button variant="primary">Return to Workspace</Button>
-        </Link>
+        <LinkButton href="/dashboard" variant="primary">Return to Workspace</LinkButton>
+      </div>
+    );
+  }
+
+  if (document?.fileAvailable === false) {
+    return (
+      <div className={`container ${styles.notFoundContainer}`}>
+        <h2>PDF Unavailable</h2>
+        <p style={{ color: 'var(--text-muted)' }}>
+          The stored PDF is missing. Remove this record from Documents and upload a new copy.
+        </p>
+        <LinkButton href="/dashboard" variant="primary">Return to Documents</LinkButton>
       </div>
     );
   }
@@ -229,24 +241,12 @@ export default function AnalyzePage({ params }: AnalyzePageProps) {
           )}
 
           {analysis && (
-            <Link href={`/prepare?docId=${docId}`}>
-              <Button size="sm" variant="primary">
-                Prepare for Lawyer
-              </Button>
-            </Link>
+            <LinkButton href={`/prepare?docId=${docId}`} size="sm" variant="primary">Prepare for Lawyer</LinkButton>
           )}
 
-          <Link href={`/legal-info?docId=${docId}`}>
-            <Button size="sm" variant="outline">
-              Legal Navigator
-            </Button>
-          </Link>
+          <LinkButton href={`/legal-info?docId=${docId}`} size="sm" variant="outline">Legal Navigator</LinkButton>
 
-          <Link href="/dashboard">
-            <Button size="sm" variant="ghost">
-              Back to Dashboard
-            </Button>
-          </Link>
+          <LinkButton href="/dashboard" size="sm" variant="ghost">Back to Dashboard</LinkButton>
         </div>
       </div>
 
@@ -255,11 +255,7 @@ export default function AnalyzePage({ params }: AnalyzePageProps) {
         <div className={styles.nextStepsBanner} role="region" aria-label="Recommended next steps">
           <span className={styles.nextStepsLabel}>Next steps with this document:</span>
           <div className={styles.nextStepsActions}>
-            <Link href={`/compare?docId=${docId}`}>
-              <Button size="sm" variant="outline">
-                ⇄ Compare with Another Version
-              </Button>
-            </Link>
+            <LinkButton href={`/compare?docId=${docId}`} size="sm" variant="outline">⇄ Compare with Another Version</LinkButton>
             <Button
               size="sm"
               variant="outline"
@@ -267,11 +263,7 @@ export default function AnalyzePage({ params }: AnalyzePageProps) {
             >
               + Add to a Matter
             </Button>
-            <Link href="/matters">
-              <Button size="sm" variant="ghost">
-                View All Matters →
-              </Button>
-            </Link>
+            <LinkButton href="/matters" size="sm" variant="ghost">View All Matters →</LinkButton>
           </div>
         </div>
       )}
@@ -282,13 +274,16 @@ export default function AnalyzePage({ params }: AnalyzePageProps) {
         <aside className={styles.leftPane} aria-label="Document Metadata and Legal X-Ray Analysis">
           {/* Case 1: Analysis Available -> Render Interactive Legal X-Ray */}
           {analysis ? (
-            <LegalXRay
-              analysis={analysis}
-              documentId={docId}
-              onCitationClick={(page) => setActivePage(page)}
-              onReanalyze={() => handleRunAnalysis(true)}
-              isReanalyzing={isAnalyzing}
-            />
+            <>
+              <DocumentQuestionPanel documentId={docId} onCitationClick={(page) => setActivePage(page)} />
+              <LegalXRay
+                analysis={analysis}
+                documentId={docId}
+                onCitationClick={(page) => setActivePage(page)}
+                onReanalyze={() => handleRunAnalysis(true)}
+                isReanalyzing={isAnalyzing}
+              />
+            </>
           ) : (
             <>
               {/* Document Details Card */}
@@ -425,28 +420,28 @@ export default function AnalyzePage({ params }: AnalyzePageProps) {
 
           {/* Safe raw file download link */}
           <div style={{ marginTop: 'auto' }}>
-            <a
+            <LinkButton
               href={`/api/documents/${docId}/file`}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ textDecoration: 'none', display: 'block' }}
+              size="sm"
+              variant="outline"
+              style={{ width: '100%' }}
             >
-              <Button size="sm" variant="outline" style={{ width: '100%' }}>
-                Download Raw PDF
-              </Button>
-            </a>
+              Download Raw PDF
+            </LinkButton>
           </div>
         </aside>
 
         {/* RIGHT PANE: Interactive PDF Viewer */}
-        <main className={styles.rightPane} aria-label="Interactive Document Viewer">
+        <section className={styles.rightPane} aria-label="Interactive Document Viewer">
           <DocumentViewer
             fileUrl={`/api/documents/${docId}/file`}
             initialPage={1}
             activePage={activePage}
             onPageChange={(p) => setActivePage(p)}
           />
-        </main>
+        </section>
       </div>
 
       {/* Safety Notice Footer */}

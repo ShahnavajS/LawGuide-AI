@@ -19,44 +19,24 @@ export const Modal: React.FC<ModalProps> = ({
   footer,
 }) => {
   const titleId = useId();
-  const modalRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDialogElement>(null);
+  const closeRef = useRef(onClose);
+  useEffect(() => { closeRef.current = onClose; }, [onClose]);
 
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isOpen) {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      window.addEventListener('keydown', handleKeyDown);
-    }
-
+    const dialog = modalRef.current;
+    if (isOpen && dialog && !dialog.open) dialog.showModal();
     return () => {
-      document.body.style.overflow = '';
-      window.removeEventListener('keydown', handleKeyDown);
+      if (dialog?.open) dialog.close();
     };
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
+  }, [isOpen]);
 
   return (
-    <div
-      className={styles.backdrop}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
-      role="presentation"
-    >
-      <div
+      <dialog
         ref={modalRef}
         className={styles.modal}
-        role="dialog"
-        aria-modal="true"
         aria-labelledby={titleId}
+        onCancel={(event) => { event.preventDefault(); closeRef.current(); }}
       >
         <div className={styles.header}>
           <h2 id={titleId} className={styles.title}>
@@ -67,6 +47,7 @@ export const Modal: React.FC<ModalProps> = ({
             className={styles.closeButton}
             onClick={onClose}
             aria-label="Close dialog"
+            autoFocus
           >
             <svg
               width="20"
@@ -85,7 +66,6 @@ export const Modal: React.FC<ModalProps> = ({
         </div>
         <div className={styles.body}>{children}</div>
         {footer && <div className={styles.footer}>{footer}</div>}
-      </div>
-    </div>
+      </dialog>
   );
 };

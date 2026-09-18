@@ -26,16 +26,16 @@ export function getDb() {
   }
 
   const { db } = getServerConfig();
-  const dbFilePath = path.resolve(/*turbopackIgnore: true*/ process.cwd(), db.url);
+  const dbFilePath = db.url === ':memory:' ? ':memory:' : path.resolve(/*turbopackIgnore: true*/ process.cwd(), db.url);
   const dbDir = path.dirname(dbFilePath);
 
   // Ensure directory exists
-  if (!fs.existsSync(dbDir)) {
+  if (dbFilePath !== ':memory:' && !fs.existsSync(dbDir)) {
     fs.mkdirSync(dbDir, { recursive: true });
   }
 
   sqliteClient = new Database(dbFilePath);
-  const journalMode = process.env.SQLITE_JOURNAL_MODE || (process.env.NODE_ENV === 'production' ? 'DELETE' : 'WAL');
+  const journalMode = dbFilePath === ':memory:' ? 'MEMORY' : process.env.SQLITE_JOURNAL_MODE || (process.env.NODE_ENV === 'production' ? 'DELETE' : 'WAL');
   try {
     sqliteClient.pragma(`journal_mode = ${journalMode}`);
   } catch {
@@ -59,7 +59,10 @@ export function getDb() {
     try {
       migrate(dbInstance, { migrationsFolder });
     } catch (migErr) {
-      console.warn('Database migration warning:', migErr);
+      dbInstance = null;
+      sqliteClient.close();
+      sqliteClient = null;
+      throw new Error('Database migration failed; refusing to serve an inconsistent schema.', { cause: migErr });
     }
   }
 

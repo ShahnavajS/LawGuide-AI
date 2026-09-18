@@ -96,7 +96,7 @@ docker build -t lexiguide-ai:latest .
 docker run -d \
   --name lexiguide \
   --restart unless-stopped \
-  -p 3000:3000 \
+  -p 3000:8080 \
   -v $(pwd)/data:/app/data \
   -v $(pwd)/uploads:/app/uploads \
   --env-file .env.local \

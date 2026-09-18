@@ -1,5 +1,7 @@
 # LexiGuide AI — Legal Safety Guidelines
 
+> This checklist is a historical design record. Current implementation status and remaining limitations are in [implementation-status.md](./implementation-status.md).
+
 ## Purpose
 This document defines the legal safety boundaries for LexiGuide AI. Every AI response, system prompt, and UI element must comply with these rules.
 
@@ -307,5 +309,4 @@ Before any release, verify:
 - [ ] Source Map displays hierarchical traceability from Documents -> Pages -> Evidence -> UsedBy
 - [ ] Evidence Ledger provides multi-attribute filtering (classification, verification, document, search)
 - [ ] Cross-matter security isolation prevents cross-tenant data leakage
-- [ ] 100% of unit tests pass (232 / 232 tests across 38 test files)
-
+- [ ] Historical phase count: 232 / 232 tests across 38 test files. Current verification is maintained in `implementation-status.md`.

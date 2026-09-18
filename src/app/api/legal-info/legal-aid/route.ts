@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { LegalInformationService } from '@/lib/legal-info/service';
+import { formatSafeError } from '@/lib/utils/errors';
 
 export async function GET(req: NextRequest) {
   try {
@@ -17,12 +18,6 @@ export async function GET(req: NextRequest) {
         'LexiGuide provides informational navigation to recognized statutory legal aid organizations. Contact organizations directly to confirm program eligibility.',
     });
   } catch (err: unknown) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: err instanceof Error ? err.message : 'Failed to retrieve legal aid resources.',
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, ...formatSafeError(err) }, { status: 500 });
   }
 }

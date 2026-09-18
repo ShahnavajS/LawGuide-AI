@@ -100,17 +100,17 @@ export const LegalInformationDossierSchema = z.object({
 export type LegalInformationDossier = z.infer<typeof LegalInformationDossierSchema>;
 
 export const ConceptQuestionRequestSchema = z.object({
-  topic: z.string().min(1, 'Topic is required'),
-  question: z.string().min(3, 'Question must be at least 3 characters long'),
-  documentId: z.string().optional(),
+  topic: z.string().trim().min(1, 'Topic is required').max(120, 'Topic is too long'),
+  question: z.string().trim().min(3, 'Question must be at least 3 characters long').max(500, 'Question is too long'),
+  documentId: z.string().trim().max(120).optional(),
   jurisdiction: z
     .object({
-      country: z.string().optional(),
-      region: z.string().optional(),
+      country: z.string().trim().max(120).optional(),
+      region: z.string().trim().max(120).optional(),
       source: JurisdictionProvenanceSchema.optional(),
     })
     .optional(),
-  contextQuote: z.string().optional(),
+  contextQuote: z.string().max(2_000).optional(),
 });
 
 export type ConceptQuestionRequest = z.infer<typeof ConceptQuestionRequestSchema>;

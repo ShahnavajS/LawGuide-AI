@@ -13,6 +13,8 @@ export interface DocumentDto {
   pageCount?: number | null;
   documentType?: string | null;
   status: DocumentProcessingStatus;
+  /** Whether the stored PDF is currently available to open. */
+  fileAvailable?: boolean;
   processingError?: string | null;
   createdAt: string;
   updatedAt: string;

@@ -5,61 +5,67 @@
 
 :root {
   /* Color Palette - Light Mode (Default) */
-  --color-brand-50: #eff6ff;
-  --color-brand-100: #dbeafe;
-  --color-brand-200: #bfdbfe;
-  --color-brand-500: #2563eb;
-  --color-brand-600: #1d4ed8;
-  --color-brand-700: #1e40af;
-  --color-brand-800: #1e3a8a;
+  color-scheme: light;
+  --color-brand-50: #eaf1ec;
+  --color-brand-100: #d5e5d9;
+  --color-brand-200: #a9c9b5;
+  --color-brand-500: #326b5c;
+  --color-brand-600: #24584d;
+  --color-brand-700: #17463c;
+  --color-brand-800: #183b35;
+  --color-gold: #a6563c;
+  --color-gold-400: #a6563c;
 
   /* Surfaces & Backgrounds */
-  --bg-primary: #f8fafc;
-  --bg-surface: #ffffff;
-  --bg-surface-subtle: #f1f5f9;
-  --bg-surface-elevated: #ffffff;
-  --bg-overlay: rgba(15, 23, 42, 0.6);
+  --bg-primary: #f5f2eb;
+  --bg-base: #f5f2eb;
+  --bg-secondary: #ebe7dd;
+  --bg-surface: #fffdf9;
+  --bg-surface-subtle: #f0ede5;
+  --bg-surface-elevated: #fffdf9;
+  --bg-overlay: rgba(28, 48, 45, 0.62);
 
   /* Text Colors */
-  --text-primary: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
-  --text-inverse: #ffffff;
+  --text-primary: #1c302d;
+  --text-secondary: #34423f;
+  --text-muted: #5e6b66;
+  --text-inverse: #fffdf9;
 
   /* Borders & Dividers */
-  --border-subtle: #e2e8f0;
-  --border-medium: #cbd5e1;
-  --border-strong: #94a3b8;
-  --border-brand: #bfdbfe;
+  --border-subtle: #dcd8cd;
+  --border-medium: #b9beb4;
+  --border-strong: #71847a;
+  --border-brand: #a9c9b5;
 
   /* Semantic Status Colors (WCAG Compliant) */
-  --status-fact-bg: #ecfdf5;
-  --status-fact-text: #065f46;
-  --status-fact-border: #a7f3d0;
-  --status-fact-badge: #10b981;
+  --status-fact-bg: #e8f3e9;
+  --status-fact-text: #20553b;
+  --status-fact-border: #a6cbae;
+  --status-fact-badge: #276747;
 
-  --status-interp-bg: #eff6ff;
-  --status-interp-text: #1e40af;
-  --status-interp-border: #bfdbfe;
-  --status-interp-badge: #3b82f6;
+  --status-interp-bg: #eaf1ed;
+  --status-interp-text: #23564d;
+  --status-interp-border: #b1c9bc;
+  --status-interp-badge: #326b5c;
 
-  --status-general-bg: #f8fafc;
-  --status-general-text: #334155;
-  --status-general-border: #e2e8f0;
-  --status-general-badge: #64748b;
+  --status-general-bg: #eeece5;
+  --status-general-text: #42534c;
+  --status-general-border: #d5d8cd;
+  --status-general-badge: #59665e;
 
-  --status-review-bg: #fffbeb;
-  --status-review-text: #92400e;
-  --status-review-border: #fde68a;
-  --status-review-badge: #d97706;
+  --status-review-bg: #fff0e5;
+  --status-review-text: #873e2b;
+  --status-review-border: #e9bca6;
+  --status-review-badge: #a6563c;
 
-  --status-risk-high-bg: #fff1f2;
-  --status-risk-high-text: #9f1239;
-  --status-risk-high-border: #fecdd3;
+  --status-risk-high-bg: #faeae7;
+  --status-risk-high-text: #8d352d;
+  --status-risk-high-border: #e6b2aa;
 
   /* Typography */
-  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-display: Georgia, 'Times New Roman', serif;
+  --font-mono: 'Cascadia Code', Consolas, monospace;
 
   --font-size-xs: 0.75rem;    /* 12px */
   --font-size-sm: 0.875rem;   /* 14px */
@@ -90,10 +96,10 @@
   --space-20: 5rem;    /* 80px */
 
   /* Border Radii */
-  --radius-sm: 0.25rem;  /* 4px */
-  --radius-md: 0.5rem;   /* 8px */
-  --radius-lg: 0.75rem;  /* 12px */
-  --radius-xl: 1rem;     /* 16px */
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
   --radius-full: 9999px;
 
   /* Shadows */
@@ -101,56 +107,11 @@
   --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
   --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.03);
   --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
-  --shadow-focus: 0 0 0 3px rgba(37, 99, 235, 0.35);
+  --shadow-focus: 0 0 0 3px rgba(50, 107, 92, 0.26);
 
   /* Transitions */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Dark Mode Tokens */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-primary: #090d16;
-    --bg-surface: #0f172a;
-    --bg-surface-subtle: #141e33;
-    --bg-surface-elevated: #1e293b;
-    --bg-overlay: rgba(0, 0, 0, 0.75);
-
-    --text-primary: #f8fafc;
-    --text-secondary: #cbd5e1;
-    --text-muted: #94a3b8;
-
-    --border-subtle: #1e293b;
-    --border-medium: #334155;
-    --border-strong: #475569;
-    --border-brand: #1e3a8a;
-
-    --status-fact-bg: rgba(6, 95, 70, 0.2);
-    --status-fact-text: #6ee7b7;
-    --status-fact-border: rgba(16, 185, 129, 0.3);
-
-    --status-interp-bg: rgba(30, 64, 175, 0.2);
-    --status-interp-text: #93c5fd;
-    --status-interp-border: rgba(59, 130, 246, 0.3);
-
-    --status-general-bg: rgba(51, 65, 85, 0.3);
-    --status-general-text: #cbd5e1;
-    --status-general-border: rgba(100, 116, 139, 0.3);
-
-    --status-review-bg: rgba(146, 64, 14, 0.2);
-    --status-review-text: #fcd34d;
-    --status-review-border: rgba(217, 119, 6, 0.3);
-
-    --status-risk-high-bg: rgba(159, 18, 57, 0.2);
-    --status-risk-high-text: #fda4af;
-    --status-risk-high-border: rgba(225, 29, 72, 0.3);
-
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-    --shadow-focus: 0 0 0 3px rgba(96, 165, 250, 0.4);
-  }
 }
 
 /* CSS Reset & Global Baseline */
@@ -187,7 +148,7 @@ button, input, select, textarea {
 
 /* Accessibility: Visible Focus Indicators */
 :focus-visible {
-  outline: 2px solid var(--color-brand-500);
+  outline: 3px solid var(--color-brand-500);
   outline-offset: 2px;
 }
 
@@ -204,7 +165,7 @@ button, input, select, textarea {
 /* Layout Container Utilities */
 .container {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1280px;
   margin-left: auto;
   margin-right: auto;
   padding-left: var(--space-6);

@@ -1,5 +1,7 @@
 # LexiGuide AI — System Architecture
 
+> Historical architecture sketch. For the current runtime and trust boundaries, see [implementation-status.md](./implementation-status.md). The old diagrams below include superseded Gemini Files API and Next.js version details.
+
 ## High-Level Architecture Diagram
 
 ```
@@ -503,7 +505,6 @@ Every response and interface in the Legal Information Navigator clearly indicate
   1. What Your Document States (`DOCUMENT_FACT`)
   2. General Legal Principles (`GENERAL_INFO`)
   3. Questions to Discuss with Counsel (`PREPARE_FOR_COUNSEL`)
-
 
 
 

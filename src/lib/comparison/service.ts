@@ -6,6 +6,7 @@
  */
 
 import { getDb, schema } from '@/lib/db';
+import { assertModelCollections } from '@/lib/ai/validate-output';
 import { getDocumentService, DocumentService } from '@/lib/document/service';
 import { geminiService, GeminiService } from '@/lib/ai/gemini';
 import { citationValidator, CitationValidator } from '@/lib/evidence/validator';
@@ -220,7 +221,7 @@ export class ComparisonService {
 
     // 5. Generate structured semantic comparison (Gemini or deterministic offline alignment)
     let raw: RawComparisonOutput;
-    if (this.gemini.isConfigured()) {
+    if (this.gemini.isConfigured() && [...basePages, ...targetPages].reduce((total, page) => total + page.text.length, 0) <= 120_000) {
       const dualPrompt = buildDualDocumentComparisonPrompt(basePages, targetPages, baseDoc.title, targetDoc.title);
       const userPrompt = `
 Compare the original document against the revised document provided below.
@@ -275,6 +276,11 @@ ${dualPrompt}
           'RawComparisonOutput',
           { systemInstruction: SYSTEM_COMPARISON_ANALYST_PROMPT }
         );
+        assertModelCollections(raw, ['differences', 'lawyerQuestions'], 200);
+        if (!Array.isArray(raw.differences)) throw new Error('Comparison output lacks differences.');
+        for (const difference of raw.differences) {
+          if (!['ADDED', 'REMOVED', 'MODIFIED', 'UNCHANGED'].includes(difference.type)) throw new Error('Unknown comparison change type.');
+        }
       } catch {
         // Fallback to deterministic alignment engine if Gemini fails or throttles
         raw = this.buildOfflineComparison(baseDoc.title, targetDoc.title, basePages, targetPages, baseDocId, targetDocId);
@@ -405,6 +411,10 @@ ${dualPrompt}
       }
 
       return item;
+    }).filter((item) => {
+      if (item.type === 'ADDED') return item.targetEvidence?.isValidated === true;
+      if (item.type === 'REMOVED') return item.baseEvidence?.isValidated === true;
+      return item.baseEvidence?.isValidated === true && item.targetEvidence?.isValidated === true;
     });
 
     // 7. Calculate Statistics

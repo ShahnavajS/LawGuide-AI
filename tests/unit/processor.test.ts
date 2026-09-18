@@ -145,12 +145,9 @@ describe('Phase 3: Document Processor & Page Extraction', () => {
 
   it('handles empty/scanned pages honestly without hallucinating text', async () => {
     const emptyPdfBuffer = createEmptyPageTestPdf();
-    const result = await processor.extractText(emptyPdfBuffer, 'application/pdf');
-
-    expect(result.pageCount).toBe(1);
-    expect(result.pages[0].pageNumber).toBe(1);
-    expect(result.pages[0].text).toBe('');
-    expect(result.pages[0].hasText).toBe(false);
+    await expect(processor.extractText(emptyPdfBuffer, 'application/pdf')).rejects.toThrow(
+      /no selectable text/
+    );
   });
 
   it('rejects invalid or non-PDF buffers safely', async () => {
@@ -318,19 +315,8 @@ describe('Phase 3: Document Processing Service & Lifecycle', () => {
   });
 
   it('completes processing successfully even when Gemini is offline or unconfigured', async () => {
-    // Mock Gemini service that is unconfigured
-    const unconfiguredGemini = {
-      isConfigured: () => false,
-      generateText: async () => '',
-      generateStructured: async () => ({}),
-      uploadFile: async () => null,
-    };
-
-    const offlineService = new DocumentService(
-      storage,
-      new PdfDocumentProcessor(),
-      unconfiguredGemini as unknown as typeof service['gemini']
-    );
+    // Processing is local and independent of the AI provider.
+    const offlineService = new DocumentService(storage, new PdfDocumentProcessor());
 
     const pdfBuffer = createMultiPageTestPdf();
     const doc = await offlineService.uploadDocument({

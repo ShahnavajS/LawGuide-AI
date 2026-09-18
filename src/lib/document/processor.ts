@@ -22,6 +22,8 @@ export interface DocumentProcessor {
 }
 
 export class PdfDocumentProcessor implements DocumentProcessor {
+  private static readonly MAX_PAGES = 100;
+  private static readonly MAX_TEXT_CHARACTERS = 500_000;
   /**
    * Validates the PDF buffer using multi-tier safety checks.
    */
@@ -60,9 +62,13 @@ export class PdfDocumentProcessor implements DocumentProcessor {
       if (pageCount <= 0) {
         throw new AppError('Document contains no readable pages.', 422, 'PROCESSING_FAILED');
       }
+      if (pageCount > PdfDocumentProcessor.MAX_PAGES) {
+        throw new AppError('PDF exceeds the 100-page processing limit.', 413, 'PROCESSING_LIMIT');
+      }
 
       const pages: ExtractedPageContent[] = [];
       const pageTexts: string[] = [];
+      let totalCharacters = 0;
 
       for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
         const page = await pdfDoc.getPage(pageNum);
@@ -75,6 +81,10 @@ export class PdfDocumentProcessor implements DocumentProcessor {
           .filter((str) => str.trim().length > 0);
 
         const pageText = textItems.join(' ').trim();
+        totalCharacters += pageText.length;
+        if (totalCharacters > PdfDocumentProcessor.MAX_TEXT_CHARACTERS) {
+          throw new AppError('PDF contains too much extractable text to process safely.', 413, 'PROCESSING_LIMIT');
+        }
         const hasText = pageText.length > 0;
 
         pages.push({
@@ -89,6 +99,9 @@ export class PdfDocumentProcessor implements DocumentProcessor {
       }
 
       const fullText = pageTexts.join('\n\n');
+      if (!fullText.trim()) {
+        throw new AppError('This PDF has no selectable text. Please provide a text-based PDF.', 422, 'NO_EXTRACTABLE_TEXT');
+      }
 
       return {
         pageCount,

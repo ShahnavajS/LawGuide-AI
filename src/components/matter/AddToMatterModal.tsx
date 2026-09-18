@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { LinkButton } from '@/components/ui/Button/LinkButton';
+
+import React, { useState, useEffect, useRef } from 'react';
 import styles from './AddToMatterModal.module.css';
 import { Button } from '@/components/ui/Button/Button';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
@@ -37,6 +38,7 @@ export const AddToMatterModal: React.FC<AddToMatterModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const [matters, setMatters] = useState<MatterOption[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedMatterId, setSelectedMatterId] = useState<string>('');
@@ -44,6 +46,13 @@ export const AddToMatterModal: React.FC<AddToMatterModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (isOpen && dialog && !dialog.open) dialog.showModal();
+    if (!isOpen && dialog?.open) dialog.close();
+    return () => { if (dialog?.open) dialog.close(); };
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -103,14 +112,11 @@ export const AddToMatterModal: React.FC<AddToMatterModalProps> = ({
     onClose();
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div
+    <dialog
+      ref={dialogRef}
       className={styles.backdrop}
       onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
-      role="dialog"
-      aria-modal="true"
       aria-labelledby="atm-title"
     >
       <div className={styles.modal}>
@@ -138,9 +144,7 @@ export const AddToMatterModal: React.FC<AddToMatterModalProps> = ({
               </div>
               <p className={styles.successMsg}>{successMessage}</p>
               <div className={styles.successActions}>
-                <Link href={`/matters/${selectedMatterId}`}>
-                  <Button variant="primary" size="sm">Open Matter →</Button>
-                </Link>
+                <LinkButton href={`/matters/${selectedMatterId}`} variant="primary" size="sm">Open Matter →</LinkButton>
                 <Button variant="secondary" size="sm" onClick={handleClose}>Done</Button>
               </div>
             </div>
@@ -152,9 +156,7 @@ export const AddToMatterModal: React.FC<AddToMatterModalProps> = ({
           ) : matters.length === 0 ? (
             <div className={styles.emptyState}>
               <p className={styles.emptyText}>You don&apos;t have any active matters yet.</p>
-              <Link href="/matters" onClick={handleClose}>
-                <Button variant="primary" size="sm">Create a Matter →</Button>
-              </Link>
+              <LinkButton href="/matters" onClick={handleClose} variant="primary" size="sm">Create a Matter →</LinkButton>
             </div>
           ) : (
             <>
@@ -212,6 +214,6 @@ export const AddToMatterModal: React.FC<AddToMatterModalProps> = ({
           )}
         </div>
       </div>
-    </div>
+    </dialog>
   );
 };

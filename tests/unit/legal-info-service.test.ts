@@ -8,6 +8,8 @@ import { DocumentService } from '@/lib/document/service';
 import { LocalStorageService } from '@/lib/document/storage';
 import { AnalysisService } from '@/lib/analysis/service';
 import { LEGAL_INFO_MODES, JURISDICTION_SOURCE_TYPES, EVIDENCE_SOURCE_TYPES } from '@/lib/ai/safety';
+import { POST as legalInfoQueryHandler } from '@/app/api/legal-info/query/route';
+import { NextRequest } from 'next/server';
 import path from 'path';
 import fs from 'fs/promises';
 
@@ -29,9 +31,9 @@ BT
 /F1 14 Tf
 50 700 Td
 (Master Services Agreement governed by Laws of India.) Tj
-50 650 Td
+0 -50 Td
 (Either party may terminate this agreement with 30 days written notice.) Tj
-50 600 Td
+0 -50 Td
 (Contractor shall defend and indemnify Client against all third-party claims.) Tj
 ET
 endstream
@@ -98,6 +100,23 @@ describe('Phase 7: LegalInformationService Layer', () => {
     await expect(
       legalInfoService.getLegalInformation({ topic: 'UNRECOGNIZED_ALIEN_LAW' })
     ).rejects.toThrow('Unknown legal topic');
+  });
+
+  it('returns a safe not-found response without echoing an unknown topic', async () => {
+    const secretTopic = 'UNKNOWN_TOPIC_WITH_PRIVATE_CONTEXT_123';
+    const request = new NextRequest('http://localhost/api/legal-info/query', {
+      method: 'POST',
+      body: JSON.stringify({ topic: secretTopic, question: 'What does this mean?' }),
+      headers: { 'content-type': 'application/json' },
+    });
+
+    const response = await legalInfoQueryHandler(request);
+    const body = await response.json();
+
+    expect(response.status).toBe(404);
+    expect(body.success).toBe(false);
+    expect(body.error.code).toBe('NOT_FOUND');
+    expect(JSON.stringify(body)).not.toContain(secretTopic);
   });
 
   it('grounds document evidence and elevates mode to MY_DOCUMENT when document contains clause', async () => {

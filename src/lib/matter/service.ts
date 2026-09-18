@@ -6,6 +6,7 @@
  */
 
 import { getDb, schema } from '@/lib/db';
+import { createHash } from 'node:crypto';
 import { getDocumentService, DocumentService } from '@/lib/document/service';
 import { getAnalysisService, AnalysisService } from '@/lib/analysis/service';
 import { geminiService, GeminiService } from '@/lib/ai/gemini';
@@ -1127,6 +1128,7 @@ export class MatterService {
         if (
           finA &&
           finB &&
+          finA.term.trim().toLowerCase() === finB.term.trim().toLowerCase() &&
           finA.amountOrValue &&
           finB.amountOrValue &&
           finA.amountOrValue !== finB.amountOrValue
@@ -1199,7 +1201,30 @@ export class MatterService {
       }
     }
 
-    return findings;
+    // Model overviews can contain paraphrases or wrong page numbers. A
+    // discrepancy is shown only when both cited quotes exist on their pages.
+    const pageText = new Map<string, string>();
+    const isGrounded = (documentId: string, pageNumber: number | null | undefined, quote: string | null | undefined): boolean => {
+      if (!documentId || pageNumber == null || !Number.isInteger(pageNumber) || !quote?.trim()) return false;
+      const key = `${documentId}:${pageNumber}`;
+      if (!pageText.has(key)) {
+        const page = db.select({ text: schema.documentPages.text }).from(schema.documentPages)
+          .where(and(eq(schema.documentPages.documentId, documentId), eq(schema.documentPages.pageNumber, pageNumber)))
+          .limit(1).get();
+        pageText.set(key, page?.text || '');
+      }
+      return pageText.get(key)!.replace(/\s+/g, ' ').includes(quote.trim().replace(/\s+/g, ' '));
+    };
+    return findings.filter((finding) =>
+      isGrounded(finding.sourceA.documentId, finding.sourceA.pageNumber, finding.sourceA.quotedText) &&
+      isGrounded(finding.sourceB.documentId, finding.sourceB.pageNumber, finding.sourceB.quotedText)
+    ).map((finding) => ({
+      ...finding,
+      id: `cons_${createHash('sha256').update(JSON.stringify([
+        finding.category, finding.sourceA.documentId, finding.sourceA.pageNumber, finding.sourceA.value,
+        finding.sourceB.documentId, finding.sourceB.pageNumber, finding.sourceB.value,
+      ])).digest('hex').slice(0, 20)}`,
+    }));
   }
 
   /**
@@ -1496,6 +1521,29 @@ export class MatterService {
           suggestedQuestionsForCounsel?: string[];
         }>(prompt, schemaDescription, { systemInstruction: SYSTEM_MATTER_ANALYST_PROMPT });
 
+        // Require each quoted source to belong to this matter and match the
+        // claimed document page. Model-supplied titles are never trusted.
+        const memberById = new Map(matter.documents.map((doc) => [doc.documentId, doc]));
+        const db = getDb();
+        const verifiedCitations = (Array.isArray(rawResponse.citations) ? rawResponse.citations : [])
+          .filter((citation) => {
+            if (!citation || !memberById.has(citation.documentId) || !Number.isInteger(citation.pageNumber) || !citation.quotedText?.trim()) return false;
+            const page = db.select({ text: schema.documentPages.text }).from(schema.documentPages)
+              .where(and(eq(schema.documentPages.documentId, citation.documentId), eq(schema.documentPages.pageNumber, citation.pageNumber)))
+              .limit(1).get();
+            return Boolean(page?.text.replace(/\s+/g, ' ').includes(citation.quotedText.trim().replace(/\s+/g, ' ')));
+          })
+          .map((citation) => ({ ...citation, documentTitle: memberById.get(citation.documentId)!.title }));
+
+        if (verifiedCitations.length === 0) {
+          return {
+            answer: 'I could not verify a supporting quote in the documents for this answer. Try a narrower question or review the documents directly.',
+            citations: [], crossDocumentObservations: [], suggestedQuestionsForCounsel: [],
+            relatedPreparationItems: relatedPreparationItems.length ? relatedPreparationItems : undefined,
+            disclaimer: LEGAL_DISCLAIMERS.GLOBAL_FOOTER,
+          };
+        }
+
         // Anti-UPL safety check
         let finalAnswer = rawResponse.answer || '';
         if (containsProhibitedLegalConclusion(finalAnswer)) {
@@ -1505,8 +1553,8 @@ export class MatterService {
 
         return {
           answer: finalAnswer,
-          citations: rawResponse.citations || [],
-          crossDocumentObservations: rawResponse.crossDocumentObservations || [],
+          citations: verifiedCitations,
+          crossDocumentObservations: [],
           suggestedQuestionsForCounsel: rawResponse.suggestedQuestionsForCounsel || [
             'How are conflicting terms across these documents resolved under the governing law clause?',
           ],
@@ -2044,8 +2092,8 @@ export class MatterService {
               documentTitle: docTitle || 'Member Document',
               pageNumber: undefined,
               quotedText: undefined,
-              classification: 'DOCUMENT_FACT' as const,
-              verificationStatus: 'VERIFIED' as const,
+              classification: 'NEEDS_REVIEW' as const,
+              verificationStatus: 'UNVERIFIED' as const,
             },
           ]
         : undefined;
@@ -2939,7 +2987,7 @@ export class MatterService {
    * Phase 10: Synchronizes all matter evidence items into the normalized matter_evidence table.
    * Pulls from citations, cross-document relationships, consistency findings, and user notes.
    */
-  public async syncMatterEvidence(matterId: string): Promise<MatterEvidenceItem[]> {
+  public async syncMatterEvidence(matterId: string, persist = true): Promise<MatterEvidenceItem[]> {
     const matter = await this.getMatter(matterId);
     const db = getDb();
     const now = new Date().toISOString();
@@ -2953,8 +3001,22 @@ export class MatterService {
     const actionItems = await this.getActionItems(matterId);
     const consistencyFindings = await this.checkConsistency(matterId);
     const relationships = await this.getRelationships(matterId);
-    const counselQuestionsResult = await this.generateCounselQuestions(matterId);
-    const counselQuestions = counselQuestionsResult.questions;
+    const counselQuestions = this.synthesizeDeterministicCounselQuestions(
+      matter, relationships, consistencyFindings, await this.getNotes(matterId)
+    );
+
+    const pageCache = new Map<string, string>();
+    const quoteIsOnPage = (documentId: string, pageNumber: number | null | undefined, quote: string | null | undefined): boolean => {
+      if (!documentId || !pageNumber || !quote?.trim() || !docMap.has(documentId)) return false;
+      const key = `${documentId}:${pageNumber}`;
+      if (!pageCache.has(key)) {
+        const row = db.select({ text: schema.documentPages.text }).from(schema.documentPages)
+          .where(and(eq(schema.documentPages.documentId, documentId), eq(schema.documentPages.pageNumber, pageNumber)))
+          .limit(1).get();
+        pageCache.set(key, row?.text || '');
+      }
+      return pageCache.get(key)!.replace(/\s+/g, ' ').includes(quote.trim().replace(/\s+/g, ' '));
+    };
 
     const evidenceItems: MatterEvidenceItem[] = [];
 
@@ -3007,7 +3069,7 @@ export class MatterService {
           }
         }
 
-        const isVerified = cit.confidenceScore >= 0.85;
+        const isVerified = quoteIsOnPage(cit.documentId, cit.pageNumber, cit.quotedText);
         const normQuote = (cit.quotedText || '').replace(/\s+/g, ' ').trim();
 
         evidenceItems.push({
@@ -3048,9 +3110,9 @@ export class MatterService {
           pageNumber: cf.sourceA.pageNumber || 1,
           quotedText: cf.sourceA.quotedText,
           normalizedQuote: cf.sourceA.quotedText.replace(/\s+/g, ' ').trim(),
-          classification: 'DOCUMENT_FACT',
-          verificationStatus: 'VERIFIED',
-          confidenceCategory: 'HIGH',
+          classification: quoteIsOnPage(cf.sourceA.documentId, cf.sourceA.pageNumber, cf.sourceA.quotedText) ? 'DOCUMENT_FACT' : 'NEEDS_REVIEW',
+          verificationStatus: quoteIsOnPage(cf.sourceA.documentId, cf.sourceA.pageNumber, cf.sourceA.quotedText) ? 'VERIFIED' : 'NEEDS_REVIEW',
+          confidenceCategory: quoteIsOnPage(cf.sourceA.documentId, cf.sourceA.pageNumber, cf.sourceA.quotedText) ? 'HIGH' : 'LOW',
           sourceReference: `${cf.sourceA.documentTitle}, Page ${cf.sourceA.pageNumber || 1}`,
           targetDocumentId: cf.sourceB?.documentId,
           targetDocumentTitle: cf.sourceB?.documentTitle,
@@ -3077,9 +3139,9 @@ export class MatterService {
           pageNumber: cf.sourceB.pageNumber || 1,
           quotedText: cf.sourceB.quotedText,
           normalizedQuote: cf.sourceB.quotedText.replace(/\s+/g, ' ').trim(),
-          classification: 'DOCUMENT_FACT',
-          verificationStatus: 'VERIFIED',
-          confidenceCategory: 'HIGH',
+          classification: quoteIsOnPage(cf.sourceB.documentId, cf.sourceB.pageNumber, cf.sourceB.quotedText) ? 'DOCUMENT_FACT' : 'NEEDS_REVIEW',
+          verificationStatus: quoteIsOnPage(cf.sourceB.documentId, cf.sourceB.pageNumber, cf.sourceB.quotedText) ? 'VERIFIED' : 'NEEDS_REVIEW',
+          confidenceCategory: quoteIsOnPage(cf.sourceB.documentId, cf.sourceB.pageNumber, cf.sourceB.quotedText) ? 'HIGH' : 'LOW',
           sourceReference: `${cf.sourceB.documentTitle}, Page ${cf.sourceB.pageNumber || 1}`,
           targetDocumentId: cf.sourceA?.documentId,
           targetDocumentTitle: cf.sourceA?.documentTitle,
@@ -3107,13 +3169,13 @@ export class MatterService {
           evidenceType: 'RELATIONSHIP_EVIDENCE',
           documentId: rel.sourceDocumentId,
           documentTitle: rel.sourceDocumentTitle,
-          pageNumber: rel.sourcePage || 1,
+          pageNumber: rel.sourcePage || undefined,
           quotedText: rel.sourceQuote,
           normalizedQuote: rel.sourceQuote.replace(/\s+/g, ' ').trim(),
-          classification: rel.classification || 'DOCUMENT_FACT',
-          verificationStatus: rel.status === 'CONFIRMED' ? 'VERIFIED' : 'NEEDS_REVIEW',
-          confidenceCategory: rel.confidence >= 0.8 ? 'HIGH' : 'MEDIUM',
-          sourceReference: `${rel.sourceDocumentTitle}, Page ${rel.sourcePage || 1}`,
+          classification: quoteIsOnPage(rel.sourceDocumentId, rel.sourcePage, rel.sourceQuote) ? 'AI_INTERPRETATION' : 'NEEDS_REVIEW',
+          verificationStatus: quoteIsOnPage(rel.sourceDocumentId, rel.sourcePage, rel.sourceQuote) ? 'VERIFIED' : 'NEEDS_REVIEW',
+          confidenceCategory: quoteIsOnPage(rel.sourceDocumentId, rel.sourcePage, rel.sourceQuote) ? 'MEDIUM' : 'LOW',
+          sourceReference: `${rel.sourceDocumentTitle}, Page ${rel.sourcePage || '?'}`,
           targetDocumentId: rel.targetDocumentId,
           targetDocumentTitle: rel.targetDocumentTitle,
           targetPageNumber: rel.targetPage,
@@ -3163,15 +3225,13 @@ export class MatterService {
     }
     const finalItems = Array.from(uniqueMap.values());
 
-    // Sync to SQLite matter_evidence table
-    db.delete(schema.matterEvidence)
-      .where(eq(schema.matterEvidence.matterId, matterId))
-      .run();
-
-    if (finalItems.length > 0) {
-      for (const item of finalItems) {
-        db.insert(schema.matterEvidence)
-          .values({
+    // Explicit refresh persists atomically. Read endpoints compute a fresh view
+    // without writes, provider calls, or activity log entries.
+    if (persist) {
+      db.transaction((tx) => {
+        tx.delete(schema.matterEvidence).where(eq(schema.matterEvidence.matterId, matterId)).run();
+        for (const item of finalItems) {
+          tx.insert(schema.matterEvidence).values({
             id: item.id,
             matterId: item.matterId,
             evidenceType: item.evidenceType,
@@ -3189,9 +3249,9 @@ export class MatterService {
             usedByJson: JSON.stringify(item.usedBy),
             createdAt: item.createdAt,
             updatedAt: item.updatedAt,
-          })
-          .run();
-      }
+          }).run();
+        }
+      });
     }
 
     return finalItems;
@@ -3225,7 +3285,7 @@ export class MatterService {
       }
     }
 
-    const items = await this.syncMatterEvidence(matterId);
+    const items = await this.syncMatterEvidence(matterId, false);
 
     let filtered = items;
     if (filters?.classification) {
@@ -3262,7 +3322,7 @@ export class MatterService {
   public async getMatterSourceMap(matterId: string): Promise<MatterSourceMapResponse> {
     const matter = await this.getMatter(matterId);
     const db = getDb();
-    const evidenceItems = await this.syncMatterEvidence(matterId);
+    const evidenceItems = await this.syncMatterEvidence(matterId, false);
 
     const documentNodes: DocumentSourceMapNode[] = [];
     const uniqueReferencedPages = new Set<string>();
@@ -3327,7 +3387,9 @@ export class MatterService {
 
     const consistencyFindings = await this.checkConsistency(matterId);
     const actionItems = await this.getActionItems(matterId);
-    const questionsResult = await this.generateCounselQuestions(matterId);
+    const questionsResult = { questions: this.synthesizeDeterministicCounselQuestions(
+      matter, await this.getRelationships(matterId), consistencyFindings, await this.getNotes(matterId)
+    ) };
 
     const findingsWithCitations = consistencyFindings.filter(
       (f) => Boolean(f.sourceA?.quotedText || f.sourceB?.quotedText)
@@ -3408,7 +3470,7 @@ export class MatterService {
 
     const pageText = pageRow.length > 0 ? pageRow[0].text : '';
 
-    const allEvidence = await this.syncMatterEvidence(matterId);
+    const allEvidence = await this.syncMatterEvidence(matterId, false);
     const itemsOnPage = allEvidence.filter(
       (e) => e.documentId === documentId && e.pageNumber === pageNumber
     );

@@ -1,4 +1,6 @@
-# LexiGuide AI — Data Model Reference (Phase 2 Implemented)
+# LexiGuide AI — Data Model Reference (historical phase reference)
+
+> Current schema and trust boundaries are maintained in the code and [implementation-status.md](./implementation-status.md). Legacy columns such as `gemini_file_uri` remain for migration compatibility; the current code does not upload original PDFs to Gemini.
 
 ## Entity Relationship Diagram
 
@@ -273,5 +275,4 @@ Materialized Evidence Intelligence Ledger anchoring every matter finding, counse
 | `used_by_json` | TEXT | NOT NULL, DEFAULT `'[]'` | Serialized array of consumer references (finding, question, action item, brief) |
 | `created_at` | TEXT | NOT NULL | ISO 8601 timestamp |
 | `updated_at` | TEXT | NOT NULL | ISO 8601 timestamp |
-
 

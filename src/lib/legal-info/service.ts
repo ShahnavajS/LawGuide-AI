@@ -20,7 +20,6 @@ import {
   LegalInfoMode,
   JURISDICTION_SOURCE_TYPES,
   EVIDENCE_SOURCE_TYPES,
-  containsProhibitedLegalConclusion,
 } from '@/lib/ai/safety';
 import {
   resolveTaxonomyTopic,
@@ -40,11 +39,6 @@ import {
   ConceptQuestionResponse,
 } from './schemas';
 import { CitationValidator } from '@/lib/evidence/validator';
-import { GeminiService } from '@/lib/ai/gemini';
-import {
-  SYSTEM_LEGAL_INFORMATION_PROMPT,
-  buildConceptQuestionPrompt,
-} from '@/lib/ai/prompts';
 import { generateId } from '@/lib/utils/id';
 
 export interface GetLegalInfoParams {
@@ -72,7 +66,21 @@ export interface ConceptQuestionParams {
 export class LegalInformationService {
   private db = getDb();
   private citationValidator = new CitationValidator();
-  private geminiService = new GeminiService();
+
+  private verifiedGoverningLaw(documentId: string, proposed: string | null): string | null {
+    if (!proposed?.trim() || /not identified|not determined/i.test(proposed)) return null;
+    const needle = proposed.replace(/\s+/g, ' ').trim().toLowerCase();
+    const pages = this.db.select({ text: documentPages.text }).from(documentPages)
+      .where(eq(documentPages.documentId, documentId)).all();
+    for (const page of pages) {
+      const text = page.text.replace(/\s+/g, ' ').toLowerCase();
+      const position = text.indexOf(needle);
+      if (position >= 0 && /govern(?:ing|ed) (?:by )?law|laws? of|jurisdiction/i.test(text.slice(Math.max(0, position - 150), position + needle.length + 150))) {
+        return proposed;
+      }
+    }
+    return null;
+  }
 
   /**
    * Resolves a search string or category into a canonical taxonomy topic.
@@ -162,7 +170,7 @@ export class LegalInformationService {
           .all();
 
         if (analysisRows.length > 0) {
-          docGoverningLaw = analysisRows[0].governingLaw;
+          docGoverningLaw = this.verifiedGoverningLaw(params.documentId, analysisRows[0].governingLaw);
 
           // Extract clauses or obligations matching this topic
           if (analysisRows[0].analysisDataJson) {
@@ -415,7 +423,7 @@ export class LegalInformationService {
           .all();
 
         if (analysisRows.length > 0) {
-          docGoverningLaw = analysisRows[0].governingLaw;
+          docGoverningLaw = this.verifiedGoverningLaw(params.documentId, analysisRows[0].governingLaw);
           if (analysisRows[0].analysisDataJson) {
             try {
               const parsed = JSON.parse(analysisRows[0].analysisDataJson);
@@ -475,73 +483,11 @@ export class LegalInformationService {
       updatedAt: s.updatedAt,
       accessedAt: s.accessedAt,
       description: s.description,
-      isVerified: true,
+      isVerified: false,
     }));
 
-    // Mode determination
-    const mode: LegalInfoMode =
-      docEvidence.length > 0
-        ? LEGAL_INFO_MODES.MY_DOCUMENT
-        : LEGAL_INFO_MODES.GENERAL_LEGAL_INFO;
-
-    // Try AI generation if Gemini is configured and enabled
-    if (this.geminiService.isConfigured()) {
-      try {
-        const prompt = buildConceptQuestionPrompt({
-          topic: topicDef.id,
-          topicLabel: topicDef.label,
-          userQuestion: trimmedQuestion,
-          jurisdictionText: jurisdiction.label,
-          registeredSourcesText: sources
-            .map((s) => `${s.title} (${s.authorityLevel}) - ${s.url}`)
-            .join('\n'),
-          documentEvidenceText:
-            docEvidence.length > 0
-              ? docEvidence
-                  .map(
-                    (e) =>
-                      `[Page ${e.pageNumber}]: "${e.quotedText}" (Classification: ${e.classification})`
-                  )
-                  .join('\n')
-              : undefined,
-        });
-
-        const rawResponse = await this.geminiService.generateText(prompt, {
-          systemInstruction: SYSTEM_LEGAL_INFORMATION_PROMPT,
-          temperature: 0.1,
-        });
-
-        if (rawResponse && !containsProhibitedLegalConclusion(rawResponse)) {
-          // Verify response safety
-          return {
-            topic: topicDef.id,
-            topicLabel: topicDef.label,
-            question: trimmedQuestion,
-            mode,
-            jurisdiction,
-            documentAnswer:
-              docEvidence.length > 0
-                ? {
-                    text: `Based on ${docTitle}, your contract contains specific language regarding ${topicDef.label}.`,
-                    citations: docEvidence,
-                  }
-                : undefined,
-            generalLegalInfo: {
-              text: rawResponse.trim(),
-              sources,
-            },
-            questionsForCounsel: topicDef.standardQuestionsForCounsel,
-            limitations: topicDef.importantLimitations,
-            disclaimer:
-              'Informational response only. Not legal advice. Grounded strictly in available sources.',
-          };
-        }
-      } catch {
-        // Fallback to deterministic offline synthesis
-      }
-    }
-
-    // Offline / Deterministic Fallback Engine
+    // Source registry contains links, not retrieved legal passages. Do not
+    // present model-generated prose as though those links verified it.
     return this.generateOfflineConceptAnswer(
       topicDef,
       trimmedQuestion,
@@ -572,10 +518,7 @@ export class LegalInformationService {
       };
     }
 
-    const generalExplanation =
-      `Generally, ${topic.label.toLowerCase()} provisions ${topic.shortExplanation.toLowerCase()} ` +
-      `Under general commercial legal principles, the exact legal effect depends on the applicable jurisdiction and the precise contractual wording. ` +
-      `Parties typically negotiate these provisions to balance commercial flexibility and risk allocation.`;
+    const generalExplanation = `${topic.shortExplanation} Review the linked official resources for current rules in the applicable jurisdiction. This explanation is educational and has not been checked against a specific statute or guidance passage.`;
 
     return {
       topic: topic.id,
@@ -597,7 +540,7 @@ export class LegalInformationService {
         'LexiGuide cannot provide legal advice or determine enforceability for your specific situation.',
       ],
       disclaimer:
-        'General legal information generated from registered legal taxonomy. Not legal advice.',
+        'Educational overview from the app topic guide; linked resources have not been checked for this answer. Not legal advice.',
     };
   }
 

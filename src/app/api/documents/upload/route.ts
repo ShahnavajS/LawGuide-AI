@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDocumentService } from '@/lib/document/service';
 import { formatSafeError, AppError } from '@/lib/utils/errors';
+import { MAX_DOCUMENT_FILE_SIZE_BYTES } from '@/lib/document/validation';
 
 export async function POST(request: NextRequest) {
   try {
+    const declaredBytes = Number(request.headers.get('content-length') || 0);
+    if (declaredBytes > MAX_DOCUMENT_FILE_SIZE_BYTES + 1024 * 1024) {
+      return NextResponse.json({ error: { code: 'FILE_TOO_LARGE', message: 'PDF must be 20 MB or smaller.' } }, { status: 413 });
+    }
     const formData = await request.formData();
     const file = formData.get('file');
 
@@ -17,6 +22,10 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 }
       );
+    }
+
+    if (file.size > MAX_DOCUMENT_FILE_SIZE_BYTES) {
+      return NextResponse.json({ error: { code: 'FILE_TOO_LARGE', message: 'PDF must be 20 MB or smaller.' } }, { status: 413 });
     }
 
     const filename = (file as File).name || 'document.pdf';

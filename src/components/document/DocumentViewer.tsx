@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import React from 'react';
 import type { DocumentViewerProps } from './DocumentViewerImpl';
+import styles from './DocumentViewer.module.css';
 
 export type { DocumentViewerProps };
 
@@ -15,19 +16,10 @@ export const DocumentViewer = dynamic<DocumentViewerProps>(
   {
     ssr: false,
     loading: () => (
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '400px',
-          backgroundColor: '#0f172a',
-          borderRadius: '0.75rem',
-          color: '#94a3b8',
-          fontSize: '0.9rem',
-        }}
-      >
-        Loading document viewer...
+      <div className={styles.viewerPlaceholder} role="status" aria-live="polite">
+        <div className={styles.spinner} aria-hidden="true" />
+        <span>Preparing the PDF viewer…</span>
+        <small>The first open can take a moment.</small>
       </div>
     ),
   }

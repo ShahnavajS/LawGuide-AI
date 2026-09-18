@@ -3,21 +3,21 @@
   flex-direction: column;
   min-height: calc(100vh - 120px);
   background: var(--bg-primary, #0b0d10);
-  color: var(--text-primary, #f1f3f7);
+  color: var(--text-primary);
 }
 
 /* Document Selection Bar */
 .selectionBar {
   background: var(--bg-secondary, #12151b);
-  border-bottom: 1px solid var(--border-color, rgba(200, 162, 86, 0.2));
+  border-bottom: 1px solid var(--border-color, var(--border-subtle));
   padding: 1.25rem 2rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-sm);
 }
 
 .selectionTitle {
   font-size: 1.1rem;
   font-weight: 700;
-  color: var(--color-gold, #c8a256);
+  color: var(--color-gold);
   letter-spacing: 0.05em;
   text-transform: uppercase;
   margin-bottom: 1rem;
@@ -48,10 +48,10 @@
 }
 
 .selectInput {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--border-color, rgba(200, 162, 86, 0.25));
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-color, var(--border-subtle));
   border-radius: 8px;
-  color: var(--text-primary, #f1f3f7);
+  color: var(--text-primary);
   padding: 0.65rem 0.9rem;
   font-size: 0.9rem;
   outline: none;
@@ -60,15 +60,15 @@
 }
 
 .selectInput:focus {
-  border-color: var(--color-gold, #c8a256);
-  box-shadow: 0 0 0 2px rgba(200, 162, 86, 0.2);
+  border-color: var(--color-gold, var(--border-subtle));
+  box-shadow: var(--shadow-sm);
 }
 
 .swapBtn {
   margin-top: 1.25rem;
-  background: rgba(200, 162, 86, 0.1);
-  border: 1px solid rgba(200, 162, 86, 0.3);
-  color: var(--color-gold, #c8a256);
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
+  color: var(--color-gold);
   border-radius: 50%;
   width: 36px;
   height: 36px;
@@ -80,7 +80,7 @@
 }
 
 .swapBtn:hover {
-  background: rgba(200, 162, 86, 0.2);
+  background: var(--bg-surface-subtle);
   transform: rotate(180deg);
 }
 
@@ -89,14 +89,14 @@
 }
 
 .compareBtn {
-  background: linear-gradient(135deg, #c8a256 0%, #a68138 100%);
-  color: #0b0d10;
+  background: var(--color-brand-600);
+  color: #fffdf9;
   font-weight: 700;
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
   border: none;
   cursor: pointer;
-  box-shadow: 0 2px 10px rgba(200, 162, 86, 0.3);
+  box-shadow: var(--shadow-sm);
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
@@ -104,7 +104,7 @@
 }
 
 .compareBtn:hover:not(:disabled) {
-  box-shadow: 0 4px 18px rgba(200, 162, 86, 0.5);
+  box-shadow: var(--shadow-sm);
   transform: translateY(-1px);
 }
 
@@ -127,7 +127,7 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  border-right: 1px solid var(--border-color, rgba(200, 162, 86, 0.2));
+  border-right: 1px solid var(--border-color, var(--border-subtle));
   background: var(--bg-primary, #0b0d10);
   padding: 1.5rem 1.75rem;
   gap: 1.25rem;
@@ -135,12 +135,12 @@
 
 /* Summary Card */
 .summaryCard {
-  background: rgba(18, 21, 27, 0.85);
-  border: 1px solid rgba(200, 162, 86, 0.25);
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
   border-radius: 10px;
   padding: 1.25rem 1.5rem;
   position: relative;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-sm);
 }
 
 .summaryHeader {
@@ -153,7 +153,7 @@
 .summaryTitle {
   font-size: 0.95rem;
   font-weight: 700;
-  color: var(--color-gold, #c8a256);
+  color: var(--color-gold);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -161,17 +161,17 @@
 .summaryText {
   font-size: 0.9rem;
   line-height: 1.55;
-  color: var(--text-secondary, #d1d5db);
+  color: var(--text-secondary);
   margin-bottom: 0.85rem;
 }
 
 .governingLawTag {
   font-size: 0.8rem;
   color: var(--text-muted, #9ca3af);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-surface-subtle);
   padding: 0.4rem 0.7rem;
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
 }
 
 /* Statistics Bar */
@@ -190,39 +190,39 @@
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
 }
 
 .statPillAdded {
-  background: rgba(34, 197, 94, 0.12);
-  border-color: rgba(34, 197, 94, 0.3);
-  color: #4ade80;
+  background: var(--bg-surface-subtle);
+  border-color: var(--border-subtle);
+  color: #216146;
 }
 
 .statPillRemoved {
-  background: rgba(239, 68, 68, 0.12);
-  border-color: rgba(239, 68, 68, 0.3);
-  color: #f87171;
+  background: var(--bg-surface-subtle);
+  border-color: var(--border-subtle);
+  color: #a33d35;
 }
 
 .statPillModified {
-  background: rgba(245, 158, 11, 0.12);
-  border-color: rgba(245, 158, 11, 0.3);
-  color: #fbbf24;
+  background: var(--bg-surface-subtle);
+  border-color: var(--border-subtle);
+  color: #8c5820;
 }
 
 .statPillUnchanged {
-  background: rgba(148, 163, 184, 0.12);
-  border-color: rgba(148, 163, 184, 0.25);
-  color: #cbd5e1;
+  background: var(--bg-surface-subtle);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
 }
 
 /* Health Bar */
 .healthBarContainer {
   margin-top: 0.85rem;
   padding-top: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .healthBarHeader {
@@ -236,14 +236,14 @@
 
 .healthBarTrack {
   height: 6px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-surface-subtle);
   border-radius: 3px;
   overflow: hidden;
 }
 
 .healthBarFill {
   height: 100%;
-  background: linear-gradient(90deg, #c8a256 0%, #22c55e 100%);
+  background: var(--bg-surface);
   transition: width 0.4s ease;
 }
 
@@ -252,10 +252,10 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  background: rgba(18, 21, 27, 0.6);
+  background: var(--bg-surface-subtle);
   padding: 0.85rem 1rem;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
 }
 
 .filterPillsRow {
@@ -265,8 +265,8 @@
 }
 
 .filterPill {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
   color: var(--text-secondary, #9ca3af);
   padding: 0.3rem 0.65rem;
   border-radius: 6px;
@@ -277,9 +277,9 @@
 }
 
 .filterPillActive {
-  background: rgba(200, 162, 86, 0.2);
-  border-color: var(--color-gold, #c8a256);
-  color: var(--color-gold, #c8a256);
+  background: var(--bg-surface-subtle);
+  border-color: var(--color-gold, var(--border-subtle));
+  color: var(--color-gold);
 }
 
 .filterSelectRow {
@@ -289,9 +289,9 @@
 }
 
 .categorySelect {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--text-primary, #f1f3f7);
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
   border-radius: 6px;
   padding: 0.35rem 0.6rem;
   font-size: 0.8rem;
@@ -301,8 +301,8 @@
 
 /* Difference Cards */
 .differenceCard {
-  background: rgba(18, 21, 27, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
   border-radius: 10px;
   padding: 1.25rem;
   display: flex;
@@ -312,7 +312,7 @@
 }
 
 .differenceCard:hover {
-  border-color: rgba(200, 162, 86, 0.4);
+  border-color: var(--border-subtle);
   transform: translateY(-1px);
 }
 
@@ -340,27 +340,27 @@
 }
 
 .typeAdded {
-  background: rgba(34, 197, 94, 0.15);
-  color: #4ade80;
-  border: 1px solid rgba(34, 197, 94, 0.4);
+  background: var(--bg-surface-subtle);
+  color: #216146;
+  border: 1px solid var(--border-subtle);
 }
 
 .typeRemoved {
-  background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: var(--bg-surface-subtle);
+  color: #a33d35;
+  border: 1px solid var(--border-subtle);
 }
 
 .typeModified {
-  background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.4);
+  background: var(--bg-surface-subtle);
+  color: #8c5820;
+  border: 1px solid var(--border-subtle);
 }
 
 .typeUnchanged {
-  background: rgba(148, 163, 184, 0.15);
-  color: #cbd5e1;
-  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: var(--bg-surface-subtle);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
 }
 
 .attentionBadge {
@@ -368,38 +368,38 @@
   font-weight: 600;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
 }
 
 .attHigh {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.4);
-  color: #f87171;
+  background: var(--bg-surface-subtle);
+  border-color: var(--border-subtle);
+  color: #a33d35;
 }
 
 .attMedium {
-  background: rgba(245, 158, 11, 0.15);
-  border-color: rgba(245, 158, 11, 0.4);
-  color: #fbbf24;
+  background: var(--bg-surface-subtle);
+  border-color: var(--border-subtle);
+  color: #8c5820;
 }
 
 .attLow {
-  background: rgba(59, 130, 246, 0.15);
-  border-color: rgba(59, 130, 246, 0.4);
-  color: #60a5fa;
+  background: var(--bg-surface-subtle);
+  border-color: var(--border-subtle);
+  color: #285a72;
 }
 
 .attInfo {
-  background: rgba(148, 163, 184, 0.1);
-  border-color: rgba(148, 163, 184, 0.2);
-  color: #94a3b8;
+  background: var(--bg-surface-subtle);
+  border-color: var(--border-subtle);
+  color: var(--text-muted);
 }
 
 .cardTitle {
   font-size: 1rem;
   font-weight: 700;
-  color: var(--text-primary, #f1f3f7);
+  color: var(--text-primary);
   margin-top: 0.2rem;
 }
 
@@ -408,10 +408,10 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.85rem;
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--bg-surface-subtle);
   border-radius: 8px;
   padding: 0.85rem;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
 }
 
 .evidenceBox {
@@ -435,9 +435,9 @@
 }
 
 .citationSeal {
-  background: rgba(200, 162, 86, 0.12);
-  border: 1px solid rgba(200, 162, 86, 0.35);
-  color: var(--color-gold, #c8a256);
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
+  color: var(--color-gold);
   border-radius: 12px;
   padding: 0.2rem 0.55rem;
   font-size: 0.72rem;
@@ -450,17 +450,17 @@
 }
 
 .citationSeal:hover {
-  background: rgba(200, 162, 86, 0.25);
-  border-color: var(--color-gold, #c8a256);
+  background: var(--bg-surface-subtle);
+  border-color: var(--color-gold, var(--border-subtle));
   transform: translateY(-1px);
 }
 
 .evidenceQuote {
   font-size: 0.8rem;
   font-style: italic;
-  color: var(--text-secondary, #d1d5db);
-  background: rgba(255, 255, 255, 0.02);
-  border-left: 2px solid rgba(200, 162, 86, 0.4);
+  color: var(--text-secondary);
+  background: var(--bg-surface-subtle);
+  border-left: 2px solid var(--border-subtle);
   padding: 0.4rem 0.6rem;
   border-radius: 0 4px 4px 0;
   line-height: 1.4;
@@ -468,25 +468,25 @@
 
 .unverifiedNotice {
   font-size: 0.72rem;
-  color: #fbbf24;
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: #8c5820;
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
   padding: 0.3rem 0.5rem;
   border-radius: 4px;
 }
 
 /* What Changed & Semantic Field Changes */
 .changeSummaryBlock {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-surface-subtle);
   border-radius: 6px;
   padding: 0.65rem 0.8rem;
-  border-left: 3px solid var(--color-gold, #c8a256);
+  border-left: 3px solid var(--color-gold, var(--border-subtle));
 }
 
 .changeSummaryLabel {
   font-size: 0.75rem;
   font-weight: 700;
-  color: var(--color-gold, #c8a256);
+  color: var(--color-gold);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   margin-bottom: 0.25rem;
@@ -494,7 +494,7 @@
 
 .changeSummaryText {
   font-size: 0.85rem;
-  color: var(--text-primary, #f1f3f7);
+  color: var(--text-primary);
   line-height: 1.45;
 }
 
@@ -511,20 +511,20 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.78rem;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--bg-surface-subtle);
   padding: 0.3rem 0.5rem;
   border-radius: 4px;
 }
 
 .semanticField {
   font-weight: 700;
-  color: var(--color-gold, #c8a256);
+  color: var(--color-gold);
   text-transform: uppercase;
   font-size: 0.7rem;
 }
 
 .semanticBefore {
-  color: #f87171;
+  color: #a33d35;
   text-decoration: line-through;
 }
 
@@ -533,7 +533,7 @@
 }
 
 .semanticAfter {
-  color: #4ade80;
+  color: #216146;
   font-weight: 600;
 }
 
@@ -554,8 +554,8 @@
 
 /* Lawyer Question Box */
 .lawyerQuestionBlock {
-  background: rgba(200, 162, 86, 0.07);
-  border: 1px solid rgba(200, 162, 86, 0.25);
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
   border-radius: 6px;
   padding: 0.6rem 0.8rem;
 }
@@ -563,7 +563,7 @@
 .lawyerQuestionLabel {
   font-size: 0.72rem;
   font-weight: 700;
-  color: var(--color-gold, #c8a256);
+  color: var(--color-gold);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   margin-bottom: 0.25rem;
@@ -574,7 +574,7 @@
 
 .lawyerQuestionText {
   font-size: 0.82rem;
-  color: var(--text-primary, #f1f3f7);
+  color: var(--text-primary);
   font-style: italic;
   line-height: 1.4;
 }
@@ -583,14 +583,14 @@
 .viewerPane {
   display: flex;
   flex-direction: column;
-  background: #0d0f14;
+  background: var(--bg-surface);
   overflow: hidden;
   height: 100%;
 }
 
 .viewerTabs {
   display: flex;
-  border-bottom: 1px solid rgba(200, 162, 86, 0.2);
+  border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-secondary, #12151b);
 }
 
@@ -607,9 +607,9 @@
 }
 
 .viewerTabActive {
-  color: var(--color-gold, #c8a256);
-  border-bottom-color: var(--color-gold, #c8a256);
-  background: rgba(200, 162, 86, 0.05);
+  color: var(--color-gold);
+  border-bottom-color: var(--color-gold, var(--border-subtle));
+  background: var(--bg-surface-subtle);
 }
 
 .viewersGrid {
@@ -624,7 +624,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  border-right: 1px solid var(--border-subtle);
 }
 
 .viewerColumn:last-child {
@@ -636,14 +636,14 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem 1rem;
-  background: rgba(18, 21, 27, 0.9);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--bg-surface-subtle);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .viewerHeaderTitle {
   font-size: 0.8rem;
   font-weight: 700;
-  color: var(--text-primary, #f1f3f7);
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -676,7 +676,7 @@
 .emptyStateTitle {
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--text-primary, #f1f3f7);
+  color: var(--text-primary);
 }
 
 .emptyStateText {

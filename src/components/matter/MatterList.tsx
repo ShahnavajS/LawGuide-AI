@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { LinkButton } from '@/components/ui/Button/LinkButton';
+
+import React, { useState, useEffect, useRef } from 'react';
 import styles from './MatterList.module.css';
 import { Button } from '@/components/ui/Button/Button';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
@@ -25,6 +26,7 @@ export const MatterList: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'ACTIVE' | 'ARCHIVED'>('ACTIVE');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
+  const createDialogRef = useRef<HTMLDialogElement>(null);
 
   // New matter form state
   const [newTitle, setNewTitle] = useState<string>('');
@@ -33,6 +35,13 @@ export const MatterList: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
+
+  useEffect(() => {
+    const dialog = createDialogRef.current;
+    if (isCreateModalOpen && dialog && !dialog.open) dialog.showModal();
+    if (!isCreateModalOpen && dialog?.open) dialog.close();
+    return () => { if (dialog?.open) dialog.close(); };
+  }, [isCreateModalOpen]);
 
   useEffect(() => {
     let ignore = false;
@@ -106,7 +115,7 @@ export const MatterList: React.FC = () => {
       <div className={styles.heroHeader}>
         <div className={styles.heroTitleGroup}>
           <div className={styles.heroBadge}>
-            <span>⚖️ Case & Matter Workspace</span>
+            <span>MATTER WORKSPACE</span>
           </div>
           <h1 className={styles.heroTitle}>Legal Matters</h1>
           <p className={styles.heroSubtitle}>
@@ -272,11 +281,7 @@ export const MatterList: React.FC = () => {
                 <span className={styles.dateText}>
                   Updated {new Date(matter.updatedAt).toLocaleDateString()}
                 </span>
-                <Link href={`/matters/${matter.id}`}>
-                  <Button size="sm" variant="secondary">
-                    Open Matter →
-                  </Button>
-                </Link>
+                <LinkButton href={`/matters/${matter.id}`} size="sm" variant="secondary">Open Matter →</LinkButton>
               </div>
             </div>
           ))}
@@ -284,14 +289,16 @@ export const MatterList: React.FC = () => {
       )}
 
       {/* Create Matter Modal */}
-      {isCreateModalOpen && (
-        <div
+      <dialog
+          ref={createDialogRef}
           className={styles.modalBackdrop}
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsCreateModalOpen(false);
           }}
+          onCancel={(e) => { e.preventDefault(); setIsCreateModalOpen(false); }}
+          aria-labelledby="modal-title"
         >
-          <div className={styles.modalContent} role="dialog" aria-modal="true" aria-labelledby="modal-title">
+          <div className={styles.modalContent}>
             <div className={styles.modalHeader}>
               <h2 id="modal-title" className={styles.modalTitle}>
                 Create Legal Matter
@@ -366,8 +373,7 @@ export const MatterList: React.FC = () => {
               </div>
             </form>
           </div>
-        </div>
-      )}
+      </dialog>
     </div>
   );
 };

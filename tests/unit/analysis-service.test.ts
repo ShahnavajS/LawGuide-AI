@@ -2,7 +2,8 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { AnalysisService } from '@/lib/analysis/service';
 import { DocumentService } from '@/lib/document/service';
 import { LocalStorageService } from '@/lib/document/storage';
-import { getDb } from '@/lib/db';
+import { getDb, schema } from '@/lib/db';
+import { eq } from 'drizzle-orm';
 import { NotFoundError } from '@/lib/utils/errors';
 import fs from 'fs/promises';
 import path from 'path';
@@ -149,8 +150,8 @@ describe('Phase 4: Legal X-Ray Analysis Service & Lifecycle', () => {
     expect(analysis.overview.summary).toBeDefined();
     expect(analysis.overview.governingLaw).toBe('Governing law was not identified in this document.');
 
-    // Obligations and material clauses must be present
-    expect(analysis.obligations.length).toBeGreaterThan(0);
+    // Offline mode may expose source excerpts, but must not invent obligations.
+    expect(analysis.obligations).toHaveLength(0);
     expect(analysis.materialClauses.length).toBeGreaterThan(0);
 
     // Verification summary should reflect ground truth
@@ -163,8 +164,7 @@ describe('Phase 4: Legal X-Ray Analysis Service & Lifecycle', () => {
       expect(ob.pageNumber).toBeLessThanOrEqual(3);
     }
 
-    // Lawyer questions must be present
-    expect(analysis.lawyerQuestions.length).toBeGreaterThan(0);
+    expect(analysis.lawyerQuestions).toHaveLength(0);
   });
 
   it('retrieves stored Legal X-Ray analysis idempotently without re-generating', async () => {
@@ -187,6 +187,22 @@ describe('Phase 4: Legal X-Ray Analysis Service & Lifecycle', () => {
     const refreshed = await analysisService.analyzeDocument(readyDocId, { force: true });
     expect(refreshed.documentId).toBe(readyDocId);
     expect(refreshed.overview.title).toBe(initial?.overview.title);
+  });
+
+  it('keeps citations owned by other workflows during forced reanalysis', async () => {
+    const citationId = 'external_citation_preserved_on_reanalysis';
+    getDb().insert(schema.citations).values({
+      id: citationId,
+      documentId: readyDocId,
+      sourceType: 'DOCUMENT_FACT',
+      pageNumber: 1,
+      quotedText: 'LexiGuide Test Document. Page 1',
+      confidenceScore: 1,
+      createdAt: new Date().toISOString(),
+    }).run();
+
+    await analysisService.analyzeDocument(readyDocId, { force: true });
+    expect(getDb().select().from(schema.citations).where(eq(schema.citations.id, citationId)).get()).toBeDefined();
   });
 
   it('preserves document status as READY even if AI analysis encounters an error', async () => {

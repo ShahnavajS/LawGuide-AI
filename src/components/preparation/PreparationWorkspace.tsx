@@ -77,7 +77,7 @@ export const PreparationWorkspace: React.FC<PreparationWorkspaceProps> = ({
           const data = await res.json();
           if (ignore) return;
           const readyDocs: DocumentDto[] = (data.documents || []).filter(
-            (d: DocumentDto) => d.status === 'READY'
+            (d: DocumentDto) => d.status === 'READY' && d.fileAvailable !== false
           );
           setDocuments(readyDocs);
           if (!selectedDocId && readyDocs[0]) {
@@ -362,7 +362,7 @@ export const PreparationWorkspace: React.FC<PreparationWorkspaceProps> = ({
           Main Workspace: Dossier on Left, PDF Viewer on Right
           ------------------------------------------------------------ */}
       {preparation ? (
-        <main className={styles.workspaceBody}>
+        <section className={styles.workspaceBody} aria-label="Consultation brief">
           {/* Left Pane: Structured Dossier */}
           <section className={styles.dossierPane} aria-label="Executive Consultation Dossier">
             {/* Header Card */}
@@ -545,13 +545,13 @@ export const PreparationWorkspace: React.FC<PreparationWorkspaceProps> = ({
                     <span>💬</span>
                     <span>Prioritized Questions for Legal Counsel</span>
                   </h2>
-                  <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     {preparation.lawyerQuestions.length} Questions
                   </span>
                 </div>
 
                 {preparation.lawyerQuestions.length === 0 ? (
-                  <p style={{ color: '#9ca3af', fontSize: '0.85rem' }}>No specific questions synthesized.</p>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No specific questions synthesized.</p>
                 ) : (
                   preparation.lawyerQuestions.map((q: PreparationLawyerQuestion, idx: number) => {
                     const isPrepared = preparedQuestions.has(q.id);
@@ -621,7 +621,7 @@ export const PreparationWorkspace: React.FC<PreparationWorkspaceProps> = ({
                     <span>✅</span>
                     <span>Actionable Preparation Checklist</span>
                   </h2>
-                  <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     {preparation.checklist.filter((c) => c.isCompleted).length} of{' '}
                     {preparation.checklist.length} Completed
                   </span>
@@ -765,7 +765,7 @@ export const PreparationWorkspace: React.FC<PreparationWorkspaceProps> = ({
                   Chronological Timeline
                 </h3>
                 {preparation.keyDates.length === 0 ? (
-                  <p style={{ color: '#9ca3af', fontSize: '0.85rem' }}>No specific dates identified.</p>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No specific dates identified.</p>
                 ) : (
                   preparation.keyDates.map((dt) => (
                     <div key={dt.id} className={styles.itemCard}>
@@ -860,7 +860,7 @@ export const PreparationWorkspace: React.FC<PreparationWorkspaceProps> = ({
                     <span>⚠️</span>
                     <span>Areas Warranting Closer Review</span>
                   </h2>
-                  <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     {preparation.attentionAreas.length} Areas
                   </span>
                 </div>
@@ -913,7 +913,7 @@ export const PreparationWorkspace: React.FC<PreparationWorkspaceProps> = ({
                     <span>⇄</span>
                     <span>Changes Between Versions</span>
                   </h2>
-                  <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     {preparation.versionChanges.length} Differences
                   </span>
                 </div>
@@ -1028,14 +1028,14 @@ export const PreparationWorkspace: React.FC<PreparationWorkspaceProps> = ({
                 </div>
 
                 {preparation.userNotes.length === 0 ? (
-                  <p style={{ color: '#9ca3af', fontSize: '0.85rem' }}>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                     No personal notes or specific concerns provided.
                   </p>
                 ) : (
                   preparation.userNotes.map((note) => (
                     <div key={note.id} className={styles.itemCard}>
                       <p className={styles.itemTitle}>&ldquo;{note.note}&rdquo;</p>
-                      <span style={{ fontSize: '0.7rem', color: '#9ca3af' }}>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                         Added {new Date(note.createdAt).toLocaleString()} · USER_PROVIDED
                       </span>
                     </div>
@@ -1081,7 +1081,7 @@ export const PreparationWorkspace: React.FC<PreparationWorkspaceProps> = ({
                     style={{
                       background: 'none',
                       border: 'none',
-                      color: '#9ca3af',
+                      color: 'var(--text-muted)',
                       cursor: 'pointer',
                       fontSize: '0.8rem',
                     }}
@@ -1101,28 +1101,13 @@ export const PreparationWorkspace: React.FC<PreparationWorkspaceProps> = ({
               </div>
             </aside>
           )}
-        </main>
+        </section>
       ) : (
         /* Empty State when no preparation brief is loaded yet */
-        <div
-          style={{
-            background: 'rgba(18, 22, 31, 0.7)',
-            border: '1px dashed rgba(200, 162, 86, 0.25)',
-            borderRadius: '12px',
-            padding: '3rem 2rem',
-            textAlign: 'center',
-            color: '#9ca3af',
-          }}
-        >
-          <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>⚖️</div>
-          <h2 style={{ fontSize: '1.25rem', color: '#f3f4f6', fontWeight: 600, marginBottom: '0.5rem' }}>
-            Ready to Prepare for Your Legal Consultation
-          </h2>
-          <p style={{ maxWidth: '600px', margin: '0 auto 1.5rem auto', fontSize: '0.875rem', lineHeight: 1.5 }}>
-            Select an analyzed contract or agreement above, specify the purpose of your consultation,
-            and click &ldquo;Generate Consultation Brief&rdquo; to synthesize verified facts, dates, prioritized
-            attorney questions, and an actionable preparation checklist.
-          </p>
+        <div className={styles.emptyState}>
+          <span className={styles.emptyIndex}>NEXT / 01</span>
+          <h2>Bring the document. Leave with better questions.</h2>
+          <p>Select an analyzed document and describe your consultation goal. LexiGuide can organize document facts, dates, and questions for a qualified legal professional to review.</p>
         </div>
       )}
     </div>

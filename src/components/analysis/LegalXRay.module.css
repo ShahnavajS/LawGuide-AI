@@ -7,14 +7,14 @@
 
 /* Executive Header Card */
 .headerCard {
-  background: linear-gradient(145deg, rgba(26, 31, 41, 0.85) 0%, rgba(14, 18, 24, 0.95) 100%);
-  border: 1px solid rgba(200, 162, 86, 0.25);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: var(--space-5);
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-sm);
   position: relative;
   overflow: hidden;
 }
@@ -26,7 +26,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent 0%, var(--color-gold-400) 50%, transparent 100%);
+  background: var(--bg-surface);
 }
 
 .titleRow {
@@ -54,13 +54,13 @@
   height: 6px;
   background-color: var(--color-gold-400);
   border-radius: 50%;
-  box-shadow: 0 0 8px var(--color-gold-400);
+  box-shadow: var(--shadow-sm);
 }
 
 .docTitle {
   font-size: var(--font-size-md);
   font-weight: 700;
-  color: #f8fafc;
+  color: var(--text-primary);
   margin: 4px 0 0 0;
   line-height: 1.35;
   letter-spacing: -0.01em;
@@ -73,16 +73,16 @@
 }
 
 .summaryBox {
-  background: rgba(10, 13, 18, 0.7);
+  background: var(--bg-surface-subtle);
   border-left: 3px solid var(--color-gold-400);
   border-radius: 0 var(--radius-md) var(--radius-md) 0;
   padding: var(--space-3) var(--space-4);
   font-size: var(--font-size-xs);
-  color: #cbd5e1;
+  color: var(--text-primary);
   line-height: 1.6;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
-  border-right: 1px solid rgba(255, 255, 255, 0.04);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-top: 1px solid var(--border-subtle);
+  border-right: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .metaGrid {
@@ -91,7 +91,7 @@
   gap: var(--space-3);
   font-size: var(--font-size-xs);
   padding-top: var(--space-3);
-  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  border-top: 1px dashed var(--border-subtle);
 }
 
 .metaItem {
@@ -109,7 +109,7 @@
 }
 
 .metaValue {
-  color: #f1f5f9;
+  color: var(--text-primary);
   font-weight: 600;
   font-size: var(--font-size-xs);
 }
@@ -122,8 +122,8 @@
   font-size: 11px;
   color: var(--text-muted);
   padding: var(--space-2) var(--space-3);
-  background: rgba(10, 13, 18, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   margin-top: var(--space-1);
 }
@@ -132,7 +132,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #34d399;
+  color: #216146;
   font-weight: 600;
   font-size: 11px;
 }
@@ -141,10 +141,10 @@
 .tabBar {
   display: flex;
   gap: 4px;
-  background: #0f1217;
+  background: var(--bg-surface);
   padding: 4px;
   border-radius: var(--radius-md);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
   overflow-x: auto;
   scrollbar-width: thin;
 }
@@ -156,7 +156,7 @@
   padding: 8px 12px;
   font-size: 11px;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--text-muted);
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.15s ease-in-out;
@@ -166,28 +166,28 @@
 }
 
 .tabButton:hover {
-  color: #f1f5f9;
-  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  background: var(--bg-surface-subtle);
 }
 
 .tabButtonActive {
-  background: linear-gradient(135deg, rgba(200, 162, 86, 0.18) 0%, rgba(30, 36, 48, 0.9) 100%);
+  background: var(--bg-surface);
   color: var(--color-gold-400);
-  border: 1px solid rgba(200, 162, 86, 0.35);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-sm);
 }
 
 .tabCountBadge {
   font-size: 10px;
   padding: 1px 6px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-surface-subtle);
   color: inherit;
 }
 
 .tabButtonActive .tabCountBadge {
-  background: rgba(200, 162, 86, 0.25);
-  color: #fce7b0;
+  background: var(--bg-surface-subtle);
+  color: var(--text-primary);
 }
 
 .sectionContent {
@@ -198,21 +198,21 @@
 
 /* Finding Cards */
 .findingCard {
-  background: linear-gradient(145deg, #151921 0%, #101319 100%);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   padding: var(--space-4);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-sm);
   position: relative;
 }
 
 .findingCard:hover {
-  border-color: rgba(200, 162, 86, 0.3);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  border-color: var(--border-subtle);
+  box-shadow: var(--shadow-sm);
   transform: translateY(-1px);
 }
 
@@ -226,7 +226,7 @@
 .findingTitle {
   font-size: var(--font-size-xs);
   font-weight: 600;
-  color: #f1f5f9;
+  color: var(--text-primary);
   margin: 2px 0 0 0;
   line-height: 1.4;
 }
@@ -241,29 +241,29 @@
 
 .findingBody {
   font-size: var(--font-size-xs);
-  color: #94a3b8;
+  color: var(--text-muted);
   line-height: 1.5;
   margin: 0;
 }
 
 /* Semantic Content Boxes */
 .plainLangBox {
-  background: rgba(14, 165, 233, 0.05);
-  border-left: 2px solid #38bdf8;
+  background: var(--bg-surface-subtle);
+  border-left: 2px solid var(--border-subtle);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   padding: var(--space-2) var(--space-3);
   font-size: var(--font-size-xs);
-  color: #e0f2fe;
+  color: var(--text-primary);
   line-height: 1.5;
 }
 
 .whyItMattersBox {
-  background: rgba(245, 158, 11, 0.06);
-  border-left: 2px solid #f59e0b;
+  background: var(--bg-surface-subtle);
+  border-left: 2px solid var(--border-subtle);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   padding: var(--space-2) var(--space-3);
   font-size: var(--font-size-xs);
-  color: #fef3c7;
+  color: var(--text-primary);
   line-height: 1.5;
 }
 
@@ -274,19 +274,19 @@
   gap: 6px;
   margin-top: 4px;
   padding-top: var(--space-2);
-  border-top: 1px dashed rgba(255, 255, 255, 0.06);
+  border-top: 1px dashed var(--border-subtle);
 }
 
 .citationButton {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(200, 162, 86, 0.08);
-  border: 1px solid rgba(200, 162, 86, 0.3);
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   padding: 3px 8px;
   font-size: 11px;
-  color: #f4d38c;
+  color: #a6563c;
   cursor: pointer;
   align-self: flex-start;
   transition: all 0.15s ease;
@@ -294,17 +294,17 @@
 }
 
 .citationButton:hover {
-  background-color: rgba(212, 175, 55, 0.2);
+  background-color: var(--bg-surface-subtle);
   border-color: var(--color-gold-400);
-  color: #ffffff;
-  box-shadow: 0 0 10px rgba(200, 162, 86, 0.3);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
   transform: translateY(-1px);
 }
 
 .understandConceptBtn {
-  background: rgba(212, 175, 55, 0.1);
-  color: #facc15;
-  border: 1px solid rgba(212, 175, 55, 0.35);
+  background: var(--bg-surface-subtle);
+  color: #8c5820;
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm, 6px);
   padding: 3px 8px;
   font-size: 0.72rem;
@@ -315,16 +315,16 @@
 }
 
 .understandConceptBtn:hover {
-  background: rgba(212, 175, 55, 0.2);
-  border-color: #d4af37;
+  background: var(--bg-surface-subtle);
+  border-color: var(--border-subtle);
 }
 
 .quoteExcerpt {
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--text-muted);
   font-style: italic;
   padding-left: 8px;
-  border-left: 2px solid rgba(200, 162, 86, 0.4);
+  border-left: 2px solid var(--border-subtle);
   line-height: 1.45;
   margin: 0;
   word-break: break-word;
@@ -334,9 +334,9 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: rgba(239, 68, 68, 0.12);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #fca5a5;
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
+  color: #a33d35;
   font-size: 10px;
   padding: 2px 8px;
   border-radius: 4px;
@@ -350,7 +350,7 @@
   font-style: italic;
   padding: var(--space-6);
   text-align: center;
-  background: rgba(16, 20, 26, 0.5);
+  background: var(--bg-surface-subtle);
   border-radius: var(--radius-md);
-  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border: 1px dashed var(--border-subtle);
 }

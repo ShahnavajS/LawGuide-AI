@@ -358,16 +358,8 @@ describe('Phase 5: ComparisonService & Dual Evidence Verification', () => {
     );
 
     const result = await stubComparisonService.compareDocuments(doc1.id, doc2.id);
-    const diff = result.differences[0];
-
-    // The fabricated base evidence must be unverified and downgraded to NEEDS_REVIEW
-    expect(diff?.baseEvidence?.isValidated).toBe(false);
-    expect(diff?.baseEvidence?.classification).toBe('NEEDS_REVIEW');
-    expect(diff?.baseEvidence?.discrepancyNote).toBeDefined();
-
-    // The genuine target evidence must remain verified DOCUMENT_FACT
-    expect(diff?.targetEvidence?.isValidated).toBe(true);
-    expect(diff?.targetEvidence?.classification).toBe('DOCUMENT_FACT');
+    // A modified finding needs verified evidence from both versions.
+    expect(result.differences).toHaveLength(0);
 
     // Validation summary reflects unverified citation
     expect(result.validationSummary.unverifiedCount).toBe(1);

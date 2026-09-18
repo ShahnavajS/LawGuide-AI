@@ -25,7 +25,7 @@ export const Footer: React.FC = () => {
           <div className={styles.brandCol}>
             <span className={styles.brandName}>LexiGuide AI</span>
             <p className={styles.brandDesc}>
-              Transforming complex contracts, agreements, and policies into clear, verifiable insights anchored to source citations.
+              Read complex documents with more clarity. Keep the source close, and bring better questions to a legal professional.
             </p>
           </div>
 
@@ -66,19 +66,19 @@ export const Footer: React.FC = () => {
           </div>
 
           <div>
-            <h3 className={styles.heading}>Safety & Privacy</h3>
+            <h3 className={styles.heading}>How to use this</h3>
             <ul className={styles.list}>
               <li>
-                <span className={styles.link}>Zero-Training Privacy</span>
+                <span className={styles.link}>Review the original document</span>
               </li>
               <li>
-                <span className={styles.link}>Verifiable Citations</span>
+                <span className={styles.link}>Inspect supporting quotes</span>
               </li>
               <li>
-                <span className={styles.link}>Source Grounding</span>
+                <span className={styles.link}>Question uncertain findings</span>
               </li>
               <li>
-                <span className={styles.link}>Non-Attorney Disclosure</span>
+                <span className={styles.link}>Ask qualified counsel</span>
               </li>
             </ul>
           </div>

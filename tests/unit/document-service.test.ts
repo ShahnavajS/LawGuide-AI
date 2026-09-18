@@ -98,6 +98,24 @@ describe('Document Service Integration & Workflow', () => {
     expect(fileResult.mimeType).toBe('application/pdf');
   });
 
+  it('marks a missing PDF unavailable and returns a not-found error', async () => {
+    const filePath = storage.resolveSafePath(`${createdDocId}/document.pdf`);
+    const temporaryPath = `${filePath}.missing`;
+    await fs.rename(filePath, temporaryPath);
+    try {
+      const doc = await service.getDocumentById(createdDocId);
+      expect(doc.fileAvailable).toBe(false);
+      const listed = (await service.getDocuments()).find((item) => item.id === createdDocId);
+      expect(listed?.fileAvailable).toBe(false);
+      await expect(service.getDocumentFile(createdDocId)).rejects.toMatchObject({
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
+    } finally {
+      await fs.rename(temporaryPath, filePath);
+    }
+  });
+
   it('prevents path traversal attempts in storage resolution', () => {
     expect(() => storage.resolveSafePath('../../etc/passwd')).toThrow(/Path traversal detected/);
     expect(() => storage.resolveSafePath('..\\..\\windows\\system32')).toThrow(/Path traversal detected/);

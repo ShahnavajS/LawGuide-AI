@@ -172,16 +172,16 @@ describe('Phase 12: Production Hardening & Security Audit', () => {
       expect(blocked.retryAfterSeconds).toBeLessThanOrEqual(60);
     });
 
-    it('correctly parses client identifier from request headers', () => {
+    it('ignores untrusted forwarding headers for rate limit identity', () => {
       const reqWithForwarded = new Request('http://localhost:3000/api/health', {
         headers: { 'x-forwarded-for': '203.0.113.195, 70.41.3.18' },
       });
-      expect(getClientIdentifier(reqWithForwarded)).toBe('203.0.113.195');
+      expect(getClientIdentifier(reqWithForwarded)).toBe('local-user');
 
       const reqWithRealIp = new Request('http://localhost:3000/api/health', {
         headers: { 'x-real-ip': '198.51.100.44' },
       });
-      expect(getClientIdentifier(reqWithRealIp)).toBe('198.51.100.44');
+      expect(getClientIdentifier(reqWithRealIp)).toBe('local-user');
 
       const reqFallback = new Request('http://localhost:3000/api/health');
       expect(getClientIdentifier(reqFallback)).toBe('local-user');

@@ -10,7 +10,6 @@ import { getDocumentStorage, DocumentStorageService } from './storage';
 import { validateDocumentUpload, sanitizeOriginalFilename } from './validation';
 import { DocumentDto, DocumentPageDto, DocumentProcessingStatus } from './types';
 import { documentProcessor, DocumentProcessor } from './processor';
-import { geminiService, GeminiService } from '@/lib/ai/gemini';
 import { generateId } from '@/lib/utils/id';
 import { AppError, NotFoundError, ValidationError } from '@/lib/utils/errors';
 import { eq, desc, asc } from 'drizzle-orm';
@@ -18,16 +17,13 @@ import { eq, desc, asc } from 'drizzle-orm';
 export class DocumentService {
   private storage: DocumentStorageService;
   private processor: DocumentProcessor;
-  private gemini: GeminiService;
 
   constructor(
     customStorage?: DocumentStorageService,
-    customProcessor?: DocumentProcessor,
-    customGemini?: GeminiService
+    customProcessor?: DocumentProcessor
   ) {
     this.storage = customStorage || getDocumentStorage();
     this.processor = customProcessor || documentProcessor;
-    this.gemini = customGemini || geminiService;
   }
 
   /**
@@ -134,7 +130,10 @@ export class DocumentService {
       .from(schema.documents)
       .orderBy(desc(schema.documents.createdAt));
 
-    return records.map((doc) => this.toDto(doc));
+    return Promise.all(records.map(async (doc) => ({
+      ...this.toDto(doc),
+      fileAvailable: await this.storage.fileExists(doc.storagePath),
+    })));
   }
 
   /**
@@ -156,7 +155,10 @@ export class DocumentService {
       throw new NotFoundError('Document');
     }
 
-    return this.toDto(record);
+    return {
+      ...this.toDto(record),
+      fileAvailable: await this.storage.fileExists(record.storagePath),
+    };
   }
 
   /**
@@ -214,7 +216,15 @@ export class DocumentService {
       throw new NotFoundError('Document');
     }
 
-    const buffer = await this.storage.getFile(record.storagePath);
+    let buffer: Buffer;
+    try {
+      buffer = await this.storage.getFile(record.storagePath);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        throw new NotFoundError('Document file');
+      }
+      throw error;
+    }
 
     return {
       buffer,
@@ -225,7 +235,7 @@ export class DocumentService {
 
   /**
    * Processes an uploaded document: extracts page boundaries and text,
-   * uploads to Gemini Files API if configured, and updates status to READY.
+   * extracts text locally and updates status to READY.
    * Fully idempotent: already READY documents are returned immediately without reprocessing.
    */
   public async processDocument(id: string): Promise<{ document: DocumentDto; pageCount: number }> {
@@ -287,30 +297,12 @@ export class DocumentService {
         await db.insert(schema.documentPages).values(pageRecords);
       }
 
-      // 6. Optional Gemini Files API upload for AI grounding
-      let geminiFileUri: string | null = record.geminiFileUri || null;
-      if (!geminiFileUri && this.gemini.isConfigured()) {
-        try {
-          const geminiFile = await this.gemini.uploadFile(
-            fileBuffer,
-            record.mimeType,
-            record.originalFilename
-          );
-          if (geminiFile) {
-            geminiFileUri = geminiFile.uri;
-          }
-        } catch {
-          // Non-fatal: Gemini upload failure does not break local text processing
-        }
-      }
-
-      // 7. Transition status to READY
+      // The original PDF stays local. Later AI analysis sends extracted text only.
       const [updatedRecord] = await db
         .update(schema.documents)
         .set({
           status: 'READY',
           pageCount: extractionResult.pageCount,
-          geminiFileUri,
           processingError: null,
           updatedAt: new Date().toISOString(),
         })

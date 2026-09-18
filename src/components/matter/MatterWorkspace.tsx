@@ -1,5 +1,7 @@
 'use client';
 
+import { LinkButton } from '@/components/ui/Button/LinkButton';
+
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import styles from './MatterWorkspace.module.css';
@@ -658,9 +660,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
         <div className={styles.emptyState}>
           <h2>Matter Not Found</h2>
           <p>{error || 'The requested legal matter does not exist.'}</p>
-          <Link href="/matters">
-            <Button variant="primary">Return to Matters</Button>
-          </Link>
+          <LinkButton href="/matters" variant="primary">Return to Matters</LinkButton>
         </div>
       </div>
     );
@@ -706,11 +706,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
               + Add Document
             </Button>
 
-            <Link href={`/prepare?matterId=${matter.id}`}>
-              <Button size="sm" variant="primary">
-                💼 Prepare for Counsel
-              </Button>
-            </Link>
+            <LinkButton href={`/prepare?matterId=${matter.id}`} size="sm" variant="primary">💼 Prepare for Counsel</LinkButton>
           </div>
         </div>
 
@@ -762,49 +758,43 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
       {/* 12 Navigation Tabs */}
       <nav className={styles.tabsNav} role="tablist" aria-label="Matter Workspace Sections">
         {[
-          { id: 'overview', label: 'Overview', icon: '📋' },
+          { id: 'overview', label: 'Overview' },
           {
             id: 'actionPlan',
             label: 'Action Plan',
-            icon: '✅',
             count: actionItems.filter((i) => i.status !== 'COMPLETED').length,
           },
           {
             id: 'sourceMap',
             label: 'Source Map',
-            icon: '🗺️',
             count: sourceMapData?.coverage?.totalEvidenceItems,
           },
-          { id: 'documents', label: 'Documents', icon: '📄', count: matter.documents.length },
-          { id: 'timeline', label: 'Timeline', icon: '⏱️' },
+          { id: 'documents', label: 'Documents', count: matter.documents.length },
+          { id: 'timeline', label: 'Timeline' },
           {
             id: 'relationships',
             label: 'Relationships',
-            icon: '🔗',
             count: matter.metrics.totalRelationships,
           },
           {
             id: 'consistency',
             label: 'Consistency',
-            icon: '⚖️',
             count: matter.metrics.totalInconsistencies,
           },
-          { id: 'search', label: 'Search Matter', icon: '🔍' },
-          { id: 'ask', label: 'Ask My Matter', icon: '💬' },
+          { id: 'search', label: 'Search Matter' },
+          { id: 'ask', label: 'Ask My Matter' },
           {
             id: 'attention',
             label: 'Attention Areas',
-            icon: '⚠️',
             count: matter.metrics.openAttentionAreas,
           },
           {
             id: 'questions',
             label: 'Lawyer Questions',
-            icon: '❓',
             count: counselQuestions.length > 0 ? counselQuestions.length : matter.metrics.totalLawyerQuestions,
           },
-          { id: 'prepare', label: 'Prepare Dossier', icon: '💼' },
-          { id: 'notes', label: 'Notes', icon: '📝' },
+          { id: 'prepare', label: 'Prepare Dossier' },
+          { id: 'notes', label: 'Notes' },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -814,7 +804,6 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
             className={`${styles.tabButton} ${activeTab === tab.id ? styles.tabButtonActive : ''}`}
             onClick={() => setActiveTab(tab.id as TabType)}
           >
-            <span>{tab.icon}</span>
             <span>{tab.label}</span>
             {tab.count !== undefined && tab.count > 0 && (
               <span className={styles.badgeCount}>{tab.count}</span>
@@ -828,12 +817,12 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
         <div className={styles.tabPane}>
           <div className={styles.card}>
             <div className={styles.cardHeader}>
-              <h2 className={styles.cardTitle}>Executive Matter Overview</h2>
+              <h2 className={styles.cardTitle}>Matter at a glance</h2>
               <span className={styles.dateText}>
                 Last updated {new Date(matter.updatedAt).toLocaleDateString()}
               </span>
             </div>
-            <p style={{ color: '#cbd5e1', lineHeight: 1.6, margin: 0 }}>
+            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
               This matter encompasses {matter.documents.length} member document
               {matter.documents.length === 1 ? '' : 's'}. {matter.metrics.analyzedDocuments} of{' '}
               {matter.metrics.totalDocuments} documents have been analyzed with Legal X-Ray. The
@@ -848,7 +837,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
             <div className={styles.card}>
               <div className={styles.cardHeader}>
                 <div>
-                  <h2 className={styles.cardTitle}>Objective Matter Readiness States</h2>
+                  <h2 className={styles.cardTitle}>Ready for review</h2>
                   <div className={styles.sectionSubtitle}>
                     Workflow status classifications based on current evidence without subjective win-rate predictions.
                   </div>
@@ -949,7 +938,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
             <div className={styles.card}>
               <div className={styles.cardHeader}>
                 <div>
-                  <h2 className={styles.cardTitle}>Recent Matter Activity Trail</h2>
+                  <h2 className={styles.cardTitle}>Recent activity</h2>
                   <div className={styles.sectionSubtitle}>
                     Append-only audit history of document and matter operations.
                   </div>
@@ -1000,17 +989,9 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                       View
                     </Button>
                     {doc.status === 'READY' ? (
-                      <Link href={`/analyze/${doc.documentId}`}>
-                        <Button size="sm" variant="primary">
-                          Legal X-Ray
-                        </Button>
-                      </Link>
+                      <LinkButton href={`/analyze/${doc.documentId}`} size="sm" variant="primary">Legal X-Ray</LinkButton>
                     ) : (
-                      <Link href={`/analyze/${doc.documentId}`}>
-                        <Button size="sm" variant="secondary">
-                          Analyze
-                        </Button>
-                      </Link>
+                      <LinkButton href={`/analyze/${doc.documentId}`} size="sm" variant="secondary">Analyze</LinkButton>
                     )}
                   </div>
                 </div>
@@ -1354,7 +1335,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                     style={{
                       fontSize: '0.82rem',
                       fontWeight: 700,
-                      color: '#94a3b8',
+                      color: 'var(--text-muted)',
                       textTransform: 'uppercase',
                       marginBottom: '0.25rem',
                     }}
@@ -1389,7 +1370,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                             <span className={styles.roleBadge}>{docNode.role.replace(/_/g, ' ')}</span>
                           </div>
 
-                          <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                             {docNode.totalEvidenceCount} evidence item
                             {docNode.totalEvidenceCount === 1 ? '' : 's'} ·{' '}
                             {docNode.verifiedEvidenceCount} verified
@@ -1455,7 +1436,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                             <h3 style={{ fontSize: '1.15rem', color: '#ffffff', margin: '0 0 0.25rem 0' }}>
                               📄 {activeDoc.title} — Page {selectedSourcePage || 1}
                             </h3>
-                            <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                               Role: {activeDoc.role.replace(/_/g, ' ')} ·{' '}
                               {activePageNode
                                 ? `${activePageNode.evidenceItems.length} Evidence Excerpts`
@@ -1534,7 +1515,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                                     </span>
 
                                     {evItem.sourceReference && (
-                                      <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                                         {evItem.sourceReference}
                                       </span>
                                     )}
@@ -1543,7 +1524,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                                   {/* Used By Lineage Chips */}
                                   {evItem.usedBy && evItem.usedBy.length > 0 && (
                                     <div className={styles.usedBySection}>
-                                      <span style={{ fontSize: '0.74rem', color: '#94a3b8', fontWeight: 600 }}>
+                                      <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>
                                         Referenced In Matter Findings:
                                       </span>
                                       <div className={styles.usedByChips}>
@@ -1648,7 +1629,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                     alignItems: 'center',
                     padding: '0.25rem 0.5rem',
                     fontSize: '0.85rem',
-                    color: '#94a3b8',
+                    color: 'var(--text-muted)',
                   }}
                 >
                   <span>
@@ -1794,7 +1775,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                             )}
 
                             {ev.sourceReference && (
-                              <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
+                              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                                 Source Reference: {ev.sourceReference}
                               </span>
                             )}
@@ -1805,7 +1786,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                                 <span
                                   style={{
                                     fontSize: '0.74rem',
-                                    color: '#94a3b8',
+                                    color: 'var(--text-muted)',
                                     fontWeight: 600,
                                   }}
                                 >
@@ -1893,11 +1874,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                       </Button>
 
                       {doc.status === 'READY' && (
-                        <Link href={`/analyze/${doc.documentId}`}>
-                          <Button size="sm" variant="secondary">
-                            X-Ray
-                          </Button>
-                        </Link>
+                        <LinkButton href={`/analyze/${doc.documentId}`} size="sm" variant="secondary">X-Ray</LinkButton>
                       )}
 
                       <Button
@@ -1937,7 +1914,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                 <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#f1f5f9', marginBottom: '0.35rem' }}>
                   No dated events found
                 </h3>
-                <p style={{ maxWidth: '520px', margin: '0 auto', fontSize: '0.85rem', color: '#94a3b8', lineHeight: 1.5 }}>
+                <p style={{ maxWidth: '520px', margin: '0 auto', fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
                   This occurs when member documents do not contain explicit, verifiable calendar dates or when documents have not yet completed Legal X-Ray analysis. LexiGuide strictly derives timeline milestones from document text and never infers or estimates dates.
                 </p>
               </div>
@@ -1950,7 +1927,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                       {event.isEstablished ? event.dateValue : '⚠️ DATE NOT ESTABLISHED'}
                     </div>
                     <div className={styles.timelineLabel}>{event.label}</div>
-                    <div style={{ fontSize: '0.88rem', color: '#cbd5e1' }}>{event.description}</div>
+                    <div style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>{event.description}</div>
 
                     <div
                       className={styles.timelineDocTag}
@@ -2019,7 +1996,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                       </span>
                     </div>
 
-                    <div style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>{rel.description}</div>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{rel.description}</div>
 
                     {rel.sourceQuote && (
                       <div
@@ -2103,7 +2080,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                     <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
                       {item.title}
                     </h3>
-                    <p style={{ fontSize: '0.9rem', color: '#cbd5e1', margin: 0 }}>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0 }}>
                       {item.description}
                     </p>
 
@@ -2192,7 +2169,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                 {searchResults.totalMatches === 0 ? (
                   <div className={styles.emptyState}>
                     <p>No matches found for &ldquo;{searchQuery}&rdquo;.</p>
-                    <p style={{ fontSize: '0.82rem', color: '#94a3b8', marginTop: '0.25rem' }}>
+                    <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
                       Try adjusting your keywords or searching for broader terms (e.g. &ldquo;notice&rdquo;, &ldquo;payment&rdquo;, &ldquo;liability&rdquo;, &ldquo;termination&rdquo;).
                     </p>
                     <Button
@@ -2209,7 +2186,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                   </div>
                 ) : (
                   <>
-                    <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '1rem' }}>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
                       Found {searchResults.totalMatches} match
                       {searchResults.totalMatches === 1 ? '' : 'es'} across{' '}
                       {searchResults.results.length} document
@@ -2247,7 +2224,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                             >
                               Page {match.pageNumber}
                             </div>
-                            <div style={{ fontSize: '0.88rem', color: '#e2e8f0', lineHeight: 1.5 }}>
+                            <div style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                               {match.snippet}
                             </div>
                           </div>
@@ -2329,7 +2306,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                           fontSize: '0.78rem',
                           fontWeight: 700,
                           textTransform: 'uppercase',
-                          color: '#94a3b8',
+                          color: 'var(--text-muted)',
                           marginBottom: '0.4rem',
                         }}
                       >
@@ -2396,7 +2373,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                       >
                         Suggested Questions For Counsel
                       </div>
-                      <ul style={{ margin: 0, paddingLeft: '1.25rem', color: '#cbd5e1' }}>
+                      <ul style={{ margin: 0, paddingLeft: '1.25rem', color: 'var(--text-secondary)' }}>
                         {qaResponse.suggestedQuestionsForCounsel.map((sq, i) => (
                           <li key={i} style={{ fontSize: '0.88rem', marginBottom: '0.25rem' }}>
                             {sq}
@@ -2433,15 +2410,11 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                     <h3 className={styles.docItemTitle}>{doc.title}</h3>
                     <span className={styles.roleBadge}>{doc.role}</span>
                   </div>
-                  <div style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                     View complete breakdown and risk clauses directly in Legal X-Ray.
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                    <Link href={`/analyze/${doc.documentId}`}>
-                      <Button size="sm" variant="secondary">
-                        Open Legal X-Ray →
-                      </Button>
-                    </Link>
+                    <LinkButton href={`/analyze/${doc.documentId}`} size="sm" variant="secondary">Open Legal X-Ray →</LinkButton>
                   </div>
                 </div>
               ))}
@@ -2471,11 +2444,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                 >
                   {isGeneratingCounselQuestions ? 'Generating...' : '⚡ Refresh Questions'}
                 </Button>
-                <Link href={`/prepare?matterId=${matter.id}`}>
-                  <Button size="sm" variant="primary">
-                    Export Consultation Brief →
-                  </Button>
-                </Link>
+                <LinkButton href={`/prepare?matterId=${matter.id}`} size="sm" variant="primary">Export Consultation Brief →</LinkButton>
               </div>
             </div>
 
@@ -2501,7 +2470,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                         <Button
                           size="sm"
                           variant="ghost"
-                          style={{ color: '#94a3b8', fontSize: '0.75rem' }}
+                          style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}
                           onClick={() => handleCopyQuestion(q)}
                         >
                           {copiedQuestionId === q.id ? '✓ Copied' : '📋 Copy Question'}
@@ -2603,7 +2572,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                     <h2 className={styles.briefTitle}>{matterBrief.title}</h2>
                     <p className={styles.briefSummaryText}>{matterBrief.summary}</p>
                     {matterBrief.parties.length > 0 && (
-                      <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.5rem' }}>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
                         Identified Parties: {matterBrief.parties.join(', ')}
                       </div>
                     )}
@@ -2620,7 +2589,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                             <h4 className={styles.docItemTitle}>{d.title}</h4>
                             <span className={styles.roleBadge}>{d.role.replace(/_/g, ' ')}</span>
                           </div>
-                          <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: '0.4rem 0 0 0' }}>
+                          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0.4rem 0 0 0' }}>
                             Status: {d.status}
                           </p>
                         </div>
@@ -2690,7 +2659,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                           <div style={{ fontWeight: 700, color: '#ffffff', marginTop: '0.35rem' }}>
                             {cq.question}
                           </div>
-                          <div style={{ fontSize: '0.82rem', color: '#94a3b8', marginTop: '0.25rem' }}>
+                          <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
                             Rationale: {cq.rationale}
                           </div>
                         </div>
@@ -2704,7 +2673,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                     <h3 className={styles.briefSectionTitle}>Preparation Action Checklist</h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                       {matterBrief.actionItems.map((ac) => (
-                        <div key={ac.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#e2e8f0', fontSize: '0.88rem' }}>
+                        <div key={ac.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
                           <span style={{ color: 'var(--color-gold, #c8a256)' }}>
                             {ac.status === 'COMPLETED' ? '☑' : '☐'}
                           </span>
@@ -2774,7 +2743,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                       </h4>
                       <span className={styles.suggestionPill}>USER_PROVIDED</span>
                     </div>
-                    <p style={{ margin: '0.5rem 0', color: '#cbd5e1', fontSize: '0.88rem' }}>
+                    <p style={{ margin: '0.5rem 0', color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
                       {note.content}
                     </p>
                     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -2805,7 +2774,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
               style={{
                 background: 'transparent',
                 border: 'none',
-                color: '#94a3b8',
+                color: 'var(--text-muted)',
                 fontSize: '1.25rem',
                 cursor: 'pointer',
               }}
@@ -2859,15 +2828,11 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
             </h2>
 
             {allAvailableDocs.length === 0 ? (
-              <div style={{ color: '#94a3b8', marginBottom: '1.5rem' }}>
+              <div style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
                 All uploaded documents are already in this matter, or no documents have been
                 uploaded yet.
                 <div style={{ marginTop: '1rem' }}>
-                  <Link href="/dashboard">
-                    <Button variant="primary" size="sm">
-                      Upload New Document →
-                    </Button>
-                  </Link>
+                  <LinkButton href="/dashboard" variant="primary" size="sm">Upload New Document →</LinkButton>
                 </div>
               </div>
             ) : (
@@ -2878,7 +2843,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                       display: 'block',
                       fontSize: '0.75rem',
                       fontWeight: 600,
-                      color: '#94a3b8',
+                      color: 'var(--text-muted)',
                       marginBottom: '0.4rem',
                     }}
                   >
@@ -2904,7 +2869,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                       display: 'block',
                       fontSize: '0.75rem',
                       fontWeight: 600,
-                      color: '#94a3b8',
+                      color: 'var(--text-muted)',
                       marginBottom: '0.4rem',
                     }}
                   >
@@ -2983,7 +2948,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                     display: 'block',
                     fontSize: '0.75rem',
                     fontWeight: 600,
-                    color: '#94a3b8',
+                    color: 'var(--text-muted)',
                     marginBottom: '0.4rem',
                   }}
                 >
@@ -3006,7 +2971,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                     display: 'block',
                     fontSize: '0.75rem',
                     fontWeight: 600,
-                    color: '#94a3b8',
+                    color: 'var(--text-muted)',
                     marginBottom: '0.4rem',
                   }}
                 >
@@ -3029,7 +2994,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                       display: 'block',
                       fontSize: '0.75rem',
                       fontWeight: 600,
-                      color: '#94a3b8',
+                      color: 'var(--text-muted)',
                       marginBottom: '0.4rem',
                     }}
                   >
@@ -3055,7 +3020,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                       display: 'block',
                       fontSize: '0.75rem',
                       fontWeight: 600,
-                      color: '#94a3b8',
+                      color: 'var(--text-muted)',
                       marginBottom: '0.4rem',
                     }}
                   >
