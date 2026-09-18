@@ -10,6 +10,8 @@ import { MatterService } from '@/lib/matter/service';
 import { CitationValidator } from '@/lib/evidence/validator';
 import { GeminiService } from '@/lib/ai/gemini';
 import { NotFoundError } from '@/lib/utils/errors';
+import { getDb, schema } from '@/lib/db';
+import { generateId } from '@/lib/utils/id';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -147,5 +149,65 @@ describe('Phase 10: Matter Security & Data Isolation', () => {
     await expect(
       matterService.getDocumentPageEvidence(matter1.id, doc2.id, 1)
     ).rejects.toThrow(NotFoundError);
+  });
+
+  it('rejects foreign document, comparison, and relationship links in action items', async () => {
+    const matterA = await matterService.createMatter({ title: 'Action isolation A' });
+    const matterB = await matterService.createMatter({ title: 'Action isolation B' });
+    const docs = [];
+    for (const title of ['A', 'B1', 'B2']) {
+      const doc = await docService.uploadDocument({
+        filename: `${title}.pdf`,
+        mimeType: 'application/pdf',
+        buffer: createSamplePdf(`${title} matter evidence`),
+      });
+      await docService.processDocument(doc.id);
+      docs.push(doc);
+    }
+    await matterService.addDocumentToMatter(matterA.id, docs[0].id);
+    await matterService.addDocumentToMatter(matterB.id, docs[1].id);
+    await matterService.addDocumentToMatter(matterB.id, docs[2].id);
+
+    const comparisonId = generateId('comp');
+    const relationshipId = generateId('rel');
+    const now = new Date().toISOString();
+    getDb().insert(schema.comparisons).values({
+      id: comparisonId,
+      baseDocumentId: docs[1].id,
+      targetDocumentId: docs[2].id,
+      createdAt: now,
+    }).run();
+    getDb().insert(schema.documentRelationships).values({
+      id: relationshipId,
+      matterId: matterB.id,
+      sourceDocumentId: docs[1].id,
+      targetDocumentId: docs[2].id,
+      relationshipType: 'RELATED_TO',
+      description: 'B documents are related',
+      createdAt: now,
+      updatedAt: now,
+    }).run();
+
+    for (const link of [
+      { relatedDocumentId: docs[1].id },
+      { relatedComparisonId: comparisonId },
+      { relatedRelationshipId: relationshipId },
+    ]) {
+      await expect(matterService.createActionItem(matterA.id, {
+        title: 'Foreign link attempt',
+        description: '',
+        ...link,
+      })).rejects.toMatchObject({ statusCode: 400 });
+    }
+    expect(await matterService.getActionItems(matterA.id)).toEqual([]);
+
+    const valid = await matterService.createActionItem(matterB.id, {
+      title: 'Review B documents with counsel',
+      description: '',
+      relatedDocumentId: docs[1].id,
+      relatedComparisonId: comparisonId,
+      relatedRelationshipId: relationshipId,
+    });
+    expect(valid.relatedDocumentId).toBe(docs[1].id);
   });
 });

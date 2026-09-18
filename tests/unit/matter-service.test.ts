@@ -138,6 +138,8 @@ describe('Phase 8: MatterService Core & Lifecycle', () => {
 
       expect(archivedList.some((m) => m.id === archived.id)).toBe(true);
       expect(archivedList.some((m) => m.id === active.id)).toBe(false);
+      expect(activeList.find((m) => m.id === active.id)?.documentCount).toBe(0);
+      expect(activeList.find((m) => m.id === active.id)?.analyzedCount).toBe(0);
     });
 
     it('updates matter details', async () => {
@@ -192,6 +194,9 @@ describe('Phase 8: MatterService Core & Lifecycle', () => {
       const detail = await matterService.getMatter(matter.id);
       expect(detail.documents).toHaveLength(2);
       expect(detail.metrics.totalDocuments).toBe(2);
+      const listed = (await matterService.listMatters()).find((item) => item.id === matter.id);
+      expect(listed?.documentCount).toBe(2);
+      expect(listed?.analyzedCount).toBe(2);
     });
 
     it('rejects adding non-ready or un-processed documents', async () => {

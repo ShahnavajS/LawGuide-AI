@@ -139,6 +139,8 @@ describe('Phase 10: Matter Source Map Hierarchy & Coverage Metrics', () => {
     expect(sourceMap.unlinkedEvidenceCount).toBe(1);
     expect(sourceMap.coverage.actionItemsWithEvidence.total).toBe(1);
     expect(sourceMap.coverage.actionItemsWithEvidence.withEvidence).toBe(1);
+    expect(sourceMap.evidenceItems).toHaveLength(sourceMap.coverage.totalEvidenceItems);
+    expect(sourceMap.evidenceItems.some((item) => item.classification === 'USER_PROVIDED')).toBe(true);
 
     // Verify Document nodes
     const apaNode = sourceMap.documents.find((d) => d.documentId === doc1.id);

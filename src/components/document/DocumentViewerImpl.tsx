@@ -13,10 +13,15 @@ if (typeof window !== 'undefined') {
 }
 
 const pdfBytesCache = new Map<string, Promise<Uint8Array>>();
+const MAX_CACHED_PDFS = 3;
 
 function getPdfBytes(fileUrl: string): Promise<Uint8Array> {
   const cached = pdfBytesCache.get(fileUrl);
-  if (cached) return cached;
+  if (cached) {
+    pdfBytesCache.delete(fileUrl);
+    pdfBytesCache.set(fileUrl, cached);
+    return cached;
+  }
 
   const request = (async () => {
     const response = await fetch(fileUrl);
@@ -34,6 +39,9 @@ function getPdfBytes(fileUrl: string): Promise<Uint8Array> {
   })();
 
   pdfBytesCache.set(fileUrl, request);
+  if (pdfBytesCache.size > MAX_CACHED_PDFS) {
+    pdfBytesCache.delete(pdfBytesCache.keys().next().value!);
+  }
   void request.catch(() => {
     if (pdfBytesCache.get(fileUrl) === request) pdfBytesCache.delete(fileUrl);
   });

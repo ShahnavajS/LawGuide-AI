@@ -44,7 +44,7 @@ Findings use five labels to show their source and review status. Labels do not e
 - **Framework**: Next.js 16 (App Router, Turbopack, React 19, Strict TypeScript)
 - **Styling**: Vanilla CSS and CSS Modules with paper-and-ink design tokens (no Tailwind or graphics runtime). See [design system](./DESIGN.md) and [frontend research](./docs/frontend-research.md).
 - **AI Engine**: Google Gemini via `@google/genai` (Configurable model, default `gemini-2.5-flash`)
-- **Database**: SQLite with Write-Ahead Logging (`better-sqlite3` + `drizzle-orm`)
+- **Database**: SQLite (`better-sqlite3` + `drizzle-orm`); production defaults to DELETE journal mode, development to WAL
 - **Document Persistence**: Decoupled filesystem storage abstraction (`LocalStorageService`)
 - **Testing**: Vitest for unit tests
 
@@ -111,7 +111,7 @@ Findings use five labels to show their source and review status. Labels do not e
 ```bash
 git clone <repository-url>
 cd "LawGuide AI"
-npm install
+npm ci
 ```
 
 ### 2. Configure Environment
@@ -131,11 +131,11 @@ GEMINI_MODEL=gemini-2.5-flash
 DATABASE_URL=./data/lexiguide.db
 STORAGE_DIR=./uploads
 NODE_ENV=development
-APP_ACCESS_PASSWORD=replace_with_a_long_private_password
-APP_SESSION_SECRET=replace_with_at_least_32_random_characters
+# For a private development workspace, set both to real independent secrets.
+# Leave both unset to use the optional local development mode.
 ```
 
-Existing migrations are applied when the database connection opens. `npm run db:generate` creates new migrations after a schema change; it is not required for first startup.
+Existing migrations are applied when the database connection opens. `npm run db:generate` creates new migrations after a schema change; it is not required for first startup. Production requires both access secrets and fails closed when they are absent or placeholders. The copied `.env.example` leaves them unset for local development.
 
 ### 4. Start Development Server
 
@@ -288,7 +288,7 @@ The phase checklist below is historical. Current security boundaries, limitation
 ### Architecture & Trust Model
 LexiGuide AI operates on a **single-tenant / private-workspace model**:
 - Documents and analysis records are persisted locally in SQLite (`data/lexiguide.db`) and an isolated filesystem directory (`uploads/`).
-- Document ownership, matter membership, and physical storage boundaries are enforced strictly on the server.
+- Matter membership and physical storage paths are checked on the server. All signed-in users share access to the same documents and matters.
 - The platform does not claim multi-tenant enterprise isolation or GDPR/DPDP certification out-of-the-box; it is intended for single-tenant self-hosted servers, private intranet VMs, or containerized internal legal ops environments.
 
 ### Deployment Requirements
@@ -306,7 +306,7 @@ LexiGuide AI operates on a **single-tenant / private-workspace model**:
        lexiguide-ai:latest
      ```
 3. **Database Concurrency**:
-   - SQLite Write-Ahead Logging (`WAL`) mode is enabled automatically on connection to support concurrent reader threads alongside serialized writes.
+   - Production defaults to SQLite DELETE journal mode; development defaults to WAL. `SQLITE_JOURNAL_MODE` can override this where the storage setup supports it.
 
 ### Operational Health Check
 - **Endpoint**: `GET /api/health`

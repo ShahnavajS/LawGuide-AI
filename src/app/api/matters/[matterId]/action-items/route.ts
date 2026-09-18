@@ -49,11 +49,14 @@ export async function POST(
     } catch {
       throw new ValidationError('Invalid JSON request body.');
     }
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      throw new ValidationError('Action item details must be a JSON object.');
+    }
 
     const service = getMatterService();
     const item = await service.createActionItem(
       matterId,
-      body as unknown as import('@/lib/ai/schemas').CreateActionItemInput
+      { ...body, sourceType: 'USER_CREATED', userProvided: true } as unknown as import('@/lib/ai/schemas').CreateActionItemInput
     );
 
     return NextResponse.json({ item }, { status: 201 });

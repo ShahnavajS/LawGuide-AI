@@ -63,7 +63,27 @@ describe('Phase 9: Matter Action Items & Counsel Workflow API Routes', () => {
       expect(data.item).toBeDefined();
       expect(data.item.title).toBe('Request Schedule B from opposing party');
       expect(data.item.priority).toBe('HIGH');
+      expect(data.item.sourceType).toBe('USER_CREATED');
+      expect(data.item.userProvided).toBe(true);
       actionItemId = data.item.id;
+    });
+
+    it('rejects malformed action items and does not trust client provenance', async () => {
+      const url = `http://localhost:3000/api/matters/${matterId}/action-items`;
+      const params = { params: Promise.resolve({ matterId }) };
+      const malformed = await POST_ACTION_ITEM(new NextRequest(url, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: 'null',
+      }), params);
+      expect(malformed.status).toBe(400);
+
+      const spoofed = await POST_ACTION_ITEM(new NextRequest(url, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'Manual question', description: '', sourceType: 'LEGAL_XRAY', userProvided: false }),
+      }), params);
+      expect(spoofed.status).toBe(201);
+      const { item } = await spoofed.json();
+      expect(item.sourceType).toBe('USER_CREATED');
+      expect(item.userProvided).toBe(true);
     });
 
     it('GET /api/matters/[matterId]/action-items > lists action items', async () => {

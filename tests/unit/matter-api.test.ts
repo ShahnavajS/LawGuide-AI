@@ -63,6 +63,18 @@ describe('Phase 8: Matter API Routes', () => {
       const res = await POST_MATTERS(req);
       expect(res.status).toBe(400);
     });
+
+    it('returns a safe 400 for null or wrongly typed matter details', async () => {
+      for (const payload of ['null', '{"title":42}']) {
+        const res = await POST_MATTERS(new NextRequest('http://localhost:3000/api/matters', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+        }));
+        expect(res.status).toBe(400);
+        expect((await res.json()).error.code).toBe('VALIDATION_ERROR');
+      }
+    });
   });
 
   describe('GET /api/matters', () => {

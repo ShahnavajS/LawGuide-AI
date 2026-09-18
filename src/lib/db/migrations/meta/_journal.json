@@ -64,6 +64,27 @@
       "when": 1789630173668,
       "tag": "0008_slow_shotgun",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1789731436842,
+      "tag": "0009_living_daredevil",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1789735325925,
+      "tag": "0010_shallow_joshua_kane",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1789755659710,
+      "tag": "0011_old_starjammers",
+      "breakpoints": true
     }
   ]
 }

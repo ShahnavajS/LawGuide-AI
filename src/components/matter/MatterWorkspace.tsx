@@ -165,7 +165,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
   const [evidenceFilterVerification, setEvidenceFilterVerification] = useState<string>('ALL');
   const [evidenceFilterDocId, setEvidenceFilterDocId] = useState<string>('ALL');
   const [evidenceSearchQuery, setEvidenceSearchQuery] = useState<string>('');
-  const [isLoadingSourceMap, setIsLoadingSourceMap] = useState<boolean>(false);
+  const [isLoadingSourceMap, setIsLoadingSourceMap] = useState<boolean>(true);
 
   // 1. Fetch Matter Details & Core Phase 9/10 Data
   useEffect(() => {
@@ -196,13 +196,10 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
 
     async function loadPhaseData() {
       try {
-        const [actRes, readRes, actTrailRes, briefRes, smRes, ledRes] = await Promise.all([
+        const [actRes, readRes, actTrailRes] = await Promise.all([
           fetch(`/api/matters/${matterId}/action-items`),
           fetch(`/api/matters/${matterId}/readiness`),
           fetch(`/api/matters/${matterId}/activity?limit=20`),
-          fetch(`/api/matters/${matterId}/brief`),
-          fetch(`/api/matters/${matterId}/source-map`),
-          fetch(`/api/matters/${matterId}/evidence`),
         ]);
 
         if (ignore) return;
@@ -217,27 +214,6 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
         if (actTrailRes.ok) {
           const d = await actTrailRes.json();
           setActivities(d.activity || []);
-        }
-        if (briefRes.ok) {
-          const d = await briefRes.json();
-          setMatterBrief(d.brief || null);
-        }
-        if (smRes.ok) {
-          const d = (await smRes.json()) as MatterSourceMapResponse;
-          setSourceMapData(d);
-          if (d.documents && d.documents.length > 0) {
-            setSelectedSourceDocId((prev) => prev || d.documents[0].documentId);
-            const firstWithEvidence = d.documents.find((doc) => doc.pagesWithEvidence.length > 0);
-            if (firstWithEvidence && firstWithEvidence.pagesWithEvidence.length > 0) {
-              setSelectedSourcePage((prev) => prev || firstWithEvidence.pagesWithEvidence[0].pageNumber);
-            } else {
-              setSelectedSourcePage((prev) => prev || 1);
-            }
-          }
-        }
-        if (ledRes.ok) {
-          const d = await ledRes.json();
-          setEvidenceLedger(d.items || []);
         }
       } catch {
         // non-blocking
@@ -293,6 +269,28 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
         .catch(() => {});
     }
   }, [matterId, activeTab, counselQuestions.length]);
+
+  useEffect(() => {
+    if (!matterId || activeTab !== 'sourceMap') return;
+    let ignore = false;
+    fetch(`/api/matters/${matterId}/source-map`).then(async (mapResponse) => {
+      if (mapResponse.ok) {
+        const data = (await mapResponse.json()) as MatterSourceMapResponse;
+        if (!ignore) {
+          setSourceMapData(data);
+          setEvidenceLedger(data.evidenceItems);
+          if (data.documents.length > 0) {
+            setSelectedSourceDocId((prev) => prev || data.documents[0].documentId);
+            const firstWithEvidence = data.documents.find((doc) => doc.pagesWithEvidence.length > 0);
+            setSelectedSourcePage((prev) => prev || firstWithEvidence?.pagesWithEvidence[0]?.pageNumber || 1);
+          }
+        }
+      }
+    }).catch(() => {}).finally(() => {
+      if (!ignore) setIsLoadingSourceMap(false);
+    });
+    return () => { ignore = true; };
+  }, [matterId, activeTab, refreshTrigger]);
 
   // Phase 9 Handlers: Action Items
   const handleToggleActionItemStatus = async (item: MatterActionItem) => {
@@ -1261,13 +1259,9 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                     try {
                       const res = await fetch(`/api/matters/${matterId}/source-map`);
                       if (res.ok) {
-                        const sm = await res.json();
+                        const sm = (await res.json()) as MatterSourceMapResponse;
                         setSourceMapData(sm);
-                      }
-                      const ledRes = await fetch(`/api/matters/${matterId}/evidence`);
-                      if (ledRes.ok) {
-                        const led = await ledRes.json();
-                        setEvidenceLedger(led.items || []);
+                        setEvidenceLedger(sm.evidenceItems);
                       }
                     } finally {
                       setIsLoadingSourceMap(false);
@@ -1344,8 +1338,8 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                   </div>
 
                   {!sourceMapData || sourceMapData.documents.length === 0 ? (
-                    <div style={{ color: '#64748b', fontSize: '0.85rem' }}>
-                      No documents in this matter yet.
+                    <div role={isLoadingSourceMap ? 'status' : undefined} style={{ color: '#64748b', fontSize: '0.85rem' }}>
+                      {isLoadingSourceMap ? 'Loading document map…' : 'No documents in this matter yet.'}
                     </div>
                   ) : (
                     sourceMapData.documents.map((docNode) => {
@@ -1672,7 +1666,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
 
                 {evidenceLedger.length === 0 ? (
                   <div className={styles.emptyState}>
-                    <p>No evidence has been mapped yet.</p>
+                    <p>{isLoadingSourceMap ? 'Loading evidence…' : 'No evidence has been mapped yet.'}</p>
                   </div>
                 ) : (
                   <div className={styles.ledgerCardList}>
@@ -2619,17 +2613,18 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                                 {pt.docTitle || 'Document'}
                                 {pt.page ? ` (p.${pt.page})` : ''} · {pt.classification}
                               </span>
-                              {pt.classification === 'USER_PROVIDED' ? (
+                              {pt.classification !== 'DOCUMENT_FACT' || pt.verificationStatus !== 'VERIFIED' ? (
                                 <span className={styles.verificationBadgeUnverified}>
-                                  USER PROVIDED
+                                  NEEDS REVIEW
                                 </span>
                               ) : (
                                 <span className={styles.verificationBadgeVerified}>
-                                  VERIFIED FACT
+                                  SOURCE VERIFIED
                                 </span>
                               )}
                             </div>
                           </div>
+                          {pt.quotedText && <blockquote>{pt.quotedText}</blockquote>}
                         </div>
                       ))}
                     </div>

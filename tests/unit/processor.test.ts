@@ -3,6 +3,8 @@ import { PdfDocumentProcessor } from '@/lib/document/processor';
 import { DocumentService } from '@/lib/document/service';
 import { LocalStorageService } from '@/lib/document/storage';
 import { getDb } from '@/lib/db';
+import { schema } from '@/lib/db';
+import { sql } from 'drizzle-orm';
 import { AppError, NotFoundError, ValidationError } from '@/lib/utils/errors';
 import fs from 'fs/promises';
 import path from 'path';
@@ -223,6 +225,33 @@ describe('Phase 3: Document Processing Service & Lifecycle', () => {
     // Verify pages are not duplicated
     const postPages = await service.getDocumentPages(testDocId);
     expect(postPages.length).toBe(initialPages.length);
+  });
+
+  it('keeps existing pages when a replacement page write fails', async () => {
+    const doc = await service.uploadDocument({
+      filename: 'Atomic_Processing.pdf',
+      mimeType: 'application/pdf',
+      buffer: createMultiPageTestPdf(),
+    });
+    const db = getDb();
+    db.insert(schema.documentPages).values({
+      id: `old_${doc.id}`,
+      documentId: doc.id,
+      pageNumber: 99,
+      text: 'Previously extracted page',
+      createdAt: new Date().toISOString(),
+    }).run();
+    db.run(sql.raw(`CREATE TEMP TRIGGER fail_page_two BEFORE INSERT ON document_pages
+      WHEN NEW.document_id = '${doc.id}' AND NEW.page_number = 2
+      BEGIN SELECT RAISE(FAIL, 'simulated page write failure'); END`));
+    try {
+      await expect(service.processDocument(doc.id)).rejects.toThrow();
+      expect((await service.getDocumentById(doc.id)).status).toBe('FAILED');
+      expect((await service.getDocumentPages(doc.id)).map((page) => page.text)).toEqual(['Previously extracted page']);
+    } finally {
+      db.run(sql.raw('DROP TRIGGER fail_page_two'));
+      await service.deleteDocument(doc.id);
+    }
   });
 
   it('rejects processing with invalid or missing document ID', async () => {

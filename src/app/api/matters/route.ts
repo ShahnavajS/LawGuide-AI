@@ -17,9 +17,16 @@ export async function POST(request: NextRequest) {
       throw new ValidationError('Invalid JSON request body.');
     }
 
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      throw new ValidationError('Matter details must be a JSON object.');
+    }
     const { title, description, jurisdiction, jurisdictionProvenance } = body;
-    if (!title || !title.trim()) {
+    if (typeof title !== 'string' || !title.trim()) {
       throw new ValidationError('Matter title is required.');
+    }
+    if ((description !== undefined && typeof description !== 'string') ||
+        (jurisdiction !== undefined && typeof jurisdiction !== 'string')) {
+      throw new ValidationError('Matter details must be text.');
     }
 
     const service = getMatterService();

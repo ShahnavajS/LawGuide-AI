@@ -2,6 +2,7 @@
  * Environment configuration and validation.
  * Ensures critical server secrets are never leaked to client bundles.
  */
+import { authConfiguration } from '@/lib/security/workspace-auth';
 
 export interface AppConfig {
   gemini: {
@@ -67,6 +68,9 @@ export function validateProductionConfig(env: Record<string, string | undefined>
   const rawStorageDir = env.STORAGE_DIR !== undefined ? env.STORAGE_DIR : './uploads';
   if (!rawStorageDir || !rawStorageDir.trim()) {
     errors.push('STORAGE_DIR is required and cannot be empty.');
+  }
+  if (env.NODE_ENV === 'production' && !authConfiguration(env).configured) {
+    errors.push('APP_ACCESS_PASSWORD and APP_SESSION_SECRET must be set to strong, non-placeholder values.');
   }
 
   const apiKey = env.GEMINI_API_KEY?.trim() || '';

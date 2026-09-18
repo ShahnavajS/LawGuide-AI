@@ -19,7 +19,18 @@ export async function POST(request: NextRequest) {
       throw new ValidationError('Invalid JSON request body.');
     }
 
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      throw new ValidationError('Request body must be an object.');
+    }
+
     const { documentId, comparisonId, matterId, purpose, userNotes, force } = body;
+
+    if ([documentId, comparisonId, matterId].some((id) => id !== undefined && (typeof id !== 'string' || !id.trim())) ||
+      (purpose !== undefined && (typeof purpose !== 'string' || purpose.length > 2000)) ||
+      (userNotes !== undefined && (!Array.isArray(userNotes) || userNotes.length > 10 || userNotes.some((note) => typeof note !== 'string' || note.length > 2000))) ||
+      (force !== undefined && typeof force !== 'boolean')) {
+      throw new ValidationError('Invalid preparation input.');
+    }
 
     if (!documentId && !comparisonId && !matterId) {
       throw new ValidationError('At least one of documentId, comparisonId, or matterId is required.');

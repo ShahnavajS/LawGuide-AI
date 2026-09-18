@@ -122,4 +122,40 @@ describe('Phase 9: Counsel Questions Generation & Anti-Adjudication Neutrality',
       expect(qLower).not.toContain('you should sue');
     }
   });
+
+  it('drops model questions with foreign or fabricated citations', async () => {
+    const matterA = await matterService.createMatter({ title: 'Counsel matter A' });
+    const matterB = await matterService.createMatter({ title: 'Counsel matter B' });
+    const docA = await docService.uploadDocument({
+      filename: 'alpha.pdf', mimeType: 'application/pdf',
+      buffer: createSamplePdf('Alpha source text for counsel.'),
+    });
+    const docB = await docService.uploadDocument({
+      filename: 'beta.pdf', mimeType: 'application/pdf',
+      buffer: createSamplePdf('Beta private source text.'),
+    });
+    await docService.processDocument(docA.id);
+    await docService.processDocument(docB.id);
+    await matterService.addDocumentToMatter(matterA.id, docA.id);
+    await matterService.addDocumentToMatter(matterB.id, docB.id);
+
+    const fakeGemini = {
+      isConfigured: () => true,
+      generateStructured: async () => [
+        { question: 'What does the Beta document require?', sourceType: 'DOCUMENT', documentId: docB.id,
+          documentTitle: docB.title, pageNumber: 1, quotedText: 'Beta private source text.' },
+        { question: 'Does a fabricated Alpha clause apply?', sourceType: 'DOCUMENT', documentId: docA.id,
+          pageNumber: 1, quotedText: 'This clause was never written.' },
+        { question: 'What should counsel clarify about the Alpha text?', sourceType: 'DOCUMENT',
+          documentId: docA.id, documentTitle: 'Spoofed title', pageNumber: 1,
+          quotedText: 'Alpha source text for counsel.', isUserProvided: true },
+      ],
+    } as unknown as GeminiService;
+    const service = new MatterService(docService, analysisService, fakeGemini, new CitationValidator());
+    const result = await service.generateCounselQuestions(matterA.id);
+    expect(result.questions).toHaveLength(1);
+    expect(result.questions[0].documentId).toBe(docA.id);
+    expect(result.questions[0].documentTitle).toBe(docA.title);
+    expect(result.questions[0].isUserProvided).toBe(false);
+  });
 });

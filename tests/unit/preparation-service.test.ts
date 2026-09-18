@@ -8,6 +8,9 @@ import { LocalStorageService } from '@/lib/document/storage';
 import { AnalysisService } from '@/lib/analysis/service';
 import { ComparisonService } from '@/lib/comparison/service';
 import { PreparationService } from '@/lib/preparation/service';
+import { MatterService } from '@/lib/matter/service';
+import { getDb, schema } from '@/lib/db';
+import { generateId } from '@/lib/utils/id';
 import { CitationValidator } from '@/lib/evidence/validator';
 import { GeminiService } from '@/lib/ai/gemini';
 import { AppError, NotFoundError, ValidationError } from '@/lib/utils/errors';
@@ -198,6 +201,74 @@ describe('Phase 6: PreparationService Layer', () => {
     });
 
     expect(second.id).not.toBe(first.id);
+  });
+
+  it('keeps matter briefs separate and rejects sources from another matter', async () => {
+    const gemini = new GeminiService();
+    gemini.isConfigured = () => false;
+    const matterService = new MatterService(docService, analysisService, gemini, new CitationValidator());
+    const matterA = await matterService.createMatter({ title: 'Preparation matter A' });
+    const matterB = await matterService.createMatter({ title: 'Preparation matter B' });
+    const docs = [];
+    for (const title of ['A', 'B1', 'B2']) {
+      const doc = await docService.uploadDocument({
+        filename: `${title}.pdf`,
+        mimeType: 'application/pdf',
+        buffer: createSamplePdf(),
+      });
+      await docService.processDocument(doc.id);
+      docs.push(doc);
+    }
+    await matterService.addDocumentToMatter(matterA.id, docs[0].id);
+    await matterService.addDocumentToMatter(matterB.id, docs[1].id);
+    await matterService.addDocumentToMatter(matterB.id, docs[2].id);
+    const comparisonId = generateId('comp');
+    getDb().insert(schema.comparisons).values({
+      id: comparisonId,
+      baseDocumentId: docs[1].id,
+      targetDocumentId: docs[2].id,
+      createdAt: new Date().toISOString(),
+    }).run();
+
+    await expect(preparationService.generatePreparation({ matterId: matterA.id, documentId: docs[1].id }))
+      .rejects.toThrow(ValidationError);
+    await expect(preparationService.generatePreparation({ matterId: matterA.id, comparisonId }))
+      .rejects.toThrow(ValidationError);
+    await expect(preparationService.getPreparationBySource(docs[1].id, undefined, matterA.id))
+      .rejects.toThrow(ValidationError);
+    expect(await preparationService.getPreparationBySource(undefined, undefined, matterA.id)).toBeNull();
+
+    const matterBrief = await matterService.generateMatterBrief(matterA.id);
+    await analysisService.analyzeDocument(docs[0].id);
+    const consultation = await preparationService.generatePreparation({ matterId: matterA.id, documentId: docs[0].id });
+    expect(consultation.checklist.length).toBeGreaterThan(0);
+    expect((await matterService.getMatterBrief(matterA.id))?.preparationId).toBe(matterBrief.preparationId);
+    expect((await preparationService.getPreparationBySource(undefined, undefined, matterA.id))?.id).toBe(consultation.id);
+
+    await matterService.generateMatterBrief(matterA.id, { force: true });
+    expect((await preparationService.getPreparationBySource(undefined, undefined, matterA.id))?.id).toBe(consultation.id);
+    await preparationService.generatePreparation({ matterId: matterA.id, documentId: docs[0].id, force: true });
+    expect((await matterService.getMatterBrief(matterA.id))?.documents[0].id).toBe(docs[0].id);
+  });
+
+  it('preserves the previous brief when replacement persistence fails', async () => {
+    const doc = await docService.uploadDocument({
+      filename: 'rollback.pdf',
+      mimeType: 'application/pdf',
+      buffer: createSamplePdf(),
+    });
+    await docService.processDocument(doc.id);
+    await analysisService.analyzeDocument(doc.id);
+    const first = await preparationService.generatePreparation({ documentId: doc.id });
+    const sqlite = getDb().$client;
+    sqlite.exec("CREATE TRIGGER fail_preparation_replace BEFORE INSERT ON preparations WHEN NEW.brief_kind = 'PREPARATION' BEGIN SELECT RAISE(ABORT, 'injected failure'); END");
+    try {
+      await expect(preparationService.generatePreparation({ documentId: doc.id, force: true }))
+        .rejects.toThrow('injected failure');
+    } finally {
+      sqlite.exec('DROP TRIGGER fail_preparation_replace');
+    }
+    expect((await preparationService.getPreparationBySource(doc.id))?.id).toBe(first.id);
   });
 
   it('updates checklist item state via updateChecklistState without mutating evidence', async () => {

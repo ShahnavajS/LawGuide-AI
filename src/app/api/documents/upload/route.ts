@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDocumentService } from '@/lib/document/service';
-import { formatSafeError, AppError } from '@/lib/utils/errors';
+import { formatSafeError, AppError, ValidationError } from '@/lib/utils/errors';
 import { MAX_DOCUMENT_FILE_SIZE_BYTES } from '@/lib/document/validation';
 
 export async function POST(request: NextRequest) {
@@ -9,7 +9,12 @@ export async function POST(request: NextRequest) {
     if (declaredBytes > MAX_DOCUMENT_FILE_SIZE_BYTES + 1024 * 1024) {
       return NextResponse.json({ error: { code: 'FILE_TOO_LARGE', message: 'PDF must be 20 MB or smaller.' } }, { status: 413 });
     }
-    const formData = await request.formData();
+    let formData: FormData;
+    try {
+      formData = await request.formData();
+    } catch {
+      throw new ValidationError('Invalid or incomplete multipart upload.');
+    }
     const file = formData.get('file');
 
     if (!file || !(file instanceof Blob)) {

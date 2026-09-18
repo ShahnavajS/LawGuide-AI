@@ -7,8 +7,11 @@ import { DocumentService } from '@/lib/document/service';
 import { LocalStorageService } from '@/lib/document/storage';
 import { AnalysisService } from '@/lib/analysis/service';
 import { MatterService } from '@/lib/matter/service';
+import { getDb, schema } from '@/lib/db';
 import { CitationValidator } from '@/lib/evidence/validator';
 import { GeminiService } from '@/lib/ai/gemini';
+import type { LegalXRayAnalysis } from '@/lib/ai/schemas';
+import { eq } from 'drizzle-orm';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -126,5 +129,50 @@ describe('Phase 9: Matter Brief Dossier Generation & Persistence', () => {
     expect(regeneratedBrief).toBeDefined();
     expect(regeneratedBrief.matterId).toBe(matter.id);
     expect(regeneratedBrief.preparationId).not.toBe(brief.preparationId);
+    expect(getDb().select({ id: schema.preparations.id }).from(schema.preparations).get()?.id)
+      .toBe(regeneratedBrief.preparationId);
+  });
+
+  it('retains the previous matter brief when regeneration fails to persist', async () => {
+    const matter = await matterService.createMatter({ title: 'Atomic matter brief' });
+    const original = await matterService.generateMatterBrief(matter.id);
+    const sqlite = getDb().$client;
+    sqlite.exec("CREATE TRIGGER fail_matter_brief_replace BEFORE INSERT ON preparations WHEN NEW.brief_kind = 'MATTER' BEGIN SELECT RAISE(ABORT, 'injected failure'); END");
+    try {
+      await expect(matterService.generateMatterBrief(matter.id, { force: true }))
+        .rejects.toThrow('injected failure');
+    } finally {
+      sqlite.exec('DROP TRIGGER fail_matter_brief_replace');
+    }
+    expect((await matterService.getMatterBrief(matter.id))?.preparationId).toBe(original.preparationId);
+  });
+
+  it('does not promote unverified analysis claims into verified matter facts', async () => {
+    const doc = await docService.uploadDocument({
+      filename: 'review-needed.pdf',
+      mimeType: 'application/pdf',
+      buffer: createSamplePdf('Agreement text without a date.'),
+    });
+    await docService.processDocument(doc.id);
+    const analysis = await analysisService.analyzeDocument(doc.id);
+    const stored = getDb().select().from(schema.analyses)
+      .where(eq(schema.analyses.documentId, doc.id)).get();
+    expect(stored).toBeDefined();
+    const modified: LegalXRayAnalysis = {
+      ...analysis,
+      parties: [{ id: 'unverified_party', name: 'Invented Party', role: 'Buyer', pageNumber: 1, quotedText: 'not in document', classification: 'NEEDS_REVIEW', isValidated: false }],
+      keyDates: [{ id: 'unverified_date', label: 'Effective date', dateValue: 'January 1', description: '', pageNumber: 1, quotedText: 'not in document', classification: 'NEEDS_REVIEW', isValidated: false }],
+    };
+    getDb().update(schema.analyses).set({ analysisDataJson: JSON.stringify(modified) })
+      .where(eq(schema.analyses.id, stored!.id)).run();
+    const matter = await matterService.createMatter({ title: 'Citation classification' });
+    await matterService.addDocumentToMatter(matter.id, doc.id);
+    const brief = await matterService.generateMatterBrief(matter.id);
+    expect(brief.parties).not.toContain('Invented Party');
+    expect(brief.keyFactualPoints[0]).toMatchObject({
+      classification: 'NEEDS_REVIEW',
+      verificationStatus: 'NEEDS_REVIEW',
+      quotedText: 'not in document',
+    });
   });
 });

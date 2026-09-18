@@ -83,6 +83,17 @@ describe('Phase 6: Preparation API Routes', () => {
   });
 
   describe('POST /api/preparations', () => {
+    it('rejects null bodies and malformed notes with a client error', async () => {
+      for (const body of ['null', JSON.stringify({ documentId: 'doc_example', userNotes: [123] })]) {
+        const req = new NextRequest('http://localhost:3000/api/preparations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body,
+        });
+        expect((await POST(req)).status).toBe(400);
+      }
+    });
+
     it('returns 400 when neither documentId nor comparisonId is provided', async () => {
       const req = new NextRequest('http://localhost:3000/api/preparations', {
         method: 'POST',

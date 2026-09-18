@@ -40,6 +40,7 @@ yarn-error.log*
 *.db-wal
 *.db-shm
 /data/
+/backups/
 
 # document storage
 /uploads/

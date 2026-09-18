@@ -3,7 +3,7 @@
  * Foundational schema supporting document metadata, analyses, citations, chat, and comparisons.
  */
 
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core';
 
 /**
  * Documents table: Stores metadata about uploaded legal files.
@@ -27,7 +27,7 @@ export const documents = sqliteTable('documents', {
   geminiFileUri: text('gemini_file_uri'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
-});
+}, (table) => [index('documents_created_at_idx').on(table.createdAt)]);
 
 export type DocumentRecord = typeof documents.$inferSelect;
 export type NewDocumentRecord = typeof documents.$inferInsert;
@@ -43,7 +43,7 @@ export const documentPages = sqliteTable('document_pages', {
   pageNumber: integer('page_number').notNull(),
   text: text('text').notNull(),
   createdAt: text('created_at').notNull(),
-});
+}, (table) => [index('document_pages_document_page_idx').on(table.documentId, table.pageNumber)]);
 
 export type DocumentPageRecord = typeof documentPages.$inferSelect;
 export type NewDocumentPageRecord = typeof documentPages.$inferInsert;
@@ -70,7 +70,7 @@ export const analyses = sqliteTable('analyses', {
     .default('PENDING'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
-});
+}, (table) => [index('analyses_document_id_idx').on(table.documentId)]);
 
 export type AnalysisRecord = typeof analyses.$inferSelect;
 export type NewAnalysisRecord = typeof analyses.$inferInsert;
@@ -144,7 +144,7 @@ export const comparisons = sqliteTable('comparisons', {
     .default('PENDING'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at'),
-});
+}, (table) => [index('comparisons_base_target_idx').on(table.baseDocumentId, table.targetDocumentId)]);
 
 export type ComparisonRecord = typeof comparisons.$inferSelect;
 export type NewComparisonRecord = typeof comparisons.$inferInsert;
@@ -169,7 +169,7 @@ export const matters = sqliteTable('matters', {
     .default('ACTIVE'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
-});
+}, (table) => [index('matters_status_updated_at_idx').on(table.status, table.updatedAt)]);
 
 export type MatterRecord = typeof matters.$inferSelect;
 export type NewMatterRecord = typeof matters.$inferInsert;
@@ -204,7 +204,10 @@ export const matterDocuments = sqliteTable('matter_documents', {
   roleConfirmed: integer('role_confirmed', { mode: 'boolean' }).notNull().default(false),
   displayOrder: integer('display_order').notNull().default(0),
   addedAt: text('added_at').notNull(),
-});
+}, (table) => [
+  index('matter_documents_matter_order_idx').on(table.matterId, table.displayOrder, table.addedAt),
+  index('matter_documents_document_id_idx').on(table.documentId),
+]);
 
 export type MatterDocumentRecord = typeof matterDocuments.$inferSelect;
 export type NewMatterDocumentRecord = typeof matterDocuments.$inferInsert;
@@ -252,7 +255,7 @@ export const documentRelationships = sqliteTable('document_relationships', {
     .default('SUGGESTED'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
-});
+}, (table) => [index('document_relationships_matter_id_idx').on(table.matterId)]);
 
 export type DocumentRelationshipRecord = typeof documentRelationships.$inferSelect;
 export type NewDocumentRelationshipRecord = typeof documentRelationships.$inferInsert;
@@ -270,7 +273,7 @@ export const matterNotes = sqliteTable('matter_notes', {
   classification: text('classification').notNull().default('USER_PROVIDED'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
-});
+}, (table) => [index('matter_notes_matter_created_at_idx').on(table.matterId, table.createdAt)]);
 
 export type MatterNoteRecord = typeof matterNotes.$inferSelect;
 export type NewMatterNoteRecord = typeof matterNotes.$inferInsert;
@@ -280,6 +283,7 @@ export type NewMatterNoteRecord = typeof matterNotes.$inferInsert;
  */
 export const preparations = sqliteTable('preparations', {
   id: text('id').primaryKey(),
+  briefKind: text('brief_kind', { enum: ['PREPARATION', 'MATTER'] }).notNull().default('PREPARATION'),
   documentId: text('document_id').references(() => documents.id, { onDelete: 'cascade' }),
   comparisonId: text('comparison_id').references(() => comparisons.id, { onDelete: 'cascade' }),
   matterId: text('matter_id').references(() => matters.id, { onDelete: 'cascade' }),
@@ -294,7 +298,7 @@ export const preparations = sqliteTable('preparations', {
     .default('PENDING'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
-});
+}, (table) => [index('preparations_matter_kind_idx').on(table.matterId, table.briefKind)]);
 
 export type PreparationRecord = typeof preparations.$inferSelect;
 export type NewPreparationRecord = typeof preparations.$inferInsert;
@@ -386,7 +390,7 @@ export const matterActionItems = sqliteTable('matter_action_items', {
   }),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
-});
+}, (table) => [index('matter_action_items_matter_created_at_idx').on(table.matterId, table.createdAt)]);
 
 export type MatterActionItemRecord = typeof matterActionItems.$inferSelect;
 export type NewMatterActionItemRecord = typeof matterActionItems.$inferInsert;
@@ -424,7 +428,7 @@ export const matterActivity = sqliteTable('matter_activity', {
   description: text('description').notNull(),
   metadataJson: text('metadata_json'),
   createdAt: text('created_at').notNull(),
-});
+}, (table) => [index('matter_activity_matter_created_at_idx').on(table.matterId, table.createdAt)]);
 
 export type MatterActivityRecord = typeof matterActivity.$inferSelect;
 export type NewMatterActivityRecord = typeof matterActivity.$inferInsert;
@@ -486,10 +490,7 @@ export const matterEvidence = sqliteTable('matter_evidence', {
   metadataJson: text('metadata_json'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
-});
+}, (table) => [index('matter_evidence_matter_id_idx').on(table.matterId)]);
 
 export type MatterEvidenceRecord = typeof matterEvidence.$inferSelect;
 export type NewMatterEvidenceRecord = typeof matterEvidence.$inferInsert;
-
-
-

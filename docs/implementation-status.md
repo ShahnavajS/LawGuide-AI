@@ -1,4 +1,4 @@
-# Implementation status — 2026-09-18
+# Implementation status — 2026-09-19
 
 This file supersedes the historical phase claims in README, `steps.md`, and `architecture.md`.
 
@@ -21,6 +21,8 @@ This file supersedes the historical phase claims in README, `steps.md`, and `arc
 7. Tests use an in-memory SQLite database. Database migration failure stops startup. The Compose port and health check match the container port. Security headers now include CSP, frame, referrer, MIME, and permissions controls. Modal focus uses the native dialog; navigation no longer nests buttons in links. The font is a local system stack.
 8. Added single-document question answering with page retrieval, a small prompt budget, quote validation, and abstention when cited support is absent. Offline mode returns source excerpts rather than an invented answer.
 9. Reconciled the local development database against stored PDFs. It contained 2,025 document records but only one PDF; 2,024 missing-file records and 1,095 linked test matters were removed after backing up `data` and `uploads` to `data/backups/before-stale-cleanup-2026-09-18`. The surviving historical stress-test PDF is labeled as a sample. Missing files are now marked unavailable in document lists, excluded from compare and preparation selectors, and served as 404 responses. The viewer handles failed PDF requests without a runtime overlay.
+10. Follow-up score review: consolidated matter-list counts, deferred brief/evidence tab requests, reused readiness consistency metrics, indexed repeated SQLite lookups, and reduced health checks to `SELECT 1`. Production now rejects missing access credentials, sign-in bodies are bounded while streaming, and only named public assets bypass the proxy. See [score improvement review](./score-improvement-review.md) for evidence and limits.
+11. Final audit: isolated matter and preparation brief records, blocked foreign matter references in action items and preparations, made replacement writes atomic, grounded counsel questions and matter brief evidence labels, removed an unvalidated summary model call, and reduced Source Map fetches and retained PDF bytes. See [final pre-submission audit](./final-pre-submission-audit.md).
 
 ## Setup
 
@@ -31,10 +33,11 @@ For Docker Compose, put a private password and session secret in `.env`, configu
 ## Verification
 
 - `tsc --noEmit`: passed.
-- Vitest: the latest full run passed **289 tests across 44 files**, including a missing-PDF regression test. All tests use `DATABASE_URL=:memory:` and do not write the workspace SQLite file.
+- Vitest: the latest full run passed **307 tests across 47 files**, including isolation, rollback, evidence, malformed-input, migration, and privacy regressions. Tests use an in-memory SQLite database and do not write the workspace SQLite file.
 - Next.js 16.3.5 production build: passed without a font fetch.
 - HTTP smoke check: unauthenticated `/api/documents` returned 401; login returned a signed cookie and authenticated API access succeeded.
-- ESLint: passed on 2026-09-18 after the final implementation edits.
+- ESLint: passed on 2026-09-19 after the final implementation edits.
+- Full npm audit: four moderate development-tool advisories; production dependency audit (`--omit=dev`): zero vulnerabilities.
 - Browser check: Documents displayed one labeled sample, its eight-page PDF opened, and the reported stale document URL showed a Document Not Found page. The valid PDF API returned 200 and the stale URL returned 404.
 
 ## Remaining before claiming production readiness

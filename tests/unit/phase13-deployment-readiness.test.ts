@@ -6,13 +6,13 @@
  * 2. Operational healthcheck contracts
  * 3. Configurable persistent storage paths
  * 4. Application restart & persistence resilience
- * 5. SQLite WAL safe backup and restore verification
+ * 5. Isolated SQLite backup snapshot verification
  * 6. Demo experience isolation
  * 7. Rate limit and security headers contract
  * 8. Adversarial anti-adjudication & prompt-injection boundaries
  */
 
-import { describe, it, expect, beforeEach, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterAll, vi } from 'vitest';
 import { validateProductionConfig } from '@/lib/config/env';
 import { GET as healthHandler } from '@/lib/../app/api/health/route';
 import { LocalStorageService } from '@/lib/document/storage';
@@ -25,6 +25,7 @@ import { rateLimiter } from '@/lib/security/rate-limiter';
 import { getDb, schema } from '@/lib/db';
 import fs from 'fs/promises';
 import fsSync from 'fs';
+import Database from 'better-sqlite3';
 import path from 'path';
 
 function createSamplePdf(content: string = 'Sample text'): Buffer {
@@ -107,6 +108,8 @@ describe('Phase 13: Deployment Readiness & Production Verification', () => {
         DATABASE_URL: './data/lexiguide.db',
         STORAGE_DIR: './uploads',
         GEMINI_API_KEY: 'AIzaSyD-validProductionKey1234567890',
+        APP_ACCESS_PASSWORD: 'a-long-private-workspace-password',
+        APP_SESSION_SECRET: 'independent-private-session-secret-over-32-characters',
       };
 
       const result = validateProductionConfig(validEnv);
@@ -127,6 +130,7 @@ describe('Phase 13: Deployment Readiness & Production Verification', () => {
       expect(result.valid).toBe(false);
       expect(result.errors.some((e) => e.includes('DATABASE_URL'))).toBe(true);
       expect(result.errors.some((e) => e.includes('STORAGE_DIR'))).toBe(true);
+      expect(result.errors.some((e) => e.includes('APP_ACCESS_PASSWORD'))).toBe(true);
 
       // Verify no secret value is exposed in error output
       const errorJson = JSON.stringify(result.errors);
@@ -139,6 +143,8 @@ describe('Phase 13: Deployment Readiness & Production Verification', () => {
         DATABASE_URL: './data/lexiguide.db',
         STORAGE_DIR: './uploads',
         GEMINI_API_KEY: '',
+        APP_ACCESS_PASSWORD: 'a-long-private-workspace-password',
+        APP_SESSION_SECRET: 'independent-private-session-secret-over-32-characters',
       };
 
       const result = validateProductionConfig(offlineEnv);
@@ -166,6 +172,19 @@ describe('Phase 13: Deployment Readiness & Production Verification', () => {
 
       // Verify strict security headers on health endpoint
       expect(response.headers.get('Cache-Control')).toBe('no-store, no-cache, must-revalidate');
+    });
+
+    it('returns degraded readiness when production access secrets are missing', async () => {
+      vi.stubEnv('NODE_ENV', 'production');
+      vi.stubEnv('APP_ACCESS_PASSWORD', '');
+      vi.stubEnv('APP_SESSION_SECRET', '');
+      try {
+        const response = await healthHandler();
+        expect(response.status).toBe(503);
+        expect(await response.json()).toMatchObject({ status: 'degraded', database: 'connected' });
+      } finally {
+        vi.unstubAllEnvs();
+      }
     });
   });
 
@@ -243,27 +262,26 @@ describe('Phase 13: Deployment Readiness & Production Verification', () => {
   });
 
   // --------------------------------------------------------------------------
-  // 5. SQLite WAL Safe Backup & File Consistency Verification
+  // 5. Isolated SQLite Backup Snapshot Verification
   // --------------------------------------------------------------------------
   describe('Backup & Storage Integrity', () => {
-    it('creates a consistent backup snapshot using SQLite checkpointing', async () => {
+    it('creates a readable snapshot of the in-memory test database', async () => {
       const db = getDb();
       const backupDir = path.join(testStorageDir, 'backup_snapshot');
 
       // Create destination directory
       fsSync.mkdirSync(backupDir, { recursive: true });
 
-      // Run WAL checkpoint
-      db.run('PRAGMA wal_checkpoint(TRUNCATE)');
-
-      // Verify database file exists and can be copied
-      const dbFile = path.resolve(process.cwd(), './data/lexiguide.db');
-      expect(fsSync.existsSync(dbFile)).toBe(true);
-
       const targetBackupDb = path.join(backupDir, 'lexiguide.db');
-      fsSync.copyFileSync(dbFile, targetBackupDb);
-      expect(fsSync.existsSync(targetBackupDb)).toBe(true);
-      expect(fsSync.statSync(targetBackupDb).size).toBeGreaterThan(0);
+      await db.$client.backup(targetBackupDb);
+      const snapshot = new Database(targetBackupDb, { readonly: true });
+      try {
+        const expected = db.$client.prepare('SELECT count(*) AS count FROM documents').get() as { count: number };
+        const restored = snapshot.prepare('SELECT count(*) AS count FROM documents').get() as { count: number };
+        expect(restored.count).toBe(expected.count);
+      } finally {
+        snapshot.close();
+      }
     });
   });
 

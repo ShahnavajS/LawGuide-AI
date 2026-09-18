@@ -1,0 +1,1 @@
+CREATE INDEX `comparisons_base_target_idx` ON `comparisons` (`base_document_id`,`target_document_id`);

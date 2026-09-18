@@ -486,7 +486,7 @@ export function buildCounselQuestionPrompt(params: {
   relationshipsText?: string;
   userNotesText?: string;
 }): string {
-  const parts: string[] = [];
+  const parts: string[] = ['<untrusted_matter_evidence>'];
 
   parts.push(`<matter_context>
 Title: ${params.matterTitle}
@@ -521,7 +521,7 @@ ${params.userNotesText}
 </user_provided_context>`);
   }
 
-  parts.push(`INSTRUCTIONS:
+  parts.push(`</untrusted_matter_evidence>\n\nINSTRUCTIONS:
 Generate specific, evidence-grounded questions for a qualified legal professional.
 RULES:
 1. Questions must be neutral, objective, and useful for attorney preparation.
@@ -548,95 +548,4 @@ Output a JSON array:
 
   return parts.join('\n\n');
 }
-
-/**
- * Builds prompt for Matter Counsel Brief (Phase 9).
- */
-export function buildMatterBriefPrompt(params: {
-  matterTitle: string;
-  description?: string;
-  jurisdiction: string;
-  documentsText: string;
-  timelineText?: string;
-  consistencyText?: string;
-  relationshipsText?: string;
-  userNotesText?: string;
-}): string {
-  const parts: string[] = [];
-
-  parts.push(`<matter_context>
-Title: ${params.matterTitle}
-Description: ${params.description || 'Not provided'}
-Jurisdiction: ${params.jurisdiction}
-</matter_context>`);
-
-  parts.push(`<member_documents>
-${params.documentsText}
-</member_documents>`);
-
-  if (params.timelineText) {
-    parts.push(`<matter_timeline>
-${params.timelineText}
-</matter_timeline>`);
-  }
-
-  if (params.consistencyText) {
-    parts.push(`<consistency_findings>
-${params.consistencyText}
-</consistency_findings>`);
-  }
-
-  if (params.relationshipsText) {
-    parts.push(`<cross_document_relationships>
-${params.relationshipsText}
-</cross_document_relationships>`);
-  }
-
-  if (params.userNotesText) {
-    parts.push(`<user_provided_context>
-${params.userNotesText}
-</user_provided_context>`);
-  }
-
-  parts.push(`INSTRUCTIONS:
-Synthesize an executive Matter Consultation Brief for a legal professional.
-RULES:
-1. Preserve 5-tier evidence classifications strictly.
-2. Facts derived from documents must cite the document title and page number.
-3. User-provided context must be isolated under USER_PROVIDED.
-4. Never adjudicate priority, enforceability, or litigation outcome.
-Output JSON:
-{
-  "summary": "Executive overview of the matter and its documentation",
-  "parties": ["Party 1", "Party 2"],
-  "keyFactualPoints": [
-    {
-      "fact": "Factual statement",
-      "page": 1,
-      "docTitle": "Document Title",
-      "classification": "DOCUMENT_FACT" | "NEEDS_REVIEW"
-    }
-  ],
-  "consistencySummary": [
-    {
-      "category": "string",
-      "finding": "Summary of discrepancy",
-      "discussionPoint": "Neutral discussion prompt for counsel"
-    }
-  ],
-  "suggestedCounselQuestions": [
-    {
-      "category": "string",
-      "question": "string",
-      "rationale": "string",
-      "sourceType": "DOCUMENT" | "CONSISTENCY" | "RELATIONSHIP" | "USER_CONTEXT",
-      "sourceReference": "string",
-      "isUserProvided": boolean
-    }
-  ]
-}`);
-
-  return parts.join('\n\n');
-}
-
 

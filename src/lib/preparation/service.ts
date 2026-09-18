@@ -33,7 +33,7 @@ import {
 import { LEGAL_DISCLAIMERS } from '@/lib/ai/safety';
 import { generateId } from '@/lib/utils/id';
 import { AppError, NotFoundError, ValidationError } from '@/lib/utils/errors';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 
 export interface GeneratePreparationInput {
   documentId?: string;
@@ -119,6 +119,29 @@ export class PreparationService {
     this.validator = customValidator || citationValidator;
   }
 
+  private assertMatterSources(matterId: string, documentId?: string, comparisonId?: string): string[] {
+    const db = getDb();
+    if (!db.select({ id: schema.matters.id }).from(schema.matters).where(eq(schema.matters.id, matterId)).get()) {
+      throw new NotFoundError('Matter');
+    }
+    const memberIds = db.select({ documentId: schema.matterDocuments.documentId })
+      .from(schema.matterDocuments).where(eq(schema.matterDocuments.matterId, matterId))
+      .all().map((row) => row.documentId);
+    if (documentId && !memberIds.includes(documentId)) {
+      throw new ValidationError('Selected document must belong to this matter.');
+    }
+    if (comparisonId) {
+      const comparison = db.select({
+        baseDocumentId: schema.comparisons.baseDocumentId,
+        targetDocumentId: schema.comparisons.targetDocumentId,
+      }).from(schema.comparisons).where(eq(schema.comparisons.id, comparisonId)).get();
+      if (!comparison || !memberIds.includes(comparison.baseDocumentId) || !memberIds.includes(comparison.targetDocumentId)) {
+        throw new ValidationError('Selected comparison must use documents in this matter.');
+      }
+    }
+    return memberIds;
+  }
+
   /**
    * Retrieves an existing preparation brief by its unique ID.
    */
@@ -131,7 +154,7 @@ export class PreparationService {
     const [record] = await db
       .select()
       .from(schema.preparations)
-      .where(eq(schema.preparations.id, preparationId))
+      .where(and(eq(schema.preparations.id, preparationId), eq(schema.preparations.briefKind, 'PREPARATION')))
       .limit(1);
 
     if (!record || record.status !== 'COMPLETED' || !record.preparationDataJson) {
@@ -167,6 +190,9 @@ export class PreparationService {
     if (!documentId && !comparisonId && !matterId) {
       throw new ValidationError('At least one of documentId, comparisonId, or matterId is required.');
     }
+    if (matterId && (documentId || comparisonId)) {
+      this.assertMatterSources(matterId, documentId, comparisonId);
+    }
 
     const db = getDb();
     let query;
@@ -175,7 +201,7 @@ export class PreparationService {
       query = db
         .select()
         .from(schema.preparations)
-        .where(eq(schema.preparations.matterId, matterId))
+        .where(and(eq(schema.preparations.matterId, matterId), eq(schema.preparations.briefKind, 'PREPARATION')))
         .limit(1);
     } else if (documentId && comparisonId) {
       query = db
@@ -184,7 +210,9 @@ export class PreparationService {
         .where(
           and(
             eq(schema.preparations.documentId, documentId),
-            eq(schema.preparations.comparisonId, comparisonId)
+            eq(schema.preparations.comparisonId, comparisonId),
+            isNull(schema.preparations.matterId),
+            eq(schema.preparations.briefKind, 'PREPARATION')
           )
         )
         .limit(1);
@@ -192,13 +220,13 @@ export class PreparationService {
       query = db
         .select()
         .from(schema.preparations)
-        .where(eq(schema.preparations.comparisonId, comparisonId))
+        .where(and(eq(schema.preparations.comparisonId, comparisonId), isNull(schema.preparations.matterId), eq(schema.preparations.briefKind, 'PREPARATION')))
         .limit(1);
     } else {
       query = db
         .select()
         .from(schema.preparations)
-        .where(eq(schema.preparations.documentId, documentId!))
+        .where(and(eq(schema.preparations.documentId, documentId!), isNull(schema.preparations.matterId), eq(schema.preparations.briefKind, 'PREPARATION')))
         .limit(1);
     }
 
@@ -231,10 +259,11 @@ export class PreparationService {
     if (!documentId && !comparisonId && !matterId) {
       throw new ValidationError('At least one of documentId, comparisonId, or matterId is required.');
     }
+    const memberIds = matterId ? this.assertMatterSources(matterId, documentId, comparisonId) : [];
 
     // 1. Check idempotency cache if not forced
     if (!force) {
-      const cached = await this.getPreparationBySource(documentId, comparisonId, matterId);
+      const cached = await this.getPreparationBySource(matterId ? undefined : documentId, matterId ? undefined : comparisonId, matterId);
       if (cached) {
         return cached;
       }
@@ -248,18 +277,8 @@ export class PreparationService {
     let targetDocId = documentId;
 
     if (matterId && !targetDocId) {
-      const db = getDb();
-      const memberDocs = db
-        .select({
-          documentId: schema.matterDocuments.documentId,
-          role: schema.matterDocuments.role,
-        })
-        .from(schema.matterDocuments)
-        .where(eq(schema.matterDocuments.matterId, matterId))
-        .all();
-
-      if (memberDocs.length > 0) {
-        targetDocId = memberDocs[0].documentId;
+      if (memberIds.length > 0) {
+        targetDocId = memberIds[0];
       }
     }
 
@@ -658,57 +677,39 @@ ${prompt}
     // 12. Persist in Database
     const db = getDb();
 
-    // Clean up any existing preparation and its child citations for this source combination
-    let existingPreps: Array<{ id: string }> = [];
-    if (matterId) {
-      existingPreps = await db
-        .select({ id: schema.preparations.id })
+    // Keep the previous completed brief if inserting its replacement fails.
+    db.transaction((tx) => {
+      const sourceFilter = matterId
+        ? eq(schema.preparations.matterId, matterId)
+        : targetDocId && comparisonId
+          ? and(eq(schema.preparations.documentId, targetDocId), eq(schema.preparations.comparisonId, comparisonId), isNull(schema.preparations.matterId))
+          : comparisonId
+            ? and(eq(schema.preparations.comparisonId, comparisonId), isNull(schema.preparations.matterId))
+            : and(eq(schema.preparations.documentId, targetDocId!), isNull(schema.preparations.matterId));
+      const existingPreps = tx.select({ id: schema.preparations.id })
         .from(schema.preparations)
-        .where(eq(schema.preparations.matterId, matterId));
-    } else if (targetDocId && comparisonId) {
-      existingPreps = await db
-        .select({ id: schema.preparations.id })
-        .from(schema.preparations)
-        .where(
-          and(
-            eq(schema.preparations.documentId, targetDocId),
-            eq(schema.preparations.comparisonId, comparisonId)
-          )
-        );
-    } else if (comparisonId) {
-      existingPreps = await db
-        .select({ id: schema.preparations.id })
-        .from(schema.preparations)
-        .where(eq(schema.preparations.comparisonId, comparisonId));
-    } else if (targetDocId) {
-      existingPreps = await db
-        .select({ id: schema.preparations.id })
-        .from(schema.preparations)
-        .where(eq(schema.preparations.documentId, targetDocId));
-    }
-
-    for (const prep of existingPreps) {
-      await db.delete(schema.citations).where(eq(schema.citations.preparationId, prep.id));
-      await db.delete(schema.preparations).where(eq(schema.preparations.id, prep.id));
-    }
-
-    await db.insert(schema.preparations).values({
-      id: preparationId,
-      documentId: targetDocId || null,
-      comparisonId: comparisonId || null,
-      matterId: matterId || null,
-      purpose: sanitizedPurpose,
-      userNotesJson: JSON.stringify(userNotesList),
-      checklistStateJson: JSON.stringify({}),
-      preparationDataJson: JSON.stringify(finalBrief),
-      status: 'COMPLETED',
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    if (validatedCitationsToInsert.length > 0) {
-      await db.insert(schema.citations).values(
-        validatedCitationsToInsert.map((c) => ({
+        .where(and(sourceFilter, eq(schema.preparations.briefKind, 'PREPARATION')))
+        .all();
+      for (const prep of existingPreps) {
+        tx.delete(schema.citations).where(eq(schema.citations.preparationId, prep.id)).run();
+        tx.delete(schema.preparations).where(eq(schema.preparations.id, prep.id)).run();
+      }
+      tx.insert(schema.preparations).values({
+        id: preparationId,
+        briefKind: 'PREPARATION',
+        documentId: targetDocId || null,
+        comparisonId: comparisonId || null,
+        matterId: matterId || null,
+        purpose: sanitizedPurpose,
+        userNotesJson: JSON.stringify(userNotesList),
+        checklistStateJson: JSON.stringify({}),
+        preparationDataJson: JSON.stringify(finalBrief),
+        status: 'COMPLETED',
+        createdAt: now,
+        updatedAt: now,
+      }).run();
+      if (validatedCitationsToInsert.length > 0) {
+        tx.insert(schema.citations).values(validatedCitationsToInsert.map((c) => ({
           id: c.id,
           documentId: c.documentId,
           preparationId,
@@ -717,9 +718,9 @@ ${prompt}
           quotedText: c.quotedText,
           confidenceScore: c.confidenceScore,
           createdAt: now,
-        }))
-      );
-    }
+        }))).run();
+      }
+    });
 
     return finalBrief;
   }
@@ -740,7 +741,7 @@ ${prompt}
     const [record] = await db
       .select()
       .from(schema.preparations)
-      .where(eq(schema.preparations.id, preparationId))
+      .where(and(eq(schema.preparations.id, preparationId), eq(schema.preparations.briefKind, 'PREPARATION')))
       .limit(1);
 
     if (!record) {
@@ -764,7 +765,7 @@ ${prompt}
         checklistStateJson: JSON.stringify(stateMap),
         updatedAt: new Date().toISOString(),
       })
-      .where(eq(schema.preparations.id, preparationId));
+      .where(and(eq(schema.preparations.id, preparationId), eq(schema.preparations.briefKind, 'PREPARATION')));
 
     return stateMap;
   }

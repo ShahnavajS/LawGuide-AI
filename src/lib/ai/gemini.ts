@@ -8,7 +8,7 @@
 import { getGeminiClient } from './client';
 import { DEFAULT_AI_CONFIG, AIServiceConfig } from './config';
 import { SYSTEM_LEGAL_ANALYST_PROMPT } from './prompts';
-import { AIServiceError, sanitizeErrorString } from '@/lib/utils/errors';
+import { AIServiceError } from '@/lib/utils/errors';
 import { getServerConfig } from '@/lib/config/env';
 
 export interface GenerateOptions {
@@ -131,7 +131,6 @@ export class GeminiService {
     const timeout = options?.timeout ?? 120_000;
     const client = getGeminiClient();
 
-    let lastError: unknown;
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {
         const response = await client.models.generateContent({
@@ -148,7 +147,6 @@ export class GeminiService {
 
         return response.text || '';
       } catch (error: unknown) {
-        lastError = error;
         const errorMessage = error instanceof Error ? error.message : 'Unknown Gemini error';
         const isTimeoutOrTransient =
           errorMessage.includes('504') ||
@@ -159,7 +157,7 @@ export class GeminiService {
           errorMessage.includes('overloaded');
 
         if (isTimeoutOrTransient && attempt < 2) {
-          console.warn(`Gemini call encountered transient issue on attempt ${attempt} (${errorMessage}), retrying with backoff...`);
+          console.warn(`Gemini request transiently failed on attempt ${attempt}; retrying.`);
           await new Promise((resolve) => setTimeout(resolve, 2000));
           continue;
         }
@@ -167,8 +165,7 @@ export class GeminiService {
       }
     }
 
-    const finalErrorMessage = lastError instanceof Error ? lastError.message : 'Unknown Gemini error';
-    throw new AIServiceError(`Gemini generation failed: ${sanitizeErrorString(finalErrorMessage)}`);
+    throw new AIServiceError();
   }
 
   /**
@@ -196,8 +193,7 @@ export class GeminiService {
       if (error instanceof AIServiceError) {
         throw error;
       }
-      const errorMessage = error instanceof Error ? error.message : 'Failed to parse AI structured response';
-      throw new AIServiceError(`Structured generation error: ${sanitizeErrorString(errorMessage)}`);
+      throw new AIServiceError('The AI response could not be parsed. Please retry.');
     }
   }
 

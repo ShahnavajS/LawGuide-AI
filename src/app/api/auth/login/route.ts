@@ -17,10 +17,30 @@ export async function POST(request: NextRequest) {
   // One shared workspace: limit password guesses globally, independent of caller-controlled IP headers.
   const limit = rateLimiter.check('workspace-login', 'login');
   if (!limit.allowed) return new NextResponse('Too many attempts. Try again shortly.', { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } });
-  let body: FormData;
-  try { body = await request.formData(); } catch { return new NextResponse('Invalid sign-in form.', { status: 400 }); }
-  const supplied = body.get('password');
-  if (typeof supplied !== 'string' || !passwordMatches(supplied, auth.password)) {
+  if (!request.headers.get('content-type')?.startsWith('application/x-www-form-urlencoded') || !request.body) {
+    return new NextResponse('Invalid sign-in form.', { status: 400 });
+  }
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let bytes = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      bytes += value.byteLength;
+      if (bytes > 4096) {
+        await reader.cancel().catch(() => {});
+        return new NextResponse('Request too large', { status: 413 });
+      }
+      chunks.push(value);
+    }
+  } catch {
+    return new NextResponse('Invalid sign-in form.', { status: 400 });
+  } finally {
+    reader.releaseLock();
+  }
+  const supplied = new URLSearchParams(Buffer.concat(chunks).toString('utf8')).get('password');
+  if (!supplied || !passwordMatches(supplied, auth.password)) {
     return NextResponse.redirect(new URL('/login?error=1', request.url), 303);
   }
   const response = NextResponse.redirect(new URL('/dashboard', request.url), 303);

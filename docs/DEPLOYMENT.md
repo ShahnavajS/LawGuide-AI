@@ -9,10 +9,10 @@
 
 LexiGuide AI is engineered as an **on-premise / private-workspace application**:
 - **Application Layer**: Next.js 16 (Turbopack, React 19, TypeScript strict mode).
-- **Persistence Layer**: Embedded SQLite with Write-Ahead Logging (`better-sqlite3` + `drizzle-orm`).
+- **Persistence Layer**: Embedded SQLite (`better-sqlite3` + `drizzle-orm`); production defaults to DELETE journal mode and development to WAL unless `SQLITE_JOURNAL_MODE` is set.
 - **File Storage**: Local filesystem storage isolated outside the public web root (`LocalStorageService`).
 - **AI Integration**: Google Gemini API via `@google/genai` (server-side only, with automatic deterministic offline fallbacks).
-- **Abuse Prevention**: In-memory sliding window rate limiter (20 heavy AI req/min, 100 standard API req/min per IP).
+- **Abuse Prevention**: In-memory sliding window rate limiter (20 heavy AI req/min, 100 standard API req/min per signed session).
 
 ### Persistent Storage Requirement
 > [!IMPORTANT]
@@ -29,7 +29,7 @@ LexiGuide AI is engineered as an **on-premise / private-workspace application**:
 ## 2. Prerequisites & Environment Setup
 
 ### System Requirements
-- **Node.js**: v20+ LTS or v22+
+- **Node.js**: v22+ (the Docker image uses Node 22; local verification used Node 24.21.0)
 - **npm**: v10+
 - **Build Tools** (for native SQLite compiling): `python3`, `make`, `g++` (installed automatically in Dockerfile)
 - **Disk Space**: At least 5 GB for database and document archives.
@@ -47,6 +47,10 @@ DATABASE_URL=./data/lexiguide.db
 
 # Isolated Document Storage Path
 STORAGE_DIR=./uploads
+
+# Required private-workspace credentials (use real independent secrets)
+APP_ACCESS_PASSWORD=<at least 16 characters>
+APP_SESSION_SECRET=<at least 32 random characters>
 
 # Environment Mode
 NODE_ENV=production
@@ -134,11 +138,11 @@ LexiGuide AI includes a zero-leak operational health check:
 
 ## 6. Backup & Disaster Recovery Runbook
 
-Because SQLite operates in Write-Ahead Logging (WAL) mode, raw filesystem copying of an open `lexiguide.db` file can produce corrupted snapshots. LexiGuide AI includes SQLite-safe backup and restore automation.
+The database backup uses SQLite's backup API, which takes a consistent database snapshot. The PDF directory is copied separately, so pause writes or stop the app while backing up to keep the database and uploaded files aligned. Keep backup destinations outside public web roots and protect them like the original legal documents.
 
 ### Performing a Safe Online Backup
 ```bash
-# Checkpoints WAL journal and creates a consistent snapshot of DB and uploaded files
+# After pausing writes, snapshot the database and copy uploaded files
 node scripts/backup.mjs
 
 # Optionally specify a custom destination directory:
@@ -159,9 +163,8 @@ node scripts/restore.mjs ./backups/backup-2026-09-17T17-00-00-000Z
 1. Create a safe backup: `node scripts/backup.mjs`.
 2. Pull latest codebase: `git pull origin main`.
 3. Install dependencies: `npm ci`.
-4. Run migrations if new schema changes exist: `npm run db:generate`.
-5. Compile production build: `npm run build`.
-6. Restart server or container.
+4. Compile production build: `npm run build`.
+5. Restart server or container. Checked-in migrations apply on first database connection; `db:generate` is only for developing a new schema change.
 
 ### Rollback Procedure
 1. Stop the application server: `docker compose down` or stop systemd process.
@@ -178,7 +181,8 @@ node scripts/restore.mjs ./backups/backup-2026-09-17T17-00-00-000Z
 
 ### Pre-Deployment
 - [ ] Persistent volumes configured and mounted for `./data` and `./uploads`.
-- [ ] Valid `GEMINI_API_KEY` supplied in server environment.
+- [ ] `APP_ACCESS_PASSWORD` and `APP_SESSION_SECRET` set to real independent values.
+- [ ] `GEMINI_API_KEY` supplied if live AI analysis is required; without it only the documented local fallback is available.
 - [ ] `NODE_ENV=production` set.
 - [ ] Port `3000` accessible or configured behind reverse proxy (Nginx / Caddy / Cloudflare).
 - [ ] Security headers active in `next.config.ts`.

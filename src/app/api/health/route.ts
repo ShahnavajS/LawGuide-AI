@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { documents } from '@/lib/db/schema';
-import { count } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
+import { authConfiguration } from '@/lib/security/workspace-auth';
 
 /**
  * Health & Operational Readiness Endpoint.
@@ -15,18 +15,19 @@ export async function GET() {
 
   try {
     const db = getDb();
-    // Verify basic read connectivity with an efficient count query
-    await db.select({ total: count() }).from(documents).limit(1);
+    db.run(sql`SELECT 1`);
+    const auth = authConfiguration();
+    const ready = !auth.required || auth.configured;
 
     return NextResponse.json(
       {
-        status: 'ok',
+        status: ready ? 'ok' : 'degraded',
         timestamp,
         database: 'connected',
         service: 'LexiGuide AI',
       },
       {
-        status: 200,
+        status: ready ? 200 : 503,
         headers: {
           'Cache-Control': 'no-store, no-cache, must-revalidate',
         },

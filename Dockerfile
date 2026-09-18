@@ -32,6 +32,7 @@ ENV NODE_ENV=production
 ENV GEMINI_API_KEY=mock_build_key
 
 RUN npm run build
+RUN npm prune --omit=dev
 
 # -----------------------------------------------------------------------------
 # Stage 3: Production Runner

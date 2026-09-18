@@ -3,12 +3,13 @@ import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 export const SESSION_COOKIE = 'lexiguide_session';
 const SESSION_SECONDS = 12 * 60 * 60;
 
-export function authConfiguration() {
-  const password = process.env.APP_ACCESS_PASSWORD || '';
-  const secret = process.env.APP_SESSION_SECRET || '';
+export function authConfiguration(env: Record<string, string | undefined> = process.env) {
+  const password = env.APP_ACCESS_PASSWORD || '';
+  const secret = env.APP_SESSION_SECRET || '';
   const configured = password.length >= 16 && secret.length >= 32 &&
     !password.startsWith('replace_with_') && !secret.startsWith('replace_with_');
-  return { configured, required: Boolean(configured && (password || secret)), password, secret };
+  const required = env.NODE_ENV === 'production' || Boolean(password || secret);
+  return { configured, required, password, secret };
 }
 
 function signature(expires: string, password: string, secret: string): string {

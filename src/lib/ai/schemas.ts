@@ -648,6 +648,7 @@ export interface MatterBriefResponse {
     fact: string;
     page?: number;
     docTitle?: string;
+    quotedText?: string;
     classification: EvidenceSourceType;
     verificationStatus?: import('./safety').VerificationStatus;
     isUserProvided?: boolean;
@@ -736,6 +737,7 @@ export interface MatterSourceMapResponse {
   coverage: EvidenceCoverageMetrics;
   documents: DocumentSourceMapNode[];
   unlinkedEvidenceCount: number;
+  evidenceItems: MatterEvidenceItem[];
 }
 
 export interface EvidenceLedgerResponse {
@@ -749,7 +751,5 @@ export interface EvidenceLedgerResponse {
     search?: string;
   };
 }
-
-
 
 

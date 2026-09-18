@@ -58,7 +58,6 @@ import {
   buildRelationshipExtractionPrompt,
   buildMatterQuestionPrompt,
   buildCounselQuestionPrompt,
-  buildMatterBriefPrompt,
 } from '@/lib/ai/prompts';
 import { generateId } from '@/lib/utils/id';
 import { NotFoundError, ValidationError } from '@/lib/utils/errors';
@@ -217,43 +216,26 @@ export class MatterService {
     }>
   > {
     const db = getDb();
-    let query = db.select().from(schema.matters);
-
-    if (statusFilter) {
-      query = query.where(eq(schema.matters.status, statusFilter)) as typeof query;
-    }
-
-    const mattersList = query.orderBy(desc(schema.matters.updatedAt)).all();
-
-    return Promise.all(
-      mattersList.map(async (m) => {
-        const memberCount = db
-          .select({ count: sql<number>`count(*)` })
-          .from(schema.matterDocuments)
-          .where(eq(schema.matterDocuments.matterId, m.id))
-          .get()?.count || 0;
-
-        const analyzedCount = db
-          .select({ count: sql<number>`count(distinct ${schema.matterDocuments.documentId})` })
-          .from(schema.matterDocuments)
-          .innerJoin(schema.documents, eq(schema.matterDocuments.documentId, schema.documents.id))
-          .where(and(eq(schema.matterDocuments.matterId, m.id), eq(schema.documents.status, 'READY')))
-          .get()?.count || 0;
-
-        return {
-          id: m.id,
-          title: m.title,
-          description: m.description,
-          jurisdiction: m.jurisdiction,
-          jurisdictionProvenance: m.jurisdictionProvenance,
-          status: m.status,
-          documentCount: memberCount,
-          analyzedCount,
-          createdAt: m.createdAt,
-          updatedAt: m.updatedAt,
-        };
+    return db
+      .select({
+        id: schema.matters.id,
+        title: schema.matters.title,
+        description: schema.matters.description,
+        jurisdiction: schema.matters.jurisdiction,
+        jurisdictionProvenance: schema.matters.jurisdictionProvenance,
+        status: schema.matters.status,
+        documentCount: sql<number>`count(${schema.matterDocuments.id})`,
+        analyzedCount: sql<number>`count(distinct case when ${schema.documents.status} = 'READY' then ${schema.matterDocuments.documentId} end)`,
+        createdAt: schema.matters.createdAt,
+        updatedAt: schema.matters.updatedAt,
       })
-    );
+      .from(schema.matters)
+      .leftJoin(schema.matterDocuments, eq(schema.matterDocuments.matterId, schema.matters.id))
+      .leftJoin(schema.documents, eq(schema.documents.id, schema.matterDocuments.documentId))
+      .where(statusFilter ? eq(schema.matters.status, statusFilter) : undefined)
+      .groupBy(schema.matters.id)
+      .orderBy(desc(schema.matters.updatedAt))
+      .all();
   }
 
   /**
@@ -1963,15 +1945,37 @@ export class MatterService {
     matterId: string,
     input: CreateActionItemInput
   ): Promise<MatterActionItem> {
-    const trimmedTitle = (input.title || '').trim();
-    const trimmedDesc = (input.description || '').trim();
+    const trimmedTitle = typeof input?.title === 'string' ? input.title.trim() : '';
+    const trimmedDesc = typeof input?.description === 'string' ? input.description.trim() : '';
     if (!trimmedTitle) {
       throw new ValidationError('Action item title is required.');
     }
 
-    await this.getMatter(matterId);
+    const matter = await this.getMatter(matterId);
 
     const db = getDb();
+    const memberIds = new Set(matter.documents.map((doc) => doc.documentId));
+    if (input.relatedDocumentId && !memberIds.has(input.relatedDocumentId)) {
+      throw new ValidationError('Related document must belong to this matter.');
+    }
+    if (input.relatedComparisonId) {
+      const comparison = db.select({
+        baseDocumentId: schema.comparisons.baseDocumentId,
+        targetDocumentId: schema.comparisons.targetDocumentId,
+      }).from(schema.comparisons)
+        .where(eq(schema.comparisons.id, input.relatedComparisonId)).get();
+      if (!comparison || !memberIds.has(comparison.baseDocumentId) || !memberIds.has(comparison.targetDocumentId)) {
+        throw new ValidationError('Related comparison must use documents in this matter.');
+      }
+    }
+    if (input.relatedRelationshipId) {
+      const relationship = db.select({ matterId: schema.documentRelationships.matterId })
+        .from(schema.documentRelationships)
+        .where(eq(schema.documentRelationships.id, input.relatedRelationshipId)).get();
+      if (relationship?.matterId !== matterId) {
+        throw new ValidationError('Related relationship must belong to this matter.');
+      }
+    }
     const id = generateId('mact_item');
     const now = new Date().toISOString();
 
@@ -2044,7 +2048,7 @@ export class MatterService {
 
     // Query document titles for member documents in this matter
     const docMap = new Map<string, string>();
-    const matterDocs = db
+    const matterDocs = rows.some((row) => row.relatedDocumentId) ? db
       .select({ id: schema.documents.id, title: schema.documents.title })
       .from(schema.documents)
       .innerJoin(
@@ -2052,7 +2056,7 @@ export class MatterService {
         eq(schema.documents.id, schema.matterDocuments.documentId)
       )
       .where(eq(schema.matterDocuments.matterId, matterId))
-      .all();
+      .all() : [];
     for (const d of matterDocs) {
       docMap.set(d.id, d.title);
     }
@@ -2354,7 +2358,7 @@ export class MatterService {
           preparationDataJson: schema.preparations.preparationDataJson,
         })
         .from(schema.preparations)
-        .where(inArray(schema.preparations.documentId, docIds))
+        .where(and(inArray(schema.preparations.documentId, docIds), eq(schema.preparations.briefKind, 'PREPARATION')))
         .all();
 
       for (const pr of prepRecords) {
@@ -2447,8 +2451,7 @@ export class MatterService {
     const relationshipsNeedingReview = relationships.filter((r) => r.status === 'SUGGESTED').length;
 
     // Consistency findings
-    const consistencyFindingsList = await this.checkConsistency(matterId);
-    const consistencyFindings = consistencyFindingsList.length;
+    const consistencyFindings = matter.metrics.totalInconsistencies;
 
     // Action items
     const actionItems = await this.getActionItems(matterId);
@@ -2614,14 +2617,15 @@ export class MatterService {
       .join('\n');
 
     const consistencyText = consistency
-      .map(
-        (c) =>
-          `[${c.category}] "${c.sourceA.documentTitle}" (${c.sourceA.value}) vs "${c.sourceB.documentTitle}" (${c.sourceB.value})`
+      .map((c) =>
+        `[${c.category}] "${c.sourceA.documentTitle}" (${c.sourceA.value}) vs "${c.sourceB.documentTitle}" (${c.sourceB.value}). ` +
+        `Source: ${c.sourceA.documentId} p.${c.sourceA.pageNumber} "${(c.sourceA.quotedText || '').slice(0, 500)}"`
       )
       .join('\n');
 
     const relationshipsText = relationships
-      .map((r) => `"${r.sourceDocumentTitle}" ${r.relationshipType} "${r.targetDocumentTitle}"`)
+      .map((r) => `"${r.sourceDocumentTitle}" ${r.relationshipType} "${r.targetDocumentTitle}". ` +
+        `Source: ${r.sourceDocumentId} p.${r.sourcePage} "${(r.sourceQuote || '').slice(0, 500)}"`)
       .join('\n');
 
     const userNotesText = notes.map((n) => `[User Note] ${n.title}: ${n.content}`).join('\n');
@@ -2660,21 +2664,42 @@ export class MatterService {
           { systemInstruction: SYSTEM_MATTER_ANALYST_PROMPT }
         );
 
-        if (Array.isArray(rawList)) {
+        if (Array.isArray(rawList) && rawList.length <= 100) {
+          const memberById = new Map(matter.documents.map((doc) => [doc.documentId, doc]));
+          const pageCache = new Map<string, string>();
+          const db = getDb();
           questions = rawList
-            .filter((q) => !containsProhibitedLegalConclusion(q.question))
+            .filter((q) => {
+              if (!q || typeof q.question !== 'string' || !q.question.trim() ||
+                  containsProhibitedLegalConclusion(q.question) ||
+                  !['DOCUMENT', 'CONSISTENCY', 'RELATIONSHIP'].includes(q.sourceType) ||
+                  !q.documentId || !memberById.has(q.documentId) ||
+                  !Number.isInteger(q.pageNumber) || !q.pageNumber ||
+                  typeof q.quotedText !== 'string' || !q.quotedText.trim() || q.quotedText.length > 2000) return false;
+              const key = `${q.documentId}:${q.pageNumber}`;
+              if (!pageCache.has(key)) {
+                const page = db.select({ text: schema.documentPages.text }).from(schema.documentPages)
+                  .where(and(eq(schema.documentPages.documentId, q.documentId), eq(schema.documentPages.pageNumber, q.pageNumber)))
+                  .get();
+                pageCache.set(key, page?.text || '');
+              }
+              return this.validator.validateCitationAgainstPages(
+                { pageNumber: q.pageNumber, quotedText: q.quotedText },
+                [{ pageNumber: q.pageNumber, text: pageCache.get(key)! }]
+              ).isValidated;
+            })
             .map((q, idx) => ({
               id: q.id || `cq_${idx + 1}_${generateId('q')}`,
               category: q.category || 'GENERAL',
               question: q.question,
               rationale: q.rationale || 'Clarify legal implications with counsel.',
-              sourceType: q.sourceType || 'DOCUMENT',
-              sourceReference: q.sourceReference || null,
-              documentId: q.documentId || null,
-              documentTitle: q.documentTitle || null,
-              pageNumber: q.pageNumber || null,
-              quotedText: q.quotedText || null,
-              isUserProvided: Boolean(q.isUserProvided),
+              sourceType: q.sourceType,
+              sourceReference: `Page ${q.pageNumber}`,
+              documentId: q.documentId,
+              documentTitle: memberById.get(q.documentId!)!.title,
+              pageNumber: q.pageNumber,
+              quotedText: q.quotedText,
+              isUserProvided: false,
             }));
         }
       } catch {
@@ -2689,6 +2714,10 @@ export class MatterService {
         consistency,
         notes
       );
+    } else if (notes.length > 0) {
+      questions.push(...this.synthesizeDeterministicCounselQuestions(
+        matter, relationships, consistency, notes
+      ).filter((question) => question.sourceType === 'USER_CONTEXT'));
     }
 
     await this.logActivity(
@@ -2795,7 +2824,7 @@ export class MatterService {
       const cached = db
         .select()
         .from(schema.preparations)
-        .where(eq(schema.preparations.matterId, matterId))
+        .where(and(eq(schema.preparations.matterId, matterId), eq(schema.preparations.briefKind, 'MATTER')))
         .limit(1)
         .all();
 
@@ -2838,7 +2867,7 @@ export class MatterService {
           const parsed = JSON.parse(a.analysisDataJson) as LegalXRayAnalysis;
           if (parsed.parties) {
             for (const p of parsed.parties) {
-              if (p.name) partiesSet.add(p.name);
+              if (p.name && p.classification === 'DOCUMENT_FACT' && p.isValidated) partiesSet.add(p.name);
             }
           }
           if (parsed.keyDates) {
@@ -2847,7 +2876,9 @@ export class MatterService {
                 fact: `${kd.label}: ${kd.dateValue}`,
                 page: kd.pageNumber,
                 docTitle,
-                classification: 'DOCUMENT_FACT',
+                quotedText: kd.quotedText,
+                classification: kd.classification === 'DOCUMENT_FACT' && kd.isValidated ? 'DOCUMENT_FACT' : 'NEEDS_REVIEW',
+                verificationStatus: kd.isValidated ? 'VERIFIED' : 'NEEDS_REVIEW',
               });
             }
           }
@@ -2860,26 +2891,7 @@ export class MatterService {
     const briefId = generateId('prep');
     const now = new Date().toISOString();
 
-    let synthesizedSummary = `Comprehensive consultation dossier for "${matter.title}" compiling ${matter.documents.length} member documents, ${timeline.length} timeline milestones, ${consistency.length} consistency findings, and ${actionItems.length} action items.`;
-
-    if (this.gemini.isConfigured()) {
-      try {
-        const briefPrompt = buildMatterBriefPrompt({
-          matterTitle: matter.title,
-          description: matter.description || undefined,
-          jurisdiction: matter.jurisdiction || 'Not established',
-          documentsText: matter.documents.map((d) => `Doc: "${d.title}" (${d.role})`).join('\n'),
-          timelineText: timeline.slice(0, 5).map((t) => `${t.dateValue}: ${t.label}`).join('\n'),
-          consistencyText: consistency.slice(0, 5).map((c) => `[${c.category}] ${c.discussionPoint}`).join('\n'),
-        });
-        const rawAi = await this.gemini.generateText(briefPrompt);
-        if (rawAi && rawAi.trim().length > 30) {
-          synthesizedSummary = rawAi.trim();
-        }
-      } catch {
-        // use default summary
-      }
-    }
+    const synthesizedSummary = `Consultation dossier for "${matter.title}" with ${matter.documents.length} member documents, ${timeline.length} timeline milestones, ${consistency.length} consistency findings, and ${actionItems.length} action items.`;
 
     const brief: MatterBriefResponse = {
       matterId,
@@ -2922,33 +2934,25 @@ export class MatterService {
     const existingRecord = db
       .select()
       .from(schema.preparations)
-      .where(eq(schema.preparations.matterId, matterId))
+      .where(and(eq(schema.preparations.matterId, matterId), eq(schema.preparations.briefKind, 'MATTER')))
       .limit(1)
       .all();
 
-    if (existingRecord.length > 0) {
-      db.update(schema.preparations)
-        .set({
-          purpose: `Matter Counsel Brief: ${matter.title}`,
-          preparationDataJson: JSON.stringify(brief),
-          status: 'COMPLETED',
-          updatedAt: now,
-        })
-        .where(eq(schema.preparations.id, existingRecord[0].id))
-        .run();
-    } else {
-      db.insert(schema.preparations)
-        .values({
-          id: briefId,
-          matterId,
-          purpose: `Matter Counsel Brief: ${matter.title}`,
-          preparationDataJson: JSON.stringify(brief),
-          status: 'COMPLETED',
-          createdAt: now,
-          updatedAt: now,
-        })
-        .run();
-    }
+    db.transaction((tx) => {
+      if (existingRecord.length > 0) {
+        tx.delete(schema.preparations).where(eq(schema.preparations.id, existingRecord[0].id)).run();
+      }
+      tx.insert(schema.preparations).values({
+        id: briefId,
+        briefKind: 'MATTER',
+        matterId,
+        purpose: `Matter Counsel Brief: ${matter.title}`,
+        preparationDataJson: JSON.stringify(brief),
+        status: 'COMPLETED',
+        createdAt: now,
+        updatedAt: now,
+      }).run();
+    });
 
     await this.logActivity(
       matterId,
@@ -2968,7 +2972,7 @@ export class MatterService {
     const records = db
       .select()
       .from(schema.preparations)
-      .where(eq(schema.preparations.matterId, matterId))
+      .where(and(eq(schema.preparations.matterId, matterId), eq(schema.preparations.briefKind, 'MATTER')))
       .limit(1)
       .all();
 
@@ -3326,33 +3330,47 @@ export class MatterService {
 
     const documentNodes: DocumentSourceMapNode[] = [];
     const uniqueReferencedPages = new Set<string>();
+    const evidenceByDocument = new Map<string, MatterEvidenceItem[]>();
+    for (const item of evidenceItems) {
+      if (!item.documentId) continue;
+      const group = evidenceByDocument.get(item.documentId) || [];
+      group.push(item);
+      evidenceByDocument.set(item.documentId, group);
+    }
 
     for (const doc of matter.documents) {
       // Query pages for this document
       const pages = db
         .select({
           pageNumber: schema.documentPages.pageNumber,
-          text: schema.documentPages.text,
+          textLength: sql<number>`length(trim(${schema.documentPages.text}))`,
         })
         .from(schema.documentPages)
         .where(eq(schema.documentPages.documentId, doc.documentId))
         .orderBy(asc(schema.documentPages.pageNumber))
         .all();
 
-      const docEvidence = evidenceItems.filter((e) => e.documentId === doc.documentId);
+      const docEvidence = evidenceByDocument.get(doc.documentId) || [];
+      const evidenceByPage = new Map<number, MatterEvidenceItem[]>();
+      for (const item of docEvidence) {
+        if (!item.pageNumber) continue;
+        const group = evidenceByPage.get(item.pageNumber) || [];
+        group.push(item);
+        evidenceByPage.set(item.pageNumber, group);
+      }
+      const pageHasText = new Map(pages.map((page) => [page.pageNumber, page.textLength > 0]));
 
       // Group by page number
       const pageNodes: DocumentPageEvidenceNode[] = [];
       const pageCount = pages.length > 0 ? pages.length : doc.pageCount || 1;
 
       for (let p = 1; p <= pageCount; p++) {
-        const pageText = pages.find((pg) => pg.pageNumber === p)?.text || '';
-        const itemsOnPage = docEvidence.filter((e) => e.pageNumber === p);
+        const itemsOnPage = evidenceByPage.get(p) || [];
         if (itemsOnPage.length > 0) {
           uniqueReferencedPages.add(`${doc.documentId}:${p}`);
           pageNodes.push({
             pageNumber: p,
-            hasText: pageText.trim().length > 0,
+            hasText: pageHasText.get(p) || false,
             evidenceItems: itemsOnPage,
           });
         }
@@ -3434,6 +3452,7 @@ export class MatterService {
       coverage,
       documents: documentNodes,
       unlinkedEvidenceCount,
+      evidenceItems,
     };
   }
 

@@ -130,10 +130,16 @@ export class DocumentService {
       .from(schema.documents)
       .orderBy(desc(schema.documents.createdAt));
 
-    return Promise.all(records.map(async (doc) => ({
-      ...this.toDto(doc),
-      fileAvailable: await this.storage.fileExists(doc.storagePath),
-    })));
+    const documents: DocumentDto[] = [];
+    for (let index = 0; index < records.length; index += 32) {
+      const batch = records.slice(index, index + 32);
+      const checked = await Promise.all(batch.map(async (doc) => ({
+        ...this.toDto(doc),
+        fileAvailable: await this.storage.fileExists(doc.storagePath),
+      })));
+      documents.push(...checked);
+    }
+    return documents;
   }
 
   /**
@@ -281,33 +287,31 @@ export class DocumentService {
       // 3. Extract page-aware text and metadata
       const extractionResult = await this.processor.extractText(fileBuffer, record.mimeType);
 
-      // 4. Clean up any previous pages if this is a retry
-      await db.delete(schema.documentPages).where(eq(schema.documentPages.documentId, id));
-
-      // 5. Insert structured pages preserving ordering and page numbers
-      if (extractionResult.pages.length > 0) {
-        const pageRecords = extractionResult.pages.map((p) => ({
-          id: generateId('page'),
-          documentId: id,
-          pageNumber: p.pageNumber,
-          text: p.text,
-          createdAt: now,
-        }));
-
-        await db.insert(schema.documentPages).values(pageRecords);
-      }
+      // Replace pages and publish READY together so a failed write cannot expose partial extraction.
+      const updatedRecord = db.transaction((tx) => {
+        tx.delete(schema.documentPages).where(eq(schema.documentPages.documentId, id)).run();
+        if (extractionResult.pages.length > 0) {
+          const pageRecords = extractionResult.pages.map((p) => ({
+            id: generateId('page'),
+            documentId: id,
+            pageNumber: p.pageNumber,
+            text: p.text,
+            createdAt: now,
+          }));
+          tx.insert(schema.documentPages).values(pageRecords).run();
+        }
+        return tx.update(schema.documents)
+          .set({
+            status: 'READY',
+            pageCount: extractionResult.pageCount,
+            processingError: null,
+            updatedAt: new Date().toISOString(),
+          })
+          .where(eq(schema.documents.id, id))
+          .returning().get();
+      });
 
       // The original PDF stays local. Later AI analysis sends extracted text only.
-      const [updatedRecord] = await db
-        .update(schema.documents)
-        .set({
-          status: 'READY',
-          pageCount: extractionResult.pageCount,
-          processingError: null,
-          updatedAt: new Date().toISOString(),
-        })
-        .where(eq(schema.documents.id, id))
-        .returning();
 
       return {
         document: this.toDto(updatedRecord),

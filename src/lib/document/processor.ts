@@ -56,58 +56,62 @@ export class PdfDocumentProcessor implements DocumentProcessor {
         useSystemFonts: true,
       });
 
-      const pdfDoc = await loadingTask.promise;
-      const pageCount = pdfDoc.numPages;
+      try {
+        const pdfDoc = await loadingTask.promise;
+        const pageCount = pdfDoc.numPages;
 
-      if (pageCount <= 0) {
-        throw new AppError('Document contains no readable pages.', 422, 'PROCESSING_FAILED');
-      }
-      if (pageCount > PdfDocumentProcessor.MAX_PAGES) {
-        throw new AppError('PDF exceeds the 100-page processing limit.', 413, 'PROCESSING_LIMIT');
-      }
-
-      const pages: ExtractedPageContent[] = [];
-      const pageTexts: string[] = [];
-      let totalCharacters = 0;
-
-      for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
-        const page = await pdfDoc.getPage(pageNum);
-        const textContent = await page.getTextContent();
-
-        // Join text items preserving natural token ordering.
-        // We preserve source text faithfully without destructive normalization (e.g. no punctuation removal).
-        const textItems = textContent.items
-          .map((item) => ('str' in item ? (item as { str: string }).str : ''))
-          .filter((str) => str.trim().length > 0);
-
-        const pageText = textItems.join(' ').trim();
-        totalCharacters += pageText.length;
-        if (totalCharacters > PdfDocumentProcessor.MAX_TEXT_CHARACTERS) {
-          throw new AppError('PDF contains too much extractable text to process safely.', 413, 'PROCESSING_LIMIT');
+        if (pageCount <= 0) {
+          throw new AppError('Document contains no readable pages.', 422, 'PROCESSING_FAILED');
         }
-        const hasText = pageText.length > 0;
-
-        pages.push({
-          pageNumber: pageNum,
-          text: pageText,
-          hasText,
-        });
-
-        if (hasText) {
-          pageTexts.push(pageText);
+        if (pageCount > PdfDocumentProcessor.MAX_PAGES) {
+          throw new AppError('PDF exceeds the 100-page processing limit.', 413, 'PROCESSING_LIMIT');
         }
-      }
 
-      const fullText = pageTexts.join('\n\n');
-      if (!fullText.trim()) {
-        throw new AppError('This PDF has no selectable text. Please provide a text-based PDF.', 422, 'NO_EXTRACTABLE_TEXT');
-      }
+        const pages: ExtractedPageContent[] = [];
+        const pageTexts: string[] = [];
+        let totalCharacters = 0;
 
-      return {
-        pageCount,
-        fullText,
-        pages,
-      };
+        for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
+          const page = await pdfDoc.getPage(pageNum);
+          const textContent = await page.getTextContent();
+
+          // Join text items preserving natural token ordering.
+          // We preserve source text faithfully without destructive normalization (e.g. no punctuation removal).
+          const textItems = textContent.items
+            .map((item) => ('str' in item ? (item as { str: string }).str : ''))
+            .filter((str) => str.trim().length > 0);
+
+          const pageText = textItems.join(' ').trim();
+          totalCharacters += pageText.length;
+          if (totalCharacters > PdfDocumentProcessor.MAX_TEXT_CHARACTERS) {
+            throw new AppError('PDF contains too much extractable text to process safely.', 413, 'PROCESSING_LIMIT');
+          }
+          const hasText = pageText.length > 0;
+
+          pages.push({
+            pageNumber: pageNum,
+            text: pageText,
+            hasText,
+          });
+
+          if (hasText) {
+            pageTexts.push(pageText);
+          }
+        }
+
+        const fullText = pageTexts.join('\n\n');
+        if (!fullText.trim()) {
+          throw new AppError('This PDF has no selectable text. Please provide a text-based PDF.', 422, 'NO_EXTRACTABLE_TEXT');
+        }
+
+        return {
+          pageCount,
+          fullText,
+          pages,
+        };
+      } finally {
+        await loadingTask.destroy();
+      }
     } catch (err: unknown) {
       if (err instanceof AppError) {
         throw err;

@@ -9,9 +9,7 @@ export function proxy(request: NextRequest) {
     pathname === '/favicon.ico' ||
     pathname === '/api/health' ||
     pathname === '/pdf.worker.min.mjs' ||
-    pathname.endsWith('.svg') ||
-    pathname.endsWith('.png') ||
-    pathname.endsWith('.ico')
+    ['/file.svg', '/globe.svg', '/next.svg', '/vercel.svg', '/window.svg'].includes(pathname)
   ) {
     return NextResponse.next();
   }
