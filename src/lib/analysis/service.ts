@@ -197,6 +197,15 @@ export class AnalysisService {
       const userPrompt = `
 Analyze the legal document provided below and generate a comprehensive Legal X-Ray analysis adhering strictly to all safety and grounding rules.
 
+EXTRACTION GUIDELINES:
+- Identify key contracting parties and primary key dates (up to 6 each).
+- Extract the most significant obligations (up to 12) and rights (up to 8).
+- Extract key financial terms (up to 6).
+- Extract material clauses (up to 8).
+- Identify notable attention areas (up to 8).
+- Provide 3 to 5 targeted lawyer questions.
+- For all "quotedText" fields, extract concise, direct verbatim text (strictly under 250 characters per quote).
+
 Respond strictly in valid JSON matching this schema:
 {
   "overview": {

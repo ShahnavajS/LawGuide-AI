@@ -16,6 +16,93 @@ export interface GenerateOptions {
   temperature?: number;
   maxOutputTokens?: number;
   timeout?: number;
+  responseMimeType?: string;
+}
+
+/**
+ * Safely parses JSON returned by the model, stripping markdown fences
+ * and gracefully repairing common truncation anomalies (e.g. unclosed strings or missing brackets).
+ */
+export function parseOrRepairJson(rawText: string): unknown {
+  let str = (rawText || '').trim();
+  // Strip markdown code fences
+  str = str.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
+
+  const firstBrace = str.indexOf('{');
+  const firstBracket = str.indexOf('[');
+  let startIdx = 0;
+  if (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
+    startIdx = firstBrace;
+  } else if (firstBracket !== -1) {
+    startIdx = firstBracket;
+  }
+  str = str.slice(startIdx);
+
+  try {
+    return JSON.parse(str);
+  } catch (initialErr) {
+    // Attempt progressive repair for cut-off / unterminated tokens
+    let inString = false;
+    let escaped = false;
+    const stack: string[] = [];
+    let repaired = '';
+
+    for (let i = 0; i < str.length; i++) {
+      const char = str[i];
+      repaired += char;
+      if (inString) {
+        if (char === '\\' && !escaped) {
+          escaped = true;
+        } else if (char === '"' && !escaped) {
+          inString = false;
+        } else {
+          escaped = false;
+        }
+      } else {
+        if (char === '"') {
+          inString = true;
+        } else if (char === '{' || char === '[') {
+          stack.push(char === '{' ? '}' : ']');
+        } else if (char === '}' || char === ']') {
+          if (stack.length > 0 && stack[stack.length - 1] === char) {
+            stack.pop();
+          }
+        }
+      }
+    }
+
+    if (inString) {
+      repaired += '"';
+    }
+
+    // Clean up trailing keys without values e.g. "key":
+    repaired = repaired.replace(/,\s*"[^"]*"\s*:\s*$/, '');
+    repaired = repaired.replace(/{\s*"[^"]*"\s*:\s*$/, '{');
+    // Clean up trailing commas before closing
+    repaired = repaired.replace(/,\s*$/, '');
+
+    // Close remaining open brackets
+    while (stack.length > 0) {
+      const closer = stack.pop()!;
+      repaired = repaired.replace(/,\s*$/, '') + closer;
+    }
+
+    try {
+      return JSON.parse(repaired);
+    } catch {
+      // Fallback: If still failing, try trimming to the last complete item
+      const lastCleanObject = repaired.lastIndexOf('},');
+      if (lastCleanObject !== -1) {
+        const truncated = repaired.substring(0, lastCleanObject + 1) + ']}';
+        try {
+          return JSON.parse(truncated);
+        } catch {
+          // Ignore
+        }
+      }
+      throw initialErr;
+    }
+  }
 }
 
 export class GeminiService {
@@ -55,6 +142,7 @@ export class GeminiService {
             temperature: options?.temperature ?? this.config.temperature,
             maxOutputTokens: options?.maxOutputTokens ?? this.config.maxOutputTokens,
             httpOptions: { timeout },
+            responseMimeType: options?.responseMimeType,
           },
         });
 
@@ -96,12 +184,10 @@ export class GeminiService {
     try {
       const text = await this.generateText(structuredPrompt, {
         ...options,
-        // Enforce JSON format in generation
+        responseMimeType: 'application/json',
       });
 
-      // Strip markdown code fences if returned by model
-      const cleaned = text.replace(/```json\s*/gi, '').replace(/```\s*$/gi, '').trim();
-      const parsed: unknown = JSON.parse(cleaned);
+      const parsed = parseOrRepairJson(text);
       if (!parsed || typeof parsed !== 'object') {
         throw new Error('Model response must be a JSON object or array.');
       }

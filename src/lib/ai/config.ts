@@ -16,5 +16,5 @@ export const DEFAULT_AI_CONFIG: AIServiceConfig = {
   // Low temperature for factual precision and reduced hallucination
   temperature: 0.1,
   topP: 0.95,
-  maxOutputTokens: 8192,
+  maxOutputTokens: 16384,
 };
