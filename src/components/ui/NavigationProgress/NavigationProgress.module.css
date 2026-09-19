@@ -1,0 +1,45 @@
+.progressBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3.5px;
+  width: 100%;
+  z-index: 99999;
+  pointer-events: none;
+  background: linear-gradient(90deg, var(--color-brand-500, #326b5c) 0%, var(--color-brand-600, #24584d) 50%, var(--color-gold, #a6563c) 100%);
+  transform-origin: left center;
+  transition: transform 0.2s ease, opacity 0.3s ease;
+  box-shadow: 0 0 10px rgba(166, 86, 60, 0.6);
+}
+
+.floatingBadge {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 99999;
+  pointer-events: none;
+  background: var(--bg-surface, #fffdf9);
+  color: var(--text-primary, #1c302d);
+  border: 1px solid var(--border-medium, #b9beb4);
+  box-shadow: 0 4px 20px rgba(28, 48, 45, 0.15);
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  animation: badgeFadeIn 0.18s ease-out;
+}
+
+@keyframes badgeFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}

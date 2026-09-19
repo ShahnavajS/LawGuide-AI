@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import styles from './Header.module.css';
 import buttonStyles from '@/components/ui/Button/Button.module.css';
+import { SignOutButton } from '@/components/auth/SignOutButton';
 
 interface HeaderUser { name: string; email: string; isDemo: boolean }
 
@@ -98,7 +99,7 @@ export const Header: React.FC = () => {
             {user ? (
               <>
                 <li><Link href="/account" className={styles.mobileNavLink} onClick={() => setMobileOpen(false)}>Account · {user.name}</Link></li>
-                <li><form method="post" action="/api/auth/logout"><button type="submit" className={styles.mobileNavLink}>Sign out</button></form></li>
+                <li><SignOutButton className={styles.mobileNavLink} /></li>
               </>
             ) : (
               <>

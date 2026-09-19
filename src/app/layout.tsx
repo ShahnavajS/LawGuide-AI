@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { NavigationProgress } from '@/components/ui/NavigationProgress/NavigationProgress';
 
 export const metadata: Metadata = {
   title: 'LexiGuide AI — Legal language, made human.',
@@ -25,6 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
+        <NavigationProgress />
         <Header />
         <main style={{ flex: 1 }}>{children}</main>
         <Footer />

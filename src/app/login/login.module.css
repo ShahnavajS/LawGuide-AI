@@ -19,3 +19,12 @@
 .switchText { padding-top: 1rem; border-top: 1px solid var(--border-subtle); font-size: .8rem; line-height: 1.5; color: var(--text-muted); margin: 1.4rem 0 0; }
 .switchText a { color: var(--color-brand-700); font-weight: 700; text-decoration: underline; text-underline-offset: .2em; }
 @media (max-width: 800px) { .shell { grid-template-columns: 1fr; padding-block: 3rem; }.panel { max-width: 500px; } }
+
+.passwordWrapper { position: relative; display: flex; align-items: center; width: 100%; }
+.passwordWrapper input { padding-right: 46px; }
+.passwordToggleBtn { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: transparent; border: none; padding: 6px; cursor: pointer; color: var(--text-muted); display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; transition: color 0.15s ease, background-color 0.15s ease; }
+.passwordToggleBtn:hover { color: var(--color-brand-700); background: var(--bg-canvas, #f3f4f6); }
+.passwordToggleBtn:focus-visible { outline: 2px solid var(--color-brand-600); outline-offset: 1px; }
+.matchBadge { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; font-weight: 600; padding: 0.3rem 0.6rem; border-radius: 4px; margin-top: 0.2rem; }
+.matchSuccess { color: var(--status-risk-low-text, #15803d); background: var(--status-risk-low-bg, #f0fdf4); border: 1px solid var(--status-risk-low-border, #bbf7d0); }
+.matchError { color: var(--status-risk-high-text, #b91c1c); background: var(--status-risk-high-bg, #fef2f2); border: 1px solid var(--status-risk-high-border, #fecaca); }

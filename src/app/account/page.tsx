@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { authenticateSessionToken } from '@/lib/auth/service';
 import { SESSION_COOKIE } from '@/lib/security/workspace-auth';
+import { SignOutButton } from '@/components/auth/SignOutButton';
 import styles from './account.module.css';
 
 export default async function AccountPage() {
@@ -32,7 +33,7 @@ export default async function AccountPage() {
         )}
         <div className={styles.actions}>
           <Link href="/dashboard">Open documents</Link>
-          <form method="post" action="/api/auth/logout"><button type="submit">Sign out</button></form>
+          <SignOutButton />
         </div>
       </section>
     </div>

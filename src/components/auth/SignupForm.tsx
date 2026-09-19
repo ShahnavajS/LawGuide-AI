@@ -25,6 +25,8 @@ export function SignupForm({ nextPath, initialError }: SignupFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(
     initialError ? (ERROR_MESSAGES[initialError] || ERROR_MESSAGES.invalid) : null
@@ -34,13 +36,12 @@ export function SignupForm({ nextPath, initialError }: SignupFormProps) {
   const hasMinLength = password.length >= 12;
   const hasUpperLower = /[a-z]/.test(password) && /[A-Z]/.test(password);
   const hasNumberSymbol = /\d/.test(password) && /[^A-Za-z0-9]/.test(password);
-  const passwordsMatch = password.length > 0 && password === confirmPassword;
+  const passwordsMatch = password.length > 0 && confirmPassword.length > 0 && password === confirmPassword;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage(null);
 
-    // Client-side quick validation
     if (name.trim().length < 2) {
       setErrorMessage('Name must be at least 2 characters long.');
       return;
@@ -147,22 +148,44 @@ export function SignupForm({ nextPath, initialError }: SignupFormProps) {
       />
 
       <label htmlFor="signup-password">Password</label>
-      <input
-        id="signup-password"
-        name="password"
-        type="password"
-        autoComplete="new-password"
-        minLength={12}
-        maxLength={128}
-        aria-describedby="password-help"
-        value={password}
-        onChange={(e) => {
-          setPassword(e.target.value);
-          if (errorMessage) setErrorMessage(null);
-        }}
-        required
-        disabled={loading}
-      />
+      <div className={styles.passwordWrapper}>
+        <input
+          id="signup-password"
+          name="password"
+          type={showPassword ? 'text' : 'password'}
+          autoComplete="new-password"
+          minLength={12}
+          maxLength={128}
+          aria-describedby="password-help"
+          value={password}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            if (errorMessage) setErrorMessage(null);
+          }}
+          required
+          disabled={loading}
+        />
+        <button
+          type="button"
+          onClick={() => setShowPassword(!showPassword)}
+          className={styles.passwordToggleBtn}
+          aria-label={showPassword ? 'Hide password' : 'Show password'}
+          title={showPassword ? 'Hide password' : 'Show password'}
+          tabIndex={0}
+        >
+          {showPassword ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+              <line x1="1" y1="1" x2="23" y2="23" />
+            </svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          )}
+        </button>
+      </div>
 
       <div id="password-help" className={styles.fieldHelp} style={{ display: 'grid', gap: '0.2rem', marginTop: '0.25rem' }}>
         <span style={{ color: hasMinLength ? 'var(--status-risk-low-text, #15803d)' : 'var(--text-muted)' }}>
@@ -177,28 +200,60 @@ export function SignupForm({ nextPath, initialError }: SignupFormProps) {
       </div>
 
       <label htmlFor="signup-confirm">Confirm Password</label>
-      <input
-        id="signup-confirm"
-        name="confirmPassword"
-        type="password"
-        autoComplete="new-password"
-        minLength={12}
-        maxLength={128}
-        value={confirmPassword}
-        onChange={(e) => {
-          setConfirmPassword(e.target.value);
-          if (errorMessage) setErrorMessage(null);
-        }}
-        required
-        disabled={loading}
-      />
+      <div className={styles.passwordWrapper}>
+        <input
+          id="signup-confirm"
+          name="confirmPassword"
+          type={showConfirmPassword ? 'text' : 'password'}
+          autoComplete="new-password"
+          minLength={12}
+          maxLength={128}
+          value={confirmPassword}
+          onChange={(e) => {
+            setConfirmPassword(e.target.value);
+            if (errorMessage) setErrorMessage(null);
+          }}
+          required
+          disabled={loading}
+        />
+        <button
+          type="button"
+          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+          className={styles.passwordToggleBtn}
+          aria-label={showConfirmPassword ? 'Hide confirmed password' : 'Show confirmed password'}
+          title={showConfirmPassword ? 'Hide confirmed password' : 'Show confirmed password'}
+          tabIndex={0}
+        >
+          {showConfirmPassword ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+              <line x1="1" y1="1" x2="23" y2="23" />
+            </svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          )}
+        </button>
+      </div>
+
       {confirmPassword.length > 0 && (
-        <span style={{ fontSize: '0.75rem', color: passwordsMatch ? 'var(--status-risk-low-text, #15803d)' : 'var(--status-risk-high-text, #b91c1c)' }}>
-          {passwordsMatch ? '✓ Passwords match' : '✕ Passwords do not match'}
-        </span>
+        <div
+          className={`${styles.matchBadge} ${passwordsMatch ? styles.matchSuccess : styles.matchError}`}
+          role={passwordsMatch ? 'status' : 'alert'}
+        >
+          <span>{passwordsMatch ? '✓' : '✕'}</span>
+          {passwordsMatch ? 'Passwords match' : 'Passwords do not match'}
+        </div>
       )}
 
-      <button type="submit" className={styles.submitButton} disabled={loading} style={{ opacity: loading ? 0.7 : 1, cursor: loading ? 'wait' : 'pointer' }}>
+      <button
+        type="submit"
+        className={styles.submitButton}
+        disabled={loading}
+        style={{ opacity: loading ? 0.7 : 1, cursor: loading ? 'wait' : 'pointer' }}
+      >
         {loading ? (
           <>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>

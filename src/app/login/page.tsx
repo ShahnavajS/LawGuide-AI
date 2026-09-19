@@ -27,10 +27,7 @@ export default async function LoginPage({
       <section className={styles.panel} aria-labelledby="sign-in-title">
         <span className={styles.panelIndex}>ACCOUNT / 01</span>
         <h2 id="sign-in-title">Sign in</h2>
-        {params.error && (
-          <p className={styles.error} role="alert">The email or password is incorrect.</p>
-        )}
-        <LoginForm nextPath={nextPath} demo={demo} />
+        <LoginForm nextPath={nextPath} demo={demo} initialError={params.error} />
         {demo && (
           <p className={styles.demoNote}>
             The evaluator account is shared and contains sample data. Use a personal account for private documents.
