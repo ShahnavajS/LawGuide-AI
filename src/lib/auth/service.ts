@@ -19,7 +19,7 @@ import type { AuthUser } from './context';
 export const DEMO_HASH_PLACEHOLDER = 'demo-hash-created-at-first-login';
 
 export function evaluatorAccountConfig(env: Record<string, string | undefined> = process.env) {
-  const enabled = env.EVALUATOR_DEMO_ENABLED === 'true' || env.NODE_ENV !== 'production';
+  const enabled = env.EVALUATOR_DEMO_ENABLED !== 'false';
   return {
     enabled,
     email: normalizeEmail(env.EVALUATOR_DEMO_EMAIL || DEFAULT_EVALUATOR_EMAIL),
