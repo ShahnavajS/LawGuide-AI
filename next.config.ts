@@ -12,13 +12,13 @@ const nextConfig: NextConfig = {
       "base-uri 'self'",
       "object-src 'none'",
       "frame-ancestors 'none'",
-      "form-action 'self'",
+      "form-action 'self' https://*.run.app https://*.a.run.app",
       "img-src 'self' data: blob:",
       "font-src 'self'",
       "style-src 'self' 'unsafe-inline'",
       `script-src ${scriptSources.join(' ')}`,
       "worker-src 'self' blob:",
-      "connect-src 'self'",
+      "connect-src 'self' https://*.run.app https://*.a.run.app",
     ].join('; ');
 
     return [

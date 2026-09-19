@@ -7,7 +7,13 @@ export function hasSameOrigin(request: NextRequest): boolean {
   const origin = request.headers.get('origin');
   if (!origin) return true;
   try {
-    return new URL(origin).host === request.headers.get('host');
+    const originHost = new URL(origin).host;
+    const allowedHosts = new Set([
+      request.headers.get('host'),
+      request.headers.get('x-forwarded-host'),
+      request.nextUrl.host,
+    ].filter(Boolean));
+    return allowedHosts.has(originHost);
   } catch {
     return false;
   }

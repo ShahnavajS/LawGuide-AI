@@ -8,6 +8,7 @@ const PUBLIC_API_ROUTES = new Set([
   '/api/auth/login',
   '/api/auth/logout',
   '/api/auth/signup',
+  '/api/auth/me',
   '/api/legal-info/topics',
   '/api/legal-info/legal-aid',
 ]);
@@ -68,8 +69,16 @@ export function proxy(request: NextRequest) {
     if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
       const origin = request.headers.get('origin');
       try {
-        if (origin && new URL(origin).host !== request.headers.get('host')) {
-          return new NextResponse('Forbidden', { status: 403 });
+        if (origin) {
+          const originHost = new URL(origin).host;
+          const allowedHosts = new Set([
+            request.headers.get('host'),
+            request.headers.get('x-forwarded-host'),
+            request.nextUrl.host,
+          ].filter(Boolean));
+          if (!allowedHosts.has(originHost)) {
+            return new NextResponse('Forbidden', { status: 403 });
+          }
         }
       } catch {
         return new NextResponse('Forbidden', { status: 403 });
