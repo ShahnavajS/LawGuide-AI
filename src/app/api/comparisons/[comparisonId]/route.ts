@@ -1,3 +1,4 @@
+import { withAuth } from '@/lib/auth/route';
 import { NextRequest, NextResponse } from 'next/server';
 import { getComparisonService } from '@/lib/comparison/service';
 import { formatSafeError, AppError, NotFoundError } from '@/lib/utils/errors';
@@ -6,7 +7,7 @@ interface RouteContext {
   params: Promise<{ comparisonId: string }>;
 }
 
-export async function GET(_request: NextRequest, context: RouteContext) {
+async function GETHandler(_request: NextRequest, context: RouteContext) {
   try {
     const { comparisonId } = await context.params;
     const service = getComparisonService();
@@ -23,3 +24,5 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     return NextResponse.json(safe, { status });
   }
 }
+
+export const GET = withAuth(GETHandler);

@@ -7,6 +7,7 @@
 
 import { getDb, schema } from '@/lib/db';
 import { assertModelCollections } from '@/lib/ai/validate-output';
+import { getCurrentUserId } from '@/lib/auth/context';
 import { getDocumentService, DocumentService } from '@/lib/document/service';
 import { geminiService, GeminiService } from '@/lib/ai/gemini';
 import { citationValidator, CitationValidator } from '@/lib/evidence/validator';
@@ -93,6 +94,7 @@ export class ComparisonService {
    * Retrieves an existing comparison by its unique ID.
    */
   public async getComparison(comparisonId: string): Promise<ComparisonResult | null> {
+    const userId = getCurrentUserId();
     if (!comparisonId || typeof comparisonId !== 'string') {
       throw new ValidationError('Comparison ID is required.');
     }
@@ -101,7 +103,7 @@ export class ComparisonService {
     const [record] = await db
       .select()
       .from(schema.comparisons)
-      .where(eq(schema.comparisons.id, comparisonId))
+      .where(and(eq(schema.comparisons.id, comparisonId), eq(schema.comparisons.userId, userId)))
       .limit(1);
 
     if (!record || record.status !== 'COMPLETED' || !record.comparisonDataJson) {
@@ -122,6 +124,7 @@ export class ComparisonService {
     baseDocId: string,
     targetDocId: string
   ): Promise<ComparisonResult | null> {
+    const userId = getCurrentUserId();
     if (!baseDocId || !targetDocId) {
       throw new ValidationError('Both base and target document IDs are required.');
     }
@@ -133,7 +136,8 @@ export class ComparisonService {
       .where(
         and(
           eq(schema.comparisons.baseDocumentId, baseDocId),
-          eq(schema.comparisons.targetDocumentId, targetDocId)
+          eq(schema.comparisons.targetDocumentId, targetDocId),
+          eq(schema.comparisons.userId, userId)
         )
       )
       .limit(1);
@@ -159,6 +163,7 @@ export class ComparisonService {
     targetDocId: string,
     options?: { force?: boolean }
   ): Promise<ComparisonResult> {
+    const userId = getCurrentUserId();
     // 1. Validate IDs
     if (!baseDocId || typeof baseDocId !== 'string') {
       throw new ValidationError('Base document ID is required.');
@@ -506,7 +511,8 @@ ${dualPrompt}
       .where(
         and(
           eq(schema.comparisons.baseDocumentId, baseDocId),
-          eq(schema.comparisons.targetDocumentId, targetDocId)
+          eq(schema.comparisons.targetDocumentId, targetDocId),
+          eq(schema.comparisons.userId, userId)
         )
       );
 
@@ -519,12 +525,14 @@ ${dualPrompt}
       .where(
         and(
           eq(schema.comparisons.baseDocumentId, baseDocId),
-          eq(schema.comparisons.targetDocumentId, targetDocId)
+          eq(schema.comparisons.targetDocumentId, targetDocId),
+          eq(schema.comparisons.userId, userId)
         )
       );
 
     await db.insert(schema.comparisons).values({
       id: comparisonId,
+      userId,
       baseDocumentId: baseDocId,
       targetDocumentId: targetDocId,
       summary: finalResult.summary.plainLanguage,

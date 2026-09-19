@@ -1,40 +1,74 @@
-import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 
 export const SESSION_COOKIE = 'lexiguide_session';
-const SESSION_SECONDS = 12 * 60 * 60;
+export const SESSION_SECONDS = 12 * 60 * 60;
+const DEV_SESSION_SECRET = 'lexiguide-local-development-session-secret-only';
+
+export interface SessionTokenPayload {
+  sessionId: string;
+  userId: string;
+  expiresAt: number;
+}
 
 export function authConfiguration(env: Record<string, string | undefined> = process.env) {
-  const password = env.APP_ACCESS_PASSWORD || '';
-  const secret = env.APP_SESSION_SECRET || '';
-  const configured = password.length >= 16 && secret.length >= 32 &&
-    !password.startsWith('replace_with_') && !secret.startsWith('replace_with_');
-  const required = env.ALLOW_OPEN_ACCESS !== 'true' && (env.NODE_ENV === 'production' || Boolean(password || secret));
-  return { configured, required, password, secret };
+  const suppliedSecret = env.APP_SESSION_SECRET || '';
+  const hasStrongSecret = suppliedSecret.length >= 32 && !suppliedSecret.startsWith('replace_with_');
+  const useDevelopmentSecret = env.NODE_ENV !== 'production' && !hasStrongSecret;
+  return {
+    configured: hasStrongSecret || useDevelopmentSecret,
+    required: true,
+    secret: useDevelopmentSecret ? DEV_SESSION_SECRET : suppliedSecret,
+  };
 }
 
-function signature(expires: string, password: string, secret: string): string {
-  const passwordDigest = createHash('sha256').update(password).digest('hex');
-  return createHmac('sha256', secret).update(`v1.${expires}.${passwordDigest}`).digest('base64url');
+export function getSessionSecret(env: Record<string, string | undefined> = process.env): string {
+  const config = authConfiguration(env);
+  if (config.configured) return config.secret;
+  throw new Error('APP_SESSION_SECRET is not configured.');
 }
 
-export function passwordMatches(candidate: string, expected: string): boolean {
-  const actual = createHash('sha256').update(candidate).digest();
-  const wanted = createHash('sha256').update(expected).digest();
-  return timingSafeEqual(actual, wanted);
+function signature(sessionId: string, userId: string, expiresAt: string, secret: string): string {
+  return createHmac('sha256', secret)
+    .update(`v2.${sessionId}.${userId}.${expiresAt}`)
+    .digest('base64url');
 }
 
-export function createWorkspaceSession(password: string, secret: string, now = Date.now()): string {
-  const expires = String(Math.floor(now / 1000) + SESSION_SECONDS);
-  return `v1.${expires}.${signature(expires, password, secret)}`;
+export function hashSessionId(sessionId: string): string {
+  return createHash('sha256').update(sessionId).digest('hex');
 }
 
-export function isWorkspaceSessionValid(token: string | undefined, password: string, secret: string, now = Date.now()): boolean {
-  if (!token || token.length > 200) return false;
-  const [version, expires, supplied, extra] = token.split('.');
-  if (version !== 'v1' || extra || !/^\d{10,}$/.test(expires || '') || !supplied) return false;
-  const expiry = Number(expires);
-  if (!Number.isSafeInteger(expiry) || expiry <= Math.floor(now / 1000) || expiry > Math.floor(now / 1000) + SESSION_SECONDS) return false;
+export function createSessionToken(
+  userId: string,
+  secret: string,
+  now = Date.now(),
+  sessionId = randomBytes(32).toString('base64url')
+): { token: string; sessionId: string; expiresAt: Date } {
+  const expiresAt = new Date(now + SESSION_SECONDS * 1000);
+  const expiry = String(Math.floor(expiresAt.getTime() / 1000));
+  const supplied = signature(sessionId, userId, expiry, secret);
+  return { token: `v2.${sessionId}.${userId}.${expiry}.${supplied}`, sessionId, expiresAt };
+}
+
+export function readSessionToken(
+  token: string | undefined,
+  secret: string,
+  now = Date.now()
+): SessionTokenPayload | null {
+  if (!token || token.length > 500) return null;
+  const [version, sessionId, userId, expiresAt, supplied, extra] = token.split('.');
+  if (
+    version !== 'v2' || extra || !sessionId || !userId || !supplied ||
+    !/^[A-Za-z0-9_-]{20,100}$/.test(sessionId) ||
+    !/^[A-Za-z0-9_-]{3,100}$/.test(userId) ||
+    !/^\d{10,}$/.test(expiresAt || '')
+  ) return null;
+
+  const expiry = Number(expiresAt);
+  const nowSeconds = Math.floor(now / 1000);
+  if (!Number.isSafeInteger(expiry) || expiry <= nowSeconds || expiry > nowSeconds + SESSION_SECONDS) return null;
+
   const actual = Buffer.from(supplied);
-  const expected = Buffer.from(signature(expires, password, secret));
-  return actual.length === expected.length && timingSafeEqual(actual, expected);
+  const expected = Buffer.from(signature(sessionId, userId, expiresAt, secret));
+  if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) return null;
+  return { sessionId, userId, expiresAt: expiry };
 }

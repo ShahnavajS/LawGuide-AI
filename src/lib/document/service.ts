@@ -12,7 +12,8 @@ import { DocumentDto, DocumentPageDto, DocumentProcessingStatus } from './types'
 import { documentProcessor, DocumentProcessor } from './processor';
 import { generateId } from '@/lib/utils/id';
 import { AppError, NotFoundError, ValidationError } from '@/lib/utils/errors';
-import { eq, desc, asc } from 'drizzle-orm';
+import { eq, desc, asc, and } from 'drizzle-orm';
+import { getCurrentUserId } from '@/lib/auth/context';
 
 export class DocumentService {
   private storage: DocumentStorageService;
@@ -54,6 +55,7 @@ export class DocumentService {
     mimeType: string;
     buffer: Buffer;
   }): Promise<DocumentDto> {
+    const userId = getCurrentUserId();
     // 1. Server-side validation
     const validation = validateDocumentUpload(input.filename, input.mimeType, input.buffer);
     if (!validation.isValid) {
@@ -94,6 +96,7 @@ export class DocumentService {
         .insert(schema.documents)
         .values({
           id: docId,
+          userId,
           title,
           originalFilename: sanitizedFilename,
           mimeType: input.mimeType,
@@ -124,10 +127,12 @@ export class DocumentService {
    * Retrieves all user documents ordered by newest first.
    */
   public async getDocuments(): Promise<DocumentDto[]> {
+    const userId = getCurrentUserId();
     const db = getDb();
     const records = await db
       .select()
       .from(schema.documents)
+      .where(eq(schema.documents.userId, userId))
       .orderBy(desc(schema.documents.createdAt));
 
     const documents: DocumentDto[] = [];
@@ -146,6 +151,7 @@ export class DocumentService {
    * Retrieves a single document by its unique ID.
    */
   public async getDocumentById(id: string): Promise<DocumentDto> {
+    const userId = getCurrentUserId();
     if (!id || typeof id !== 'string') {
       throw new ValidationError('Document ID is required.');
     }
@@ -154,7 +160,7 @@ export class DocumentService {
     const [record] = await db
       .select()
       .from(schema.documents)
-      .where(eq(schema.documents.id, id))
+      .where(and(eq(schema.documents.id, id), eq(schema.documents.userId, userId)))
       .limit(1);
 
     if (!record) {
@@ -171,6 +177,7 @@ export class DocumentService {
    * Deletes a document and its stored physical file.
    */
   public async deleteDocument(id: string): Promise<{ success: boolean; id: string }> {
+    const userId = getCurrentUserId();
     if (!id || typeof id !== 'string') {
       throw new ValidationError('Document ID is required.');
     }
@@ -179,7 +186,7 @@ export class DocumentService {
     const [record] = await db
       .select()
       .from(schema.documents)
-      .where(eq(schema.documents.id, id))
+      .where(and(eq(schema.documents.id, id), eq(schema.documents.userId, userId)))
       .limit(1);
 
     if (!record) {
@@ -194,7 +201,7 @@ export class DocumentService {
     }
 
     // 2. Delete database record
-    await db.delete(schema.documents).where(eq(schema.documents.id, id));
+    await db.delete(schema.documents).where(and(eq(schema.documents.id, id), eq(schema.documents.userId, userId)));
 
     return { success: true, id };
   }
@@ -207,6 +214,7 @@ export class DocumentService {
     originalFilename: string;
     mimeType: string;
   }> {
+    const userId = getCurrentUserId();
     if (!id || typeof id !== 'string') {
       throw new ValidationError('Document ID is required.');
     }
@@ -215,7 +223,7 @@ export class DocumentService {
     const [record] = await db
       .select()
       .from(schema.documents)
-      .where(eq(schema.documents.id, id))
+      .where(and(eq(schema.documents.id, id), eq(schema.documents.userId, userId)))
       .limit(1);
 
     if (!record) {
@@ -245,6 +253,7 @@ export class DocumentService {
    * Fully idempotent: already READY documents are returned immediately without reprocessing.
    */
   public async processDocument(id: string): Promise<{ document: DocumentDto; pageCount: number }> {
+    const userId = getCurrentUserId();
     if (!id || typeof id !== 'string') {
       throw new ValidationError('Document ID is required.');
     }
@@ -253,7 +262,7 @@ export class DocumentService {
     const [record] = await db
       .select()
       .from(schema.documents)
-      .where(eq(schema.documents.id, id))
+      .where(and(eq(schema.documents.id, id), eq(schema.documents.userId, userId)))
       .limit(1);
 
     if (!record) {
@@ -278,7 +287,7 @@ export class DocumentService {
         processingError: null,
         updatedAt: now,
       })
-      .where(eq(schema.documents.id, id));
+      .where(and(eq(schema.documents.id, id), eq(schema.documents.userId, userId)));
 
     try {
       // 2. Fetch raw file from safe storage
@@ -307,7 +316,7 @@ export class DocumentService {
             processingError: null,
             updatedAt: new Date().toISOString(),
           })
-          .where(eq(schema.documents.id, id))
+          .where(and(eq(schema.documents.id, id), eq(schema.documents.userId, userId)))
           .returning().get();
       });
 
@@ -331,7 +340,7 @@ export class DocumentService {
           processingError: safeErrorMessage,
           updatedAt: new Date().toISOString(),
         })
-        .where(eq(schema.documents.id, id));
+        .where(and(eq(schema.documents.id, id), eq(schema.documents.userId, userId)));
 
       if (err instanceof AppError) {
         throw err;
@@ -344,6 +353,7 @@ export class DocumentService {
    * Retrieves extracted pages for a document ordered by page number.
    */
   public async getDocumentPages(id: string): Promise<DocumentPageDto[]> {
+    const userId = getCurrentUserId();
     if (!id || typeof id !== 'string') {
       throw new ValidationError('Document ID is required.');
     }
@@ -352,7 +362,7 @@ export class DocumentService {
     const [record] = await db
       .select()
       .from(schema.documents)
-      .where(eq(schema.documents.id, id))
+      .where(and(eq(schema.documents.id, id), eq(schema.documents.userId, userId)))
       .limit(1);
 
     if (!record) {

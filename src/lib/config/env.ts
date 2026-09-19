@@ -69,8 +69,11 @@ export function validateProductionConfig(env: Record<string, string | undefined>
   if (!rawStorageDir || !rawStorageDir.trim()) {
     errors.push('STORAGE_DIR is required and cannot be empty.');
   }
-  if (env.NODE_ENV === 'production' && env.ALLOW_OPEN_ACCESS !== 'true' && !authConfiguration(env).configured) {
-    errors.push('APP_ACCESS_PASSWORD and APP_SESSION_SECRET must be set to strong, non-placeholder values.');
+  if (env.NODE_ENV === 'production' && !authConfiguration(env).configured) {
+    errors.push('APP_SESSION_SECRET must be set to a strong, non-placeholder value of at least 32 characters.');
+  }
+  if (env.NODE_ENV === 'production' && env.EVALUATOR_DEMO_ENABLED === 'true') {
+    warnings.push('The shared evaluator demo account is enabled. Store only non-sensitive sample data in that account.');
   }
 
   const apiKey = env.GEMINI_API_KEY?.trim() || '';

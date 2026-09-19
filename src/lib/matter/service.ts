@@ -62,6 +62,7 @@ import {
 import { generateId } from '@/lib/utils/id';
 import { NotFoundError, ValidationError } from '@/lib/utils/errors';
 import { eq, and, inArray, like, sql, desc, asc } from 'drizzle-orm';
+import { getCurrentUserId } from '@/lib/auth/context';
 
 export interface CreateMatterInput {
   title: string;
@@ -96,10 +97,23 @@ export class MatterService {
     this.validator = validator || citationValidator;
   }
 
+  private assertMatterOwned(matterId: string): void {
+    const userId = getCurrentUserId();
+    const ownedMatter = getDb()
+      .select({ id: schema.matters.id })
+      .from(schema.matters)
+      .where(and(eq(schema.matters.id, matterId), eq(schema.matters.userId, userId)))
+      .get();
+    if (!ownedMatter) {
+      throw new NotFoundError(`Matter with ID ${matterId} was not found.`);
+    }
+  }
+
   /**
    * Creates a new legal matter.
    */
   public async createMatter(input: CreateMatterInput): Promise<MatterDetail> {
+    const userId = getCurrentUserId();
     const trimmedTitle = (input.title || '').trim();
     if (!trimmedTitle) {
       throw new ValidationError('Matter title is required.');
@@ -111,6 +125,7 @@ export class MatterService {
 
     const newRecord = {
       id: matterId,
+      userId,
       title: trimmedTitle,
       description: input.description?.trim() || null,
       jurisdiction: input.jurisdiction?.trim() || null,
@@ -129,11 +144,12 @@ export class MatterService {
    * Retrieves a matter by ID with member documents and computed metrics.
    */
   public async getMatter(matterId: string): Promise<MatterDetail> {
+    const userId = getCurrentUserId();
     const db = getDb();
     const matter = db
       .select()
       .from(schema.matters)
-      .where(eq(schema.matters.id, matterId))
+      .where(and(eq(schema.matters.id, matterId), eq(schema.matters.userId, userId)))
       .get();
 
     if (!matter) {
@@ -159,7 +175,10 @@ export class MatterService {
       })
       .from(schema.matterDocuments)
       .innerJoin(schema.documents, eq(schema.matterDocuments.documentId, schema.documents.id))
-      .where(eq(schema.matterDocuments.matterId, matterId))
+      .where(and(
+        eq(schema.matterDocuments.matterId, matterId),
+        eq(schema.documents.userId, userId)
+      ))
       .orderBy(asc(schema.matterDocuments.displayOrder), desc(schema.matterDocuments.addedAt))
       .all();
 
@@ -215,6 +234,7 @@ export class MatterService {
       updatedAt: string;
     }>
   > {
+    const userId = getCurrentUserId();
     const db = getDb();
     return db
       .select({
@@ -232,7 +252,10 @@ export class MatterService {
       .from(schema.matters)
       .leftJoin(schema.matterDocuments, eq(schema.matterDocuments.matterId, schema.matters.id))
       .leftJoin(schema.documents, eq(schema.documents.id, schema.matterDocuments.documentId))
-      .where(statusFilter ? eq(schema.matters.status, statusFilter) : undefined)
+      .where(and(
+        eq(schema.matters.userId, userId),
+        statusFilter ? eq(schema.matters.status, statusFilter) : undefined
+      ))
       .groupBy(schema.matters.id)
       .orderBy(desc(schema.matters.updatedAt))
       .all();
@@ -242,11 +265,12 @@ export class MatterService {
    * Updates matter details.
    */
   public async updateMatter(matterId: string, updates: UpdateMatterInput): Promise<MatterDetail> {
+    const userId = getCurrentUserId();
     const db = getDb();
     const existing = db
       .select()
       .from(schema.matters)
-      .where(eq(schema.matters.id, matterId))
+      .where(and(eq(schema.matters.id, matterId), eq(schema.matters.userId, userId)))
       .get();
 
     if (!existing) {
@@ -276,7 +300,7 @@ export class MatterService {
 
     db.update(schema.matters)
       .set(fieldsToUpdate)
-      .where(eq(schema.matters.id, matterId))
+      .where(and(eq(schema.matters.id, matterId), eq(schema.matters.userId, userId)))
       .run();
 
     return this.getMatter(matterId);
@@ -288,18 +312,19 @@ export class MatterService {
    * CRITICAL SAFETY GUARANTEE: Does NOT delete the underlying physical documents or analyses!
    */
   public async deleteMatter(matterId: string): Promise<void> {
+    const userId = getCurrentUserId();
     const db = getDb();
     const existing = db
       .select()
       .from(schema.matters)
-      .where(eq(schema.matters.id, matterId))
+      .where(and(eq(schema.matters.id, matterId), eq(schema.matters.userId, userId)))
       .get();
 
     if (!existing) {
       throw new NotFoundError(`Matter ${matterId} not found.`);
     }
 
-    db.delete(schema.matters).where(eq(schema.matters.id, matterId)).run();
+    db.delete(schema.matters).where(and(eq(schema.matters.id, matterId), eq(schema.matters.userId, userId))).run();
   }
 
   /**
@@ -310,10 +335,12 @@ export class MatterService {
     documentId: string,
     role?: MatterDocumentRole
   ): Promise<MatterMemberDocument> {
+    const userId = getCurrentUserId();
     const db = getDb();
 
     // Verify matter exists
-    const matter = db.select().from(schema.matters).where(eq(schema.matters.id, matterId)).get();
+    const matter = db.select().from(schema.matters)
+      .where(and(eq(schema.matters.id, matterId), eq(schema.matters.userId, userId))).get();
     if (!matter) {
       throw new NotFoundError(`Matter ${matterId} not found.`);
     }
@@ -412,6 +439,8 @@ export class MatterService {
    * Does NOT delete the physical document or its analysis!
    */
   public async removeDocumentFromMatter(matterId: string, documentId: string): Promise<void> {
+    this.assertMatterOwned(matterId);
+    await this.documentService.getDocumentById(documentId);
     const db = getDb();
 
     // Remove the link
@@ -462,6 +491,7 @@ export class MatterService {
     role: MatterDocumentRole,
     confirmed = true
   ): Promise<MatterMemberDocument> {
+    this.assertMatterOwned(matterId);
     const db = getDb();
     const existingLink = db
       .select()
@@ -513,6 +543,7 @@ export class MatterService {
    * Reorders member documents in the workspace.
    */
   public async reorderDocuments(matterId: string, documentIds: string[]): Promise<void> {
+    this.assertMatterOwned(matterId);
     const db = getDb();
     for (let i = 0; i < documentIds.length; i++) {
       db.update(schema.matterDocuments)
@@ -535,6 +566,7 @@ export class MatterService {
     matterId: string,
     force = false
   ): Promise<DocumentRelationshipItem[]> {
+    this.assertMatterOwned(matterId);
     const db = getDb();
 
     // Check existing
@@ -560,7 +592,10 @@ export class MatterService {
       })
       .from(schema.matterDocuments)
       .innerJoin(schema.documents, eq(schema.matterDocuments.documentId, schema.documents.id))
-      .where(eq(schema.matterDocuments.matterId, matterId))
+      .where(and(
+        eq(schema.matterDocuments.matterId, matterId),
+        eq(schema.documents.userId, getCurrentUserId())
+      ))
       .all();
 
     if (memberDocs.length < 2) {
@@ -828,6 +863,7 @@ export class MatterService {
    * Retrieves relationships for a matter.
    */
   public async getRelationships(matterId: string): Promise<DocumentRelationshipItem[]> {
+    this.assertMatterOwned(matterId);
     const db = getDb();
     const rows = db
       .select()
@@ -847,6 +883,7 @@ export class MatterService {
     relationshipId: string,
     status: 'CONFIRMED' | 'REJECTED'
   ): Promise<DocumentRelationshipItem> {
+    this.assertMatterOwned(matterId);
     const db = getDb();
     const existing = db
       .select()
@@ -907,7 +944,10 @@ export class MatterService {
       const docs = db
         .select({ id: schema.documents.id, title: schema.documents.title })
         .from(schema.documents)
-        .where(inArray(schema.documents.id, Array.from(docIds)))
+        .where(and(
+          eq(schema.documents.userId, getCurrentUserId()),
+          inArray(schema.documents.id, Array.from(docIds))
+        ))
         .all();
 
       for (const d of docs) {
@@ -943,6 +983,7 @@ export class MatterService {
    * NEVER decides legal precedence.
    */
   public async checkConsistency(matterId: string): Promise<ConsistencyFinding[]> {
+    this.assertMatterOwned(matterId);
     const db = getDb();
 
     // Fetch analyzed member documents
@@ -956,7 +997,10 @@ export class MatterService {
       .from(schema.matterDocuments)
       .innerJoin(schema.documents, eq(schema.matterDocuments.documentId, schema.documents.id))
       .leftJoin(schema.analyses, eq(schema.documents.id, schema.analyses.documentId))
-      .where(eq(schema.matterDocuments.matterId, matterId))
+      .where(and(
+        eq(schema.matterDocuments.matterId, matterId),
+        eq(schema.documents.userId, getCurrentUserId())
+      ))
       .all();
 
     const analyzedDocs = memberRows.filter((r) => r.analysisDataJson != null);
@@ -1214,6 +1258,7 @@ export class MatterService {
    * If date is unknown, marks "DATE NOT ESTABLISHED".
    */
   public async getTimeline(matterId: string): Promise<MatterTimelineEvent[]> {
+    this.assertMatterOwned(matterId);
     const db = getDb();
 
     // Fetch analyzed member documents
@@ -1226,7 +1271,10 @@ export class MatterService {
       .from(schema.matterDocuments)
       .innerJoin(schema.documents, eq(schema.matterDocuments.documentId, schema.documents.id))
       .leftJoin(schema.analyses, eq(schema.documents.id, schema.analyses.documentId))
-      .where(eq(schema.matterDocuments.matterId, matterId))
+      .where(and(
+        eq(schema.matterDocuments.matterId, matterId),
+        eq(schema.documents.userId, getCurrentUserId())
+      ))
       .all();
 
     const events: MatterTimelineEvent[] = [];
@@ -1309,6 +1357,7 @@ export class MatterService {
    * Searches document_pages.text without needing cloud vector DB or external search engine.
    */
   public async searchMatter(matterId: string, query: string): Promise<MatterSearchResponse> {
+    this.assertMatterOwned(matterId);
     const trimmedQuery = (query || '').trim();
     if (!trimmedQuery) {
       throw new ValidationError('Search query must not be empty.');
@@ -1328,7 +1377,10 @@ export class MatterService {
       })
       .from(schema.matterDocuments)
       .innerJoin(schema.documents, eq(schema.matterDocuments.documentId, schema.documents.id))
-      .where(eq(schema.matterDocuments.matterId, matterId))
+      .where(and(
+        eq(schema.matterDocuments.matterId, matterId),
+        eq(schema.documents.userId, getCurrentUserId())
+      ))
       .all();
 
     if (memberDocs.length === 0) {
@@ -1710,6 +1762,7 @@ export class MatterService {
    * User Notes CRUD for a matter.
    */
   public async getNotes(matterId: string) {
+    this.assertMatterOwned(matterId);
     const db = getDb();
     return db
       .select()
@@ -1720,6 +1773,7 @@ export class MatterService {
   }
 
   public async addNote(matterId: string, title: string, content: string) {
+    this.assertMatterOwned(matterId);
     const trimmedTitle = (title || '').trim();
     const trimmedContent = (content || '').trim();
     if (!trimmedTitle || !trimmedContent) {
@@ -1753,6 +1807,7 @@ export class MatterService {
   }
 
   public async deleteNote(matterId: string, noteId: string) {
+    this.assertMatterOwned(matterId);
     const db = getDb();
     const res = db
       .delete(schema.matterNotes)
@@ -1780,6 +1835,7 @@ export class MatterService {
     matterId: string,
     memberDocs: MatterMemberDocument[]
   ): Promise<MatterOverviewMetrics> {
+    const userId = getCurrentUserId();
     const db = getDb();
 
     const totalDocuments = memberDocs.length;
@@ -1794,6 +1850,7 @@ export class MatterService {
         .from(schema.comparisons)
         .where(
           and(
+            eq(schema.comparisons.userId, userId),
             inArray(schema.comparisons.baseDocumentId, docIds),
             inArray(schema.comparisons.targetDocumentId, docIds)
           )
@@ -1909,6 +1966,7 @@ export class MatterService {
    * Retrieves the activity audit log for a matter.
    */
   public async getActivity(matterId: string, limit = 50): Promise<MatterActivityItem[]> {
+    this.assertMatterOwned(matterId);
     const db = getDb();
     const rows = db
       .select()
@@ -1959,11 +2017,15 @@ export class MatterService {
       throw new ValidationError('Related document must belong to this matter.');
     }
     if (input.relatedComparisonId) {
+      const userId = getCurrentUserId();
       const comparison = db.select({
         baseDocumentId: schema.comparisons.baseDocumentId,
         targetDocumentId: schema.comparisons.targetDocumentId,
       }).from(schema.comparisons)
-        .where(eq(schema.comparisons.id, input.relatedComparisonId)).get();
+        .where(and(
+          eq(schema.comparisons.id, input.relatedComparisonId),
+          eq(schema.comparisons.userId, userId)
+        )).get();
       if (!comparison || !memberIds.has(comparison.baseDocumentId) || !memberIds.has(comparison.targetDocumentId)) {
         throw new ValidationError('Related comparison must use documents in this matter.');
       }
@@ -2026,6 +2088,7 @@ export class MatterService {
       itemType?: ActionItemType;
     }
   ): Promise<MatterActionItem[]> {
+    this.assertMatterOwned(matterId);
     const db = getDb();
     const conditions = [eq(schema.matterActionItems.matterId, matterId)];
 
@@ -2055,7 +2118,10 @@ export class MatterService {
         schema.matterDocuments,
         eq(schema.documents.id, schema.matterDocuments.documentId)
       )
-      .where(eq(schema.matterDocuments.matterId, matterId))
+      .where(and(
+        eq(schema.matterDocuments.matterId, matterId),
+        eq(schema.documents.userId, getCurrentUserId())
+      ))
       .all() : [];
     for (const d of matterDocs) {
       docMap.set(d.id, d.title);
@@ -2137,6 +2203,7 @@ export class MatterService {
     itemId: string,
     input: UpdateActionItemInput
   ): Promise<MatterActionItem> {
+    this.assertMatterOwned(matterId);
     const db = getDb();
     const [existing] = db
       .select()
@@ -2219,6 +2286,7 @@ export class MatterService {
    * Deletes an action item.
    */
   public async deleteActionItem(matterId: string, itemId: string): Promise<void> {
+    this.assertMatterOwned(matterId);
     const db = getDb();
     const [existing] = db
       .select()
@@ -2358,7 +2426,11 @@ export class MatterService {
           preparationDataJson: schema.preparations.preparationDataJson,
         })
         .from(schema.preparations)
-        .where(and(inArray(schema.preparations.documentId, docIds), eq(schema.preparations.briefKind, 'PREPARATION')))
+        .where(and(
+          eq(schema.preparations.userId, getCurrentUserId()),
+          inArray(schema.preparations.documentId, docIds),
+          eq(schema.preparations.briefKind, 'PREPARATION')
+        ))
         .all();
 
       for (const pr of prepRecords) {
@@ -2816,6 +2888,7 @@ export class MatterService {
     matterId: string,
     options?: { force?: boolean }
   ): Promise<MatterBriefResponse> {
+    const userId = getCurrentUserId();
     const db = getDb();
     const matter = await this.getMatter(matterId);
 
@@ -2824,7 +2897,11 @@ export class MatterService {
       const cached = db
         .select()
         .from(schema.preparations)
-        .where(and(eq(schema.preparations.matterId, matterId), eq(schema.preparations.briefKind, 'MATTER')))
+        .where(and(
+          eq(schema.preparations.userId, userId),
+          eq(schema.preparations.matterId, matterId),
+          eq(schema.preparations.briefKind, 'MATTER')
+        ))
         .limit(1)
         .all();
 
@@ -2934,7 +3011,11 @@ export class MatterService {
     const existingRecord = db
       .select()
       .from(schema.preparations)
-      .where(and(eq(schema.preparations.matterId, matterId), eq(schema.preparations.briefKind, 'MATTER')))
+      .where(and(
+        eq(schema.preparations.userId, userId),
+        eq(schema.preparations.matterId, matterId),
+        eq(schema.preparations.briefKind, 'MATTER')
+      ))
       .limit(1)
       .all();
 
@@ -2944,6 +3025,7 @@ export class MatterService {
       }
       tx.insert(schema.preparations).values({
         id: briefId,
+        userId,
         briefKind: 'MATTER',
         matterId,
         purpose: `Matter Counsel Brief: ${matter.title}`,
@@ -2968,11 +3050,17 @@ export class MatterService {
    * Retrieves an existing Matter Brief if generated.
    */
   public async getMatterBrief(matterId: string): Promise<MatterBriefResponse | null> {
+    this.assertMatterOwned(matterId);
+    const userId = getCurrentUserId();
     const db = getDb();
     const records = db
       .select()
       .from(schema.preparations)
-      .where(and(eq(schema.preparations.matterId, matterId), eq(schema.preparations.briefKind, 'MATTER')))
+      .where(and(
+        eq(schema.preparations.userId, userId),
+        eq(schema.preparations.matterId, matterId),
+        eq(schema.preparations.briefKind, 'MATTER')
+      ))
       .limit(1)
       .all();
 

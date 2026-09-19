@@ -4,6 +4,33 @@
  */
 
 import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core';
+import { UNOWNED_USER_ID } from '@/lib/auth/constants';
+
+/** Local accounts. Passwords are stored as versioned scrypt hashes. */
+export const users = sqliteTable('users', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  email: text('email').notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  isDemo: integer('is_demo', { mode: 'boolean' }).notNull().default(false),
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+}, (table) => [index('users_email_idx').on(table.email)]);
+
+export type UserRecord = typeof users.$inferSelect;
+export type NewUserRecord = typeof users.$inferInsert;
+
+/** Revocable browser sessions. The raw session ID is never stored. */
+export const userSessions = sqliteTable('user_sessions', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  expiresAt: text('expires_at').notNull(),
+  createdAt: text('created_at').notNull(),
+}, (table) => [
+  index('user_sessions_user_id_idx').on(table.userId),
+  index('user_sessions_expires_at_idx').on(table.expiresAt),
+]);
 
 /**
  * Documents table: Stores metadata about uploaded legal files.
@@ -11,6 +38,7 @@ import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core
  */
 export const documents = sqliteTable('documents', {
   id: text('id').primaryKey(),
+  userId: text('user_id').notNull().default(UNOWNED_USER_ID),
   title: text('title').notNull(),
   originalFilename: text('original_filename').notNull(),
   mimeType: text('mime_type').notNull(),
@@ -27,7 +55,10 @@ export const documents = sqliteTable('documents', {
   geminiFileUri: text('gemini_file_uri'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
-}, (table) => [index('documents_created_at_idx').on(table.createdAt)]);
+}, (table) => [
+  index('documents_created_at_idx').on(table.createdAt),
+  index('documents_user_created_at_idx').on(table.userId, table.createdAt),
+]);
 
 export type DocumentRecord = typeof documents.$inferSelect;
 export type NewDocumentRecord = typeof documents.$inferInsert;
@@ -127,6 +158,7 @@ export type NewChatMessageRecord = typeof chatMessages.$inferInsert;
  */
 export const comparisons = sqliteTable('comparisons', {
   id: text('id').primaryKey(),
+  userId: text('user_id').notNull().default(UNOWNED_USER_ID),
   baseDocumentId: text('base_document_id')
     .notNull()
     .references(() => documents.id, { onDelete: 'cascade' }),
@@ -144,7 +176,10 @@ export const comparisons = sqliteTable('comparisons', {
     .default('PENDING'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at'),
-}, (table) => [index('comparisons_base_target_idx').on(table.baseDocumentId, table.targetDocumentId)]);
+}, (table) => [
+  index('comparisons_base_target_idx').on(table.baseDocumentId, table.targetDocumentId),
+  index('comparisons_user_pair_idx').on(table.userId, table.baseDocumentId, table.targetDocumentId),
+]);
 
 export type ComparisonRecord = typeof comparisons.$inferSelect;
 export type NewComparisonRecord = typeof comparisons.$inferInsert;
@@ -154,6 +189,7 @@ export type NewComparisonRecord = typeof comparisons.$inferInsert;
  */
 export const matters = sqliteTable('matters', {
   id: text('id').primaryKey(),
+  userId: text('user_id').notNull().default(UNOWNED_USER_ID),
   title: text('title').notNull(),
   description: text('description'),
   jurisdiction: text('jurisdiction'),
@@ -169,7 +205,10 @@ export const matters = sqliteTable('matters', {
     .default('ACTIVE'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
-}, (table) => [index('matters_status_updated_at_idx').on(table.status, table.updatedAt)]);
+}, (table) => [
+  index('matters_status_updated_at_idx').on(table.status, table.updatedAt),
+  index('matters_user_status_updated_at_idx').on(table.userId, table.status, table.updatedAt),
+]);
 
 export type MatterRecord = typeof matters.$inferSelect;
 export type NewMatterRecord = typeof matters.$inferInsert;
@@ -283,6 +322,7 @@ export type NewMatterNoteRecord = typeof matterNotes.$inferInsert;
  */
 export const preparations = sqliteTable('preparations', {
   id: text('id').primaryKey(),
+  userId: text('user_id').notNull().default(UNOWNED_USER_ID),
   briefKind: text('brief_kind', { enum: ['PREPARATION', 'MATTER'] }).notNull().default('PREPARATION'),
   documentId: text('document_id').references(() => documents.id, { onDelete: 'cascade' }),
   comparisonId: text('comparison_id').references(() => comparisons.id, { onDelete: 'cascade' }),
@@ -298,7 +338,10 @@ export const preparations = sqliteTable('preparations', {
     .default('PENDING'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
-}, (table) => [index('preparations_matter_kind_idx').on(table.matterId, table.briefKind)]);
+}, (table) => [
+  index('preparations_matter_kind_idx').on(table.matterId, table.briefKind),
+  index('preparations_user_source_idx').on(table.userId, table.documentId, table.comparisonId, table.matterId),
+]);
 
 export type PreparationRecord = typeof preparations.$inferSelect;
 export type NewPreparationRecord = typeof preparations.$inferInsert;

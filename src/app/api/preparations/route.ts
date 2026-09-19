@@ -1,8 +1,9 @@
+import { withAuth } from '@/lib/auth/route';
 import { NextRequest, NextResponse } from 'next/server';
 import { getPreparationService } from '@/lib/preparation/service';
 import { formatSafeError, AppError, ValidationError } from '@/lib/utils/errors';
 
-export async function POST(request: NextRequest) {
+async function POSTHandler(request: NextRequest) {
   try {
     let body: {
       documentId?: string;
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+async function GETHandler(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const documentId = searchParams.get('documentId') || searchParams.get('docId') || undefined;
@@ -75,3 +76,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(safe, { status });
   }
 }
+
+export const POST = withAuth(POSTHandler);
+export const GET = withAuth(GETHandler);

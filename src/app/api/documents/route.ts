@@ -1,8 +1,9 @@
+import { withAuth } from '@/lib/auth/route';
 import { NextResponse } from 'next/server';
 import { getDocumentService } from '@/lib/document/service';
 import { formatSafeError, AppError } from '@/lib/utils/errors';
 
-export async function GET() {
+async function GETHandler() {
   try {
     const service = getDocumentService();
     const documents = await service.getDocuments();
@@ -13,3 +14,5 @@ export async function GET() {
     return NextResponse.json(safe, { status });
   }
 }
+
+export const GET = withAuth(GETHandler);

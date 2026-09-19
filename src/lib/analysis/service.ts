@@ -128,6 +128,8 @@ export class AnalysisService {
       throw new ValidationError('Document ID is required.');
     }
 
+    await this.documentService.getDocumentById(docId);
+
     const db = getDb();
     const [record] = await db
       .select()

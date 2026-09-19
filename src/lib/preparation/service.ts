@@ -34,6 +34,7 @@ import { LEGAL_DISCLAIMERS } from '@/lib/ai/safety';
 import { generateId } from '@/lib/utils/id';
 import { AppError, NotFoundError, ValidationError } from '@/lib/utils/errors';
 import { eq, and, isNull } from 'drizzle-orm';
+import { getCurrentUserId } from '@/lib/auth/context';
 
 export interface GeneratePreparationInput {
   documentId?: string;
@@ -120,12 +121,21 @@ export class PreparationService {
   }
 
   private assertMatterSources(matterId: string, documentId?: string, comparisonId?: string): string[] {
+    const userId = getCurrentUserId();
     const db = getDb();
-    if (!db.select({ id: schema.matters.id }).from(schema.matters).where(eq(schema.matters.id, matterId)).get()) {
+    if (!db.select({ id: schema.matters.id }).from(schema.matters).where(and(
+      eq(schema.matters.id, matterId),
+      eq(schema.matters.userId, userId)
+    )).get()) {
       throw new NotFoundError('Matter');
     }
     const memberIds = db.select({ documentId: schema.matterDocuments.documentId })
-      .from(schema.matterDocuments).where(eq(schema.matterDocuments.matterId, matterId))
+      .from(schema.matterDocuments)
+      .innerJoin(schema.documents, eq(schema.documents.id, schema.matterDocuments.documentId))
+      .where(and(
+        eq(schema.matterDocuments.matterId, matterId),
+        eq(schema.documents.userId, userId)
+      ))
       .all().map((row) => row.documentId);
     if (documentId && !memberIds.includes(documentId)) {
       throw new ValidationError('Selected document must belong to this matter.');
@@ -134,7 +144,10 @@ export class PreparationService {
       const comparison = db.select({
         baseDocumentId: schema.comparisons.baseDocumentId,
         targetDocumentId: schema.comparisons.targetDocumentId,
-      }).from(schema.comparisons).where(eq(schema.comparisons.id, comparisonId)).get();
+      }).from(schema.comparisons).where(and(
+        eq(schema.comparisons.id, comparisonId),
+        eq(schema.comparisons.userId, userId)
+      )).get();
       if (!comparison || !memberIds.includes(comparison.baseDocumentId) || !memberIds.includes(comparison.targetDocumentId)) {
         throw new ValidationError('Selected comparison must use documents in this matter.');
       }
@@ -150,11 +163,16 @@ export class PreparationService {
       throw new ValidationError('Preparation ID is required.');
     }
 
+    const userId = getCurrentUserId();
     const db = getDb();
     const [record] = await db
       .select()
       .from(schema.preparations)
-      .where(and(eq(schema.preparations.id, preparationId), eq(schema.preparations.briefKind, 'PREPARATION')))
+      .where(and(
+        eq(schema.preparations.id, preparationId),
+        eq(schema.preparations.userId, userId),
+        eq(schema.preparations.briefKind, 'PREPARATION')
+      ))
       .limit(1);
 
     if (!record || record.status !== 'COMPLETED' || !record.preparationDataJson) {
@@ -190,10 +208,16 @@ export class PreparationService {
     if (!documentId && !comparisonId && !matterId) {
       throw new ValidationError('At least one of documentId, comparisonId, or matterId is required.');
     }
-    if (matterId && (documentId || comparisonId)) {
+    if (matterId) {
       this.assertMatterSources(matterId, documentId, comparisonId);
+    } else {
+      if (documentId) await this.documentService.getDocumentById(documentId);
+      if (comparisonId && !(await this.comparisonService.getComparison(comparisonId))) {
+        throw new NotFoundError('Comparison');
+      }
     }
 
+    const userId = getCurrentUserId();
     const db = getDb();
     let query;
 
@@ -201,7 +225,11 @@ export class PreparationService {
       query = db
         .select()
         .from(schema.preparations)
-        .where(and(eq(schema.preparations.matterId, matterId), eq(schema.preparations.briefKind, 'PREPARATION')))
+        .where(and(
+          eq(schema.preparations.userId, userId),
+          eq(schema.preparations.matterId, matterId),
+          eq(schema.preparations.briefKind, 'PREPARATION')
+        ))
         .limit(1);
     } else if (documentId && comparisonId) {
       query = db
@@ -209,6 +237,7 @@ export class PreparationService {
         .from(schema.preparations)
         .where(
           and(
+            eq(schema.preparations.userId, userId),
             eq(schema.preparations.documentId, documentId),
             eq(schema.preparations.comparisonId, comparisonId),
             isNull(schema.preparations.matterId),
@@ -220,13 +249,23 @@ export class PreparationService {
       query = db
         .select()
         .from(schema.preparations)
-        .where(and(eq(schema.preparations.comparisonId, comparisonId), isNull(schema.preparations.matterId), eq(schema.preparations.briefKind, 'PREPARATION')))
+        .where(and(
+          eq(schema.preparations.userId, userId),
+          eq(schema.preparations.comparisonId, comparisonId),
+          isNull(schema.preparations.matterId),
+          eq(schema.preparations.briefKind, 'PREPARATION')
+        ))
         .limit(1);
     } else {
       query = db
         .select()
         .from(schema.preparations)
-        .where(and(eq(schema.preparations.documentId, documentId!), isNull(schema.preparations.matterId), eq(schema.preparations.briefKind, 'PREPARATION')))
+        .where(and(
+          eq(schema.preparations.userId, userId),
+          eq(schema.preparations.documentId, documentId!),
+          isNull(schema.preparations.matterId),
+          eq(schema.preparations.briefKind, 'PREPARATION')
+        ))
         .limit(1);
     }
 
@@ -254,6 +293,7 @@ export class PreparationService {
    * Generates or retrieves an executive Lawyer Consultation Brief.
    */
   public async generatePreparation(input: GeneratePreparationInput): Promise<PreparationBrief> {
+    const userId = getCurrentUserId();
     const { documentId, comparisonId, matterId, purpose, userNotes = [], force = false } = input;
 
     if (!documentId && !comparisonId && !matterId) {
@@ -688,7 +728,11 @@ ${prompt}
             : and(eq(schema.preparations.documentId, targetDocId!), isNull(schema.preparations.matterId));
       const existingPreps = tx.select({ id: schema.preparations.id })
         .from(schema.preparations)
-        .where(and(sourceFilter, eq(schema.preparations.briefKind, 'PREPARATION')))
+        .where(and(
+          eq(schema.preparations.userId, userId),
+          sourceFilter,
+          eq(schema.preparations.briefKind, 'PREPARATION')
+        ))
         .all();
       for (const prep of existingPreps) {
         tx.delete(schema.citations).where(eq(schema.citations.preparationId, prep.id)).run();
@@ -696,6 +740,7 @@ ${prompt}
       }
       tx.insert(schema.preparations).values({
         id: preparationId,
+        userId,
         briefKind: 'PREPARATION',
         documentId: targetDocId || null,
         comparisonId: comparisonId || null,
@@ -737,11 +782,16 @@ ${prompt}
       throw new ValidationError('Preparation ID and Item ID are required.');
     }
 
+    const userId = getCurrentUserId();
     const db = getDb();
     const [record] = await db
       .select()
       .from(schema.preparations)
-      .where(and(eq(schema.preparations.id, preparationId), eq(schema.preparations.briefKind, 'PREPARATION')))
+      .where(and(
+        eq(schema.preparations.id, preparationId),
+        eq(schema.preparations.userId, userId),
+        eq(schema.preparations.briefKind, 'PREPARATION')
+      ))
       .limit(1);
 
     if (!record) {
@@ -765,7 +815,11 @@ ${prompt}
         checklistStateJson: JSON.stringify(stateMap),
         updatedAt: new Date().toISOString(),
       })
-      .where(and(eq(schema.preparations.id, preparationId), eq(schema.preparations.briefKind, 'PREPARATION')));
+      .where(and(
+        eq(schema.preparations.id, preparationId),
+        eq(schema.preparations.userId, userId),
+        eq(schema.preparations.briefKind, 'PREPARATION')
+      ));
 
     return stateMap;
   }

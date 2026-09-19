@@ -1,9 +1,10 @@
+import { withAuth } from '@/lib/auth/route';
 import { NextRequest, NextResponse } from 'next/server';
 import { getMatterService } from '@/lib/matter/service';
 import { formatSafeError, AppError, ValidationError } from '@/lib/utils/errors';
 import { ActionItemStatus, ActionItemPriority, ActionItemType } from '@/lib/ai/safety';
 
-export async function GET(
+async function GETHandler(
   request: NextRequest,
   { params }: { params: Promise<{ matterId: string }> }
 ) {
@@ -33,7 +34,7 @@ export async function GET(
   }
 }
 
-export async function POST(
+async function POSTHandler(
   request: NextRequest,
   { params }: { params: Promise<{ matterId: string }> }
 ) {
@@ -66,3 +67,6 @@ export async function POST(
     return NextResponse.json(safe, { status });
   }
 }
+
+export const GET = withAuth(GETHandler);
+export const POST = withAuth(POSTHandler);

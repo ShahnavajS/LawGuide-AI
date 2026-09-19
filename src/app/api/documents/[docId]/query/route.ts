@@ -1,9 +1,10 @@
+import { withAuth } from '@/lib/auth/route';
 import { NextRequest, NextResponse } from 'next/server';
 import { answerDocumentQuestion } from '@/lib/document/query';
 import { formatSafeError, AppError, ValidationError } from '@/lib/utils/errors';
 import { getClientIdentifier, rateLimiter } from '@/lib/security/rate-limiter';
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ docId: string }> }) {
+async function POSTHandler(request: NextRequest, { params }: { params: Promise<{ docId: string }> }) {
   try {
     const limit = rateLimiter.check(getClientIdentifier(request), 'heavy_ai');
     if (!limit.allowed) return NextResponse.json({ error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many questions. Try again shortly.' } }, { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } });
@@ -19,3 +20,5 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json(safe, { status: error instanceof AppError ? error.statusCode : 500 });
   }
 }
+
+export const POST = withAuth(POSTHandler);

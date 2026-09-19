@@ -1,8 +1,9 @@
+import { withAuth } from '@/lib/auth/route';
 import { NextRequest, NextResponse } from 'next/server';
 import { getMatterService } from '@/lib/matter/service';
 import { formatSafeError, AppError, ValidationError } from '@/lib/utils/errors';
 
-export async function GET(
+async function GETHandler(
   _request: NextRequest,
   { params }: { params: Promise<{ matterId: string }> }
 ) {
@@ -23,7 +24,7 @@ export async function GET(
   }
 }
 
-export async function PATCH(
+async function PATCHHandler(
   request: NextRequest,
   { params }: { params: Promise<{ matterId: string }> }
 ) {
@@ -58,7 +59,7 @@ export async function PATCH(
   }
 }
 
-export async function DELETE(
+async function DELETEHandler(
   _request: NextRequest,
   { params }: { params: Promise<{ matterId: string }> }
 ) {
@@ -78,3 +79,7 @@ export async function DELETE(
     return NextResponse.json(safe, { status });
   }
 }
+
+export const GET = withAuth(GETHandler);
+export const PATCH = withAuth(PATCHHandler);
+export const DELETE = withAuth(DELETEHandler);

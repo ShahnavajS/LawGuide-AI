@@ -108,7 +108,6 @@ describe('Phase 13: Deployment Readiness & Production Verification', () => {
         DATABASE_URL: './data/lexiguide.db',
         STORAGE_DIR: './uploads',
         GEMINI_API_KEY: 'AIzaSyD-validProductionKey1234567890',
-        APP_ACCESS_PASSWORD: 'a-long-private-workspace-password',
         APP_SESSION_SECRET: 'independent-private-session-secret-over-32-characters',
       };
 
@@ -130,7 +129,7 @@ describe('Phase 13: Deployment Readiness & Production Verification', () => {
       expect(result.valid).toBe(false);
       expect(result.errors.some((e) => e.includes('DATABASE_URL'))).toBe(true);
       expect(result.errors.some((e) => e.includes('STORAGE_DIR'))).toBe(true);
-      expect(result.errors.some((e) => e.includes('APP_ACCESS_PASSWORD'))).toBe(true);
+      expect(result.errors.some((e) => e.includes('APP_SESSION_SECRET'))).toBe(true);
 
       // Verify no secret value is exposed in error output
       const errorJson = JSON.stringify(result.errors);
@@ -143,7 +142,6 @@ describe('Phase 13: Deployment Readiness & Production Verification', () => {
         DATABASE_URL: './data/lexiguide.db',
         STORAGE_DIR: './uploads',
         GEMINI_API_KEY: '',
-        APP_ACCESS_PASSWORD: 'a-long-private-workspace-password',
         APP_SESSION_SECRET: 'independent-private-session-secret-over-32-characters',
       };
 
@@ -176,7 +174,6 @@ describe('Phase 13: Deployment Readiness & Production Verification', () => {
 
     it('returns degraded readiness when production access secrets are missing', async () => {
       vi.stubEnv('NODE_ENV', 'production');
-      vi.stubEnv('APP_ACCESS_PASSWORD', '');
       vi.stubEnv('APP_SESSION_SECRET', '');
       try {
         const response = await healthHandler();

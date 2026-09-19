@@ -1,8 +1,9 @@
+import { withAuth } from '@/lib/auth/route';
 import { NextRequest, NextResponse } from 'next/server';
 import { getMatterService } from '@/lib/matter/service';
 import { formatSafeError, AppError, ValidationError } from '@/lib/utils/errors';
 
-export async function GET(
+async function GETHandler(
   _request: NextRequest,
   {
     params,
@@ -39,3 +40,5 @@ export async function GET(
     return NextResponse.json(safe, { status });
   }
 }
+
+export const GET = withAuth(GETHandler);

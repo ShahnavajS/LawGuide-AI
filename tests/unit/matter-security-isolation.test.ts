@@ -12,6 +12,7 @@ import { GeminiService } from '@/lib/ai/gemini';
 import { NotFoundError } from '@/lib/utils/errors';
 import { getDb, schema } from '@/lib/db';
 import { generateId } from '@/lib/utils/id';
+import { EVALUATOR_USER_ID } from '@/lib/auth/constants';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -173,6 +174,7 @@ describe('Phase 10: Matter Security & Data Isolation', () => {
     const now = new Date().toISOString();
     getDb().insert(schema.comparisons).values({
       id: comparisonId,
+      userId: EVALUATOR_USER_ID,
       baseDocumentId: docs[1].id,
       targetDocumentId: docs[2].id,
       createdAt: now,

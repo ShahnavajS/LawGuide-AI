@@ -13,8 +13,11 @@ services:
       - STORAGE_DIR=/app/uploads
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
-      - APP_ACCESS_PASSWORD=${APP_ACCESS_PASSWORD:?Set APP_ACCESS_PASSWORD in .env}
       - APP_SESSION_SECRET=${APP_SESSION_SECRET:?Set APP_SESSION_SECRET in .env}
+      - EVALUATOR_DEMO_ENABLED=${EVALUATOR_DEMO_ENABLED:-false}
+      - EVALUATOR_DEMO_NAME=${EVALUATOR_DEMO_NAME:-Evaluator Demo}
+      - EVALUATOR_DEMO_EMAIL=${EVALUATOR_DEMO_EMAIL:-evaluator@lexiguide.demo}
+      - EVALUATOR_DEMO_PASSWORD=${EVALUATOR_DEMO_PASSWORD:-}
     volumes:
       - ./data:/app/data
       - ./uploads:/app/uploads

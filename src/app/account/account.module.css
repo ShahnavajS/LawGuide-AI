@@ -1,0 +1,19 @@
+.shell { min-height: 65vh; padding-block: clamp(3rem, 7vw, 6rem); display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 520px); gap: clamp(2rem, 8vw, 8rem); align-items: start; }
+.heading > p,.cardHeader span { color: var(--color-brand-700); font-size: .72rem; font-weight: 750; letter-spacing: .14em; }
+.heading h1 { max-width: 12ch; margin: 1rem 0; font-family: var(--font-display); font-size: clamp(3rem, 6vw, 5.3rem); font-weight: 400; letter-spacing: -.055em; line-height: 1; }
+.heading > span { display: block; max-width: 52ch; color: var(--text-secondary); line-height: 1.7; }
+.card { background: var(--bg-surface); border: 1px solid var(--border-subtle); box-shadow: var(--shadow-md); padding: clamp(1.5rem, 4vw, 2.5rem); }
+.cardHeader { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.cardHeader strong { padding: .35rem .55rem; background: var(--color-gold-100); color: var(--color-brand-800); font-size: .68rem; letter-spacing: .08em; }
+.card h2 { margin: 1.4rem 0; font-family: var(--font-display); font-size: 2.5rem; font-weight: 400; }
+.card dl { margin: 0; border-block: 1px solid var(--border-subtle); }
+.card dl div { display: grid; grid-template-columns: 7rem 1fr; gap: 1rem; padding: 1rem 0; }
+.card dl div + div { border-top: 1px solid var(--border-subtle); }
+.card dt { color: var(--text-muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; }
+.card dd { margin: 0; overflow-wrap: anywhere; }
+.notice { padding: .9rem; background: var(--color-gold-50); border-left: 3px solid var(--color-gold); color: var(--text-secondary); font-size: .82rem; line-height: 1.6; }
+.actions { display: flex; flex-wrap: wrap; gap: .7rem; margin-top: 1.5rem; }
+.actions a,.actions button { display: inline-flex; min-height: 44px; align-items: center; padding: .7rem 1rem; font: inherit; font-size: .84rem; font-weight: 700; }
+.actions a { background: var(--color-brand-700); color: white; }
+.actions button { border: 1px solid var(--border-medium); background: transparent; color: var(--text-primary); }
+@media (max-width: 800px) { .shell { grid-template-columns: 1fr; }.heading h1 { max-width: 15ch; } }

@@ -1,8 +1,9 @@
+import { withAuth } from '@/lib/auth/route';
 import { NextRequest, NextResponse } from 'next/server';
 import { getPreparationService } from '@/lib/preparation/service';
 import { formatSafeError, AppError, ValidationError } from '@/lib/utils/errors';
 
-export async function PATCH(
+async function PATCHHandler(
   request: NextRequest,
   context: { params: Promise<{ preparationId: string }> }
 ) {
@@ -38,3 +39,5 @@ export async function PATCH(
     return NextResponse.json(safe, { status });
   }
 }
+
+export const PATCH = withAuth(PATCHHandler);

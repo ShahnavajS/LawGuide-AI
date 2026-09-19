@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { LegalInformationService } from '@/lib/legal-info/service';
 import { formatSafeError, AppError } from '@/lib/utils/errors';
+import { runWithOptionalAuth } from '@/lib/auth/route';
+import { getOptionalCurrentUser } from '@/lib/auth/context';
 
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ topicId: string }> }
 ) {
+  return runWithOptionalAuth(req, async () => {
   try {
     const { topicId } = await context.params;
     if (!topicId) {
@@ -21,6 +24,13 @@ export async function GET(
     const country = searchParams.get('country') || undefined;
     const region = searchParams.get('region') || undefined;
     const force = searchParams.get('force') === 'true';
+
+    if ((documentId || comparisonId) && !getOptionalCurrentUser()) {
+      return NextResponse.json(
+        { success: false, error: { code: 'UNAUTHORIZED', message: 'Sign in to use document context.' } },
+        { status: 401 }
+      );
+    }
 
     const service = new LegalInformationService();
     const dossier = await service.getLegalInformation({
@@ -44,4 +54,5 @@ export async function GET(
       : formatSafeError(err);
     return NextResponse.json({ success: false, ...payload }, { status });
   }
+  });
 }

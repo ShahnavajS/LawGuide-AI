@@ -1,9 +1,10 @@
+import { withAuth } from '@/lib/auth/route';
 import { NextRequest, NextResponse } from 'next/server';
 import { LegalInformationService } from '@/lib/legal-info/service';
 import { ConceptQuestionRequestSchema } from '@/lib/legal-info/schemas';
 import { formatSafeError, AppError, ValidationError } from '@/lib/utils/errors';
 
-export async function POST(req: NextRequest) {
+async function POSTHandler(req: NextRequest) {
   try {
     if (Number(req.headers.get('content-length') || 0) > 16 * 1024) {
       throw new ValidationError('Question request is too large.');
@@ -48,3 +49,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, ...payload }, { status });
   }
 }
+
+export const POST = withAuth(POSTHandler);

@@ -1,8 +1,9 @@
+import { withAuth } from '@/lib/auth/route';
 import { NextRequest, NextResponse } from 'next/server';
 import { getPreparationService } from '@/lib/preparation/service';
 import { formatSafeError, AppError, ValidationError } from '@/lib/utils/errors';
 
-export async function GET(
+async function GETHandler(
   _request: NextRequest,
   context: { params: Promise<{ preparationId: string }> }
 ) {
@@ -30,3 +31,5 @@ export async function GET(
     return NextResponse.json(safe, { status });
   }
 }
+
+export const GET = withAuth(GETHandler);

@@ -7,7 +7,7 @@ LexiGuide AI is a GenAI-powered legal information and document-assistance platfo
 > **Important Legal Safety Notice:**  
 > LexiGuide AI provides legal information and document analysis tools, **not legal advice**. The platform does not form an attorney-client relationship and is not a substitute for consultation with a licensed attorney.
 
-**Current implementation:** This is a single private workspace protected by one shared password in production. Everyone with that password sees the same documents and matters. The original PDF remains local; extracted document text is sent to Gemini when AI analysis is requested. A matching source quote verifies its location, not the legal correctness of an interpretation. See [current implementation status](./docs/implementation-status.md) for deployment and remaining limitations. The phase log below is historical and may describe earlier behavior.
+**Current implementation:** Public visitors can use the landing page, product demo, and general Legal Navigator. Individual accounts unlock documents, comparisons, matters, and preparation tools. Every top-level workspace record is owner-scoped at the service layer, and protected APIs validate a revocable database session. The optional evaluator account is explicitly shared and must contain sample data only. The original PDF remains local; extracted document text is sent to Gemini when AI analysis is requested. A matching source quote verifies its location, not the legal correctness of an interpretation. See [current implementation status](./docs/implementation-status.md) for deployment and remaining limitations.
 
 ---
 
@@ -63,6 +63,9 @@ Findings use five labels to show their source and review status. Labels do not e
 ├── src/
 │   ├── app/                     # Next.js App Router
 │   │   ├── analyze/[docId]/     # Legal X-Ray & Evidence Viewer
+│   │   ├── account/             # Signed-in profile and workspace notice
+│   │   ├── login/               # Sign-in and evaluator autofill
+│   │   ├── signup/              # Account creation
 │   │   ├── compare/             # Version comparison workspace
 │   │   ├── dashboard/           # Document management workspace
 │   │   ├── legal-info/          # Legal Information Navigator
@@ -81,6 +84,7 @@ Findings use five labels to show their source and review status. Labels do not e
 │   │   └── ui/                  # Button, Card, Badge, Input, Modal, Spinner, Skeleton, Tooltip
 │   └── lib/
 │       ├── ai/                  # Gemini client, config, prompts, safety guardrails, schemas
+│       ├── auth/                # Password hashing, sessions, account context, route guards
 │       ├── config/              # Server-only environment validation
 │       ├── db/                  # SQLite connection, Drizzle schema, migrations
 │       ├── document/            # Storage & processor interfaces (PDF.js text extractor)
@@ -130,12 +134,13 @@ GEMINI_API_KEY=your_gemini_api_key_here
 GEMINI_MODEL=gemini-2.5-flash
 DATABASE_URL=./data/lexiguide.db
 STORAGE_DIR=./uploads
+APP_SESSION_SECRET=<at least 32 random characters in production>
 NODE_ENV=development
-# For a private development workspace, set both to real independent secrets.
-# Leave both unset to use the optional local development mode.
+# Optional shared evaluator sample account; disable for ordinary production use.
+EVALUATOR_DEMO_ENABLED=false
 ```
 
-Existing migrations are applied when the database connection opens. `npm run db:generate` creates new migrations after a schema change; it is not required for first startup. Production requires both access secrets and fails closed when they are absent or placeholders. The copied `.env.example` leaves them unset for local development.
+Existing migrations are applied when the database connection opens. `npm run db:generate` creates new migrations after a schema change; it is not required for first startup. Production requires `APP_SESSION_SECRET` and fails closed for private routes when it is absent or a placeholder. Development uses a local-only fallback secret. Set `EVALUATOR_DEMO_ENABLED=true` only when the shared sample workspace is required.
 
 ### 4. Start Development Server
 

@@ -45,7 +45,7 @@ The prior pass also bounded document-list filesystem checks, delayed hidden matt
 
 ## 4. Security and AI safety
 
-Authentication is a signed shared-session cookie with production fail-closed configuration, login throttling, same-origin checks for mutations, and a request-size bound. This does **not** create individual ownership: anyone with the workspace password can access all documents and matters. Matter IDs provide grouping, and the new checks prevent accidental or malicious cross-matter links in scoped workflows; they are not tenant isolation.
+Authentication now uses individual accounts, memory-hard password hashes, signed opaque session cookies, server-side session revocation, login throttling, same-origin mutation checks, and bounded request bodies. Documents, comparisons, matters, and preparations carry an owner ID; services verify ownership close to every data access. The optional evaluator account is intentionally shared and limited to sample data.
 
 Document text is treated as untrusted prompt context. Existing prompts constrain legal advice and jurisdiction claims; the citation validator checks whether a quoted excerpt appears on the stated source page. This establishes quote presence, **not** the truth of an AI interpretation. Legal X-Ray and comparison preserve interpretation/review classifications. The counsel-question path now discards foreign or unsupported citations, and the matter brief no longer labels failed citations as verified facts. User-provided context remains labeled separately. Anti-adjudication and abstention tests remained in the passing suite. Full runtime schemas and claim-to-quote entailment checks are still incomplete across all model outputs.
 

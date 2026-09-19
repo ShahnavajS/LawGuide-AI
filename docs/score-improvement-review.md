@@ -21,7 +21,7 @@ The external score is a useful signal, but its rubric and test corpus are unavai
 
 - [SQLite query plan guidance](https://sqlite.org/eqp.html) explains how to inspect full scans versus indexed searches. [SQLite foreign key guidance](https://sqlite.org/foreignkeys.html) recommends indexes on child keys for efficient parent deletes and updates.
 - [Drizzle index declarations](https://orm.drizzle.team/docs/indexes-constraints) are the source for schema-defined indexes and generated migrations.
-- [Next.js authentication guidance](https://nextjs.org/docs/app/guides/authentication) recommends secure authorization close to data access and treats Proxy checks as optimistic. This project remains one shared private workspace, so per-user authorization is outside its present data model.
+- [Next.js authentication guidance](https://nextjs.org/docs/app/guides/authentication) recommends authorization close to data access and treats Proxy checks as optimistic. The current account implementation follows that split: Proxy performs a signed-token precheck, protected handlers validate the database session, and domain services scope top-level records to the authenticated owner.
 - [OWASP's file upload guidance](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html) supports the existing extension, MIME, signature, size, generated-name, and private-storage checks. The PDF parser and worker remain a dependency to keep patched; the [PDF.js advisory](https://github.com/mozilla/pdf.js/security/advisories/GHSA-hq66-cqwq-w95j) lists 6.2.108 as patched, and this project uses 6.3.289.
 
 ## Verification and limits
@@ -30,4 +30,4 @@ The external score is a useful signal, but its rubric and test corpus are unavai
 - ESLint, TypeScript, and a Next.js production build passed. The migration SQL was reviewed before running tests.
 - The checked-in PDF worker SHA-256 hash matches the worker in the installed `pdfjs-dist` 6.3.289 package.
 - A small, one-off in-memory SQLite benchmark with 1,000 matters and two documents each measured median raw SQL times of 5.12 ms for the old 2,001-query count path and 1.85 ms for the grouped query (five runs, warmed connection). This is a directional microbenchmark, not an end-to-end browser measurement. The initial request count is determined from the changed code; browser timing was not run.
-- The shared password has no per-person ownership or audit attribution. The current CSP permits inline scripts for Next.js rendering. Public multi-user deployment requires a different authorization design and a separate security review. No external evaluator score can be guaranteed by repository changes alone.
+- Individual account ownership and revocable sessions are implemented and covered by two-account isolation tests. The current CSP permits inline scripts required by Next.js rendering. No external evaluator score can be guaranteed by repository changes alone.

@@ -7,7 +7,7 @@
 
 ## 1. Deployment Architecture & Trust Model
 
-LexiGuide AI is engineered as an **on-premise / private-workspace application**:
+LexiGuide AI is engineered as a persistent, account-based legal document application:
 - **Application Layer**: Next.js 16 (Turbopack, React 19, TypeScript strict mode).
 - **Persistence Layer**: Embedded SQLite (`better-sqlite3` + `drizzle-orm`); production defaults to DELETE journal mode and development to WAL unless `SQLITE_JOURNAL_MODE` is set.
 - **File Storage**: Local filesystem storage isolated outside the public web root (`LocalStorageService`).
@@ -48,9 +48,11 @@ DATABASE_URL=./data/lexiguide.db
 # Isolated Document Storage Path
 STORAGE_DIR=./uploads
 
-# Required private-workspace credentials (use real independent secrets)
-APP_ACCESS_PASSWORD=<at least 16 characters>
+# Required session-signing secret
 APP_SESSION_SECRET=<at least 32 random characters>
+
+# Optional shared evaluator sample workspace (normally disabled in production)
+EVALUATOR_DEMO_ENABLED=false
 
 # Environment Mode
 NODE_ENV=production
@@ -181,7 +183,8 @@ node scripts/restore.mjs ./backups/backup-2026-09-17T17-00-00-000Z
 
 ### Pre-Deployment
 - [ ] Persistent volumes configured and mounted for `./data` and `./uploads`.
-- [ ] `APP_ACCESS_PASSWORD` and `APP_SESSION_SECRET` set to real independent values.
+- [ ] `APP_SESSION_SECRET` set to a real random value of at least 32 characters.
+- [ ] Evaluator demo account disabled, or confirmed to contain non-sensitive sample data only.
 - [ ] `GEMINI_API_KEY` supplied if live AI analysis is required; without it only the documented local fallback is available.
 - [ ] `NODE_ENV=production` set.
 - [ ] Port `3000` accessible or configured behind reverse proxy (Nginx / Caddy / Cloudflare).

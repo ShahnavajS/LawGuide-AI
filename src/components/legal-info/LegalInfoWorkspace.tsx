@@ -109,7 +109,10 @@ export const LegalInfoWorkspace: React.FC<LegalInfoWorkspaceProps> = ({
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to get answer for this concept.');
+        if (res.status === 401) {
+          throw new Error('Sign in to ask a question and save the answer to your workspace.');
+        }
+        throw new Error(data.error?.message || data.error || 'Failed to get answer for this concept.');
       }
 
       setQaResult(data.data);

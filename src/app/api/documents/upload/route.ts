@@ -1,9 +1,10 @@
+import { withAuth } from '@/lib/auth/route';
 import { NextRequest, NextResponse } from 'next/server';
 import { getDocumentService } from '@/lib/document/service';
 import { formatSafeError, AppError, ValidationError } from '@/lib/utils/errors';
 import { MAX_DOCUMENT_FILE_SIZE_BYTES } from '@/lib/document/validation';
 
-export async function POST(request: NextRequest) {
+async function POSTHandler(request: NextRequest) {
   try {
     const declaredBytes = Number(request.headers.get('content-length') || 0);
     if (declaredBytes > MAX_DOCUMENT_FILE_SIZE_BYTES + 1024 * 1024) {
@@ -52,3 +53,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(safe, { status });
   }
 }
+
+export const POST = withAuth(POSTHandler);

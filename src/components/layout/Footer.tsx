@@ -33,23 +33,8 @@ export const Footer: React.FC = () => {
             <h3 className={styles.heading}>Navigate</h3>
             <ul className={styles.list}>
               <li>
-                <Link href="/dashboard" className={styles.link}>
-                  Document Workspace
-                </Link>
-              </li>
-              <li>
-                <Link href="/matters" className={styles.link}>
-                  Legal Matters
-                </Link>
-              </li>
-              <li>
-                <Link href="/compare" className={styles.link}>
-                  Version Compare
-                </Link>
-              </li>
-              <li>
-                <Link href="/prepare" className={styles.link}>
-                  Prepare for Counsel
+                <Link href="/" className={styles.link}>
+                  Home
                 </Link>
               </li>
               <li>
@@ -62,6 +47,8 @@ export const Footer: React.FC = () => {
                   Demo
                 </Link>
               </li>
+              <li><Link href="/login" className={styles.link}>Sign in</Link></li>
+              <li><Link href="/signup" className={styles.link}>Create account</Link></li>
             </ul>
           </div>
 

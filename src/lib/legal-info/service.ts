@@ -14,7 +14,9 @@ import {
   comparisons,
   legalInformationCache,
 } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
+import { getCurrentUserId } from '@/lib/auth/context';
+import { NotFoundError } from '@/lib/utils/errors';
 import {
   LEGAL_INFO_MODES,
   LegalInfoMode,
@@ -155,11 +157,14 @@ export class LegalInformationService {
     const documentEvidenceList: DocumentEvidenceItem[] = [];
 
     if (params.documentId) {
+      const userId = getCurrentUserId();
       const docRows = this.db
         .select()
         .from(documents)
-        .where(eq(documents.id, params.documentId))
+        .where(and(eq(documents.id, params.documentId), eq(documents.userId, userId)))
         .all();
+
+      if (docRows.length === 0) throw new NotFoundError('Document');
 
       if (docRows.length > 0) {
         docTitle = docRows[0].title;
@@ -286,11 +291,14 @@ export class LegalInformationService {
     // Check comparison evidence if comparisonId provided
     let comparisonEvidence: LegalInformationDossier['comparisonEvidence'] = undefined;
     if (params.comparisonId) {
+      const userId = getCurrentUserId();
       const compRows = this.db
         .select()
         .from(comparisons)
-        .where(eq(comparisons.id, params.comparisonId))
+        .where(and(eq(comparisons.id, params.comparisonId), eq(comparisons.userId, userId)))
         .all();
+
+      if (compRows.length === 0) throw new NotFoundError('Comparison');
 
       if (compRows.length > 0 && compRows[0].comparisonDataJson) {
         try {
@@ -356,7 +364,8 @@ export class LegalInformationService {
     };
 
     // Cache to SQLite
-    const cacheKey = `${topicDef.id}:${jurisdiction.label}:${params.documentId || 'none'}`;
+    const scopedUserId = params.documentId || params.comparisonId ? getCurrentUserId() : 'public';
+    const cacheKey = `${scopedUserId}:${topicDef.id}:${jurisdiction.label}:${params.documentId || 'none'}:${params.comparisonId || 'none'}`;
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
     try {
@@ -408,11 +417,14 @@ export class LegalInformationService {
     let docTitle = 'Document';
 
     if (params.documentId) {
+      const userId = getCurrentUserId();
       const docRows = this.db
         .select()
         .from(documents)
-        .where(eq(documents.id, params.documentId))
+        .where(and(eq(documents.id, params.documentId), eq(documents.userId, userId)))
         .all();
+
+      if (docRows.length === 0) throw new NotFoundError('Document');
 
       if (docRows.length > 0) {
         docTitle = docRows[0].title;

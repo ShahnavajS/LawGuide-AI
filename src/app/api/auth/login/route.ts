@@ -1,53 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authConfiguration, createWorkspaceSession, passwordMatches, SESSION_COOKIE } from '@/lib/security/workspace-auth';
+import { authenticateAccount, createUserSession } from '@/lib/auth/service';
+import { hasSameOrigin, readAuthForm, safeNextPath, setSessionCookie } from '@/lib/auth/http';
 import { rateLimiter } from '@/lib/security/rate-limiter';
 
 export async function POST(request: NextRequest) {
-  const auth = authConfiguration();
-  if (!auth.configured) return new NextResponse('Private workspace access is not configured.', { status: 503 });
-  const origin = request.headers.get('origin');
-  if (origin) {
-    try {
-      if (new URL(origin).host !== request.headers.get('host')) return new NextResponse('Forbidden', { status: 403 });
-    } catch {
-      return new NextResponse('Forbidden', { status: 403 });
-    }
+  if (!hasSameOrigin(request)) return new NextResponse('Forbidden', { status: 403 });
+  const limit = rateLimiter.check('account-login', 'login');
+  if (!limit.allowed) {
+    return new NextResponse('Too many attempts. Try again shortly.', {
+      status: 429,
+      headers: { 'Retry-After': String(limit.retryAfterSeconds) },
+    });
   }
-  if (Number(request.headers.get('content-length') || 0) > 4096) return new NextResponse('Request too large', { status: 413 });
-  // One shared workspace: limit password guesses globally, independent of caller-controlled IP headers.
-  const limit = rateLimiter.check('workspace-login', 'login');
-  if (!limit.allowed) return new NextResponse('Too many attempts. Try again shortly.', { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } });
-  if (!request.headers.get('content-type')?.startsWith('application/x-www-form-urlencoded') || !request.body) {
-    return new NextResponse('Invalid sign-in form.', { status: 400 });
+
+  const form = await readAuthForm(request);
+  if (!form) return new NextResponse('Invalid sign-in form.', { status: 400 });
+  const next = safeNextPath(form.get('next'));
+  const user = await authenticateAccount(form.get('email') || '', form.get('password') || '');
+  if (!user) {
+    const url = new URL('/login', request.url);
+    url.searchParams.set('error', 'credentials');
+    if (next !== '/dashboard') url.searchParams.set('next', next);
+    return NextResponse.redirect(url, 303);
   }
-  const reader = request.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let bytes = 0;
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      bytes += value.byteLength;
-      if (bytes > 4096) {
-        await reader.cancel().catch(() => {});
-        return new NextResponse('Request too large', { status: 413 });
-      }
-      chunks.push(value);
-    }
-  } catch {
-    return new NextResponse('Invalid sign-in form.', { status: 400 });
-  } finally {
-    reader.releaseLock();
-  }
-  const supplied = new URLSearchParams(Buffer.concat(chunks).toString('utf8')).get('password');
-  if (!supplied || !passwordMatches(supplied, auth.password)) {
-    return NextResponse.redirect(new URL('/login?error=1', request.url), 303);
-  }
-  const response = NextResponse.redirect(new URL('/dashboard', request.url), 303);
-  const isLocal = ['localhost', '127.0.0.1', '[::1]'].includes(request.nextUrl.hostname);
-  response.cookies.set(SESSION_COOKIE, createWorkspaceSession(auth.password, auth.secret), {
-    httpOnly: true, secure: request.nextUrl.protocol === 'https:' || (process.env.NODE_ENV === 'production' && !isLocal),
-    sameSite: 'strict', path: '/', maxAge: 12 * 60 * 60,
-  });
+
+  const session = createUserSession(user.id);
+  const response = NextResponse.redirect(new URL(next, request.url), 303);
+  setSessionCookie(response, request, session.token);
   return response;
 }

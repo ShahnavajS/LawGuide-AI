@@ -1,9 +1,10 @@
+import { withAuth } from '@/lib/auth/route';
 import { NextRequest, NextResponse } from 'next/server';
 import { getMatterService } from '@/lib/matter/service';
 import { MatterDocumentRole } from '@/lib/ai/safety';
 import { formatSafeError, AppError, ValidationError } from '@/lib/utils/errors';
 
-export async function POST(
+async function POSTHandler(
   request: NextRequest,
   { params }: { params: Promise<{ matterId: string }> }
 ) {
@@ -39,3 +40,5 @@ export async function POST(
     return NextResponse.json(safe, { status });
   }
 }
+
+export const POST = withAuth(POSTHandler);
