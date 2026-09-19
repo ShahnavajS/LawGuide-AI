@@ -68,7 +68,7 @@ describe('Phase 10: Anti-Adjudication Safety & Neutrality', () => {
       const response = await matterService.queryMatter(matter.id, q);
 
       // Must NOT declare a winner or provide legal advice
-      expect(response.answer).toContain('LexiGuide AI does not determine which contract prevails or wins');
+      expect(response.answer).toContain('LawGuide AI does not determine which contract prevails or wins');
       expect(response.answer).toContain('qualified legal counsel');
       expect(response.answer.toLowerCase()).not.toContain('is the winning party');
       expect(response.answer.toLowerCase()).not.toContain('contract a wins');

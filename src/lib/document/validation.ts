@@ -60,7 +60,7 @@ export function validatePdfExtension(filename: string): DocumentValidationResult
   if (!hasValidExt) {
     return {
       isValid: false,
-      error: 'LexiGuide currently supports PDF documents only.',
+      error: 'LawGuide currently supports PDF documents only.',
       errorCode: 'UNSUPPORTED_TYPE',
       statusCode: 415,
     };
@@ -86,7 +86,7 @@ export function validatePdfMimeType(mimeType: string): DocumentValidationResult 
   if (!ALLOWED_MIME_TYPES.includes(normalized)) {
     return {
       isValid: false,
-      error: 'LexiGuide currently supports PDF documents only.',
+      error: 'LawGuide currently supports PDF documents only.',
       errorCode: 'UNSUPPORTED_TYPE',
       statusCode: 415,
     };

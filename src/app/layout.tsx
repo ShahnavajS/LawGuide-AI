@@ -5,7 +5,7 @@ import { Footer } from '@/components/layout/Footer';
 import { NavigationProgress } from '@/components/ui/NavigationProgress/NavigationProgress';
 
 export const metadata: Metadata = {
-  title: 'LexiGuide AI — Legal language, made human.',
+  title: 'LawGuide AI — Legal language, made human.',
   description:
     'Understand your legal documents, find key obligations and risks, compare versions, and prepare with confidence. GenAI-powered legal information grounded in verifiable evidence.',
   keywords: [

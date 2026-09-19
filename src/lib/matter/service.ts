@@ -1582,7 +1582,7 @@ export class MatterService {
         let finalAnswer = rawResponse.answer || '';
         if (containsProhibitedLegalConclusion(finalAnswer)) {
           finalAnswer =
-            'The member documents contain varying provisions regarding this topic. LexiGuide AI provides document analysis and does not determine legal enforceability or which document takes legal precedence. Please consult with qualified legal counsel.';
+            'The member documents contain varying provisions regarding this topic. LawGuide AI provides document analysis and does not determine legal enforceability or which document takes legal precedence. Please consult with qualified legal counsel.';
         }
 
         return {
@@ -1677,7 +1677,7 @@ export class MatterService {
     ) {
       return {
         answer:
-          'LexiGuide AI does not determine which contract prevails or wins, and provides legal information and preparation support, not legal advice. Determining tactical legal actions (such as terminating, settling, or suing) or deciding legal priority and enforceability requires formal analysis by qualified legal counsel based on the specific facts, execution sequence, and applicable governing law.',
+          'LawGuide AI does not determine which contract prevails or wins, and provides legal information and preparation support, not legal advice. Determining tactical legal actions (such as terminating, settling, or suing) or deciding legal priority and enforceability requires formal analysis by qualified legal counsel based on the specific facts, execution sequence, and applicable governing law.',
         citations: [],
         crossDocumentObservations: [
           'Agreements and clauses in this matter require professional review for strategic or contentious decisions.',
@@ -1721,7 +1721,7 @@ export class MatterService {
           noticeCons
             ? `one document specifies ${noticeCons.sourceA.value} while another states ${noticeCons.sourceB.value}.`
             : 'multiple notice provisions were identified.'
-        } LexiGuide does not determine which provision controls.`,
+        } LawGuide does not determine which provision controls.`,
         citations,
         crossDocumentObservations: observations,
         suggestedQuestionsForCounsel: [

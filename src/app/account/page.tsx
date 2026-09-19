@@ -15,7 +15,7 @@ export default async function AccountPage() {
     <div className={`container ${styles.shell}`}>
       <header className={styles.heading}>
         <p>ACCOUNT</p>
-        <h1>Your LexiGuide workspace</h1>
+        <h1>Your LawGuide workspace</h1>
         <span>Documents and generated work in this workspace are visible only to this account.</span>
       </header>
       <section className={styles.card} aria-labelledby="profile-heading">

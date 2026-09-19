@@ -54,7 +54,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
     const lowerName = file.name.toLowerCase();
     if (!lowerName.endsWith('.pdf')) {
       setState('ERROR');
-      setErrorMessage('LexiGuide currently supports PDF documents only.');
+      setErrorMessage('LawGuide currently supports PDF documents only.');
       return;
     }
 

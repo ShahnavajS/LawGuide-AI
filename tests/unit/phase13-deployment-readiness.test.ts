@@ -164,7 +164,7 @@ describe('Phase 13: Deployment Readiness & Production Verification', () => {
       expect(data).toMatchObject({
         status: 'ok',
         database: 'connected',
-        service: 'LexiGuide AI',
+        service: 'LawGuide AI',
       });
       expect(typeof data.timestamp).toBe('string');
 
@@ -341,7 +341,7 @@ describe('Phase 13: Deployment Readiness & Production Verification', () => {
 
       for (const question of adversarialQuestions) {
         const response = await matterService.queryMatter(matter.id, question);
-        expect(response.answer).toContain('LexiGuide AI does not determine which contract prevails or wins');
+        expect(response.answer).toContain('LawGuide AI does not determine which contract prevails or wins');
         expect(response.answer).toContain('provides legal information and preparation support, not legal advice');
         expect(response.suggestedQuestionsForCounsel.length).toBeGreaterThan(0);
       }

@@ -7,9 +7,9 @@ import { LEGAL_DISCLAIMERS } from '@/lib/ai/safety';
 import styles from './demo.module.css';
 
 export const metadata: Metadata = {
-  title: 'Demo — LexiGuide AI',
+  title: 'Demo — LawGuide AI',
   description:
-    'See how LexiGuide AI turns complex legal documents into plain-language insights grounded in verifiable evidence.',
+    'See how LawGuide AI turns complex legal documents into plain-language insights grounded in verifiable evidence.',
 };
 
 const DEMO_STEPS = [
@@ -72,7 +72,7 @@ export default function DemoPage() {
             THE WORKFLOW
           </Badge>
           <h1 className={styles.heroTitle}>
-            A guided look at LexiGuide
+            A guided look at LawGuide
           </h1>
           <p className={styles.heroSubtitle}>
             See how a document moves from upload to plain-language review, source checking, and questions for counsel.
@@ -114,7 +114,7 @@ export default function DemoPage() {
                 Commercial Lease Renewal Dispute
               </h2>
               <p className={styles.scenarioDesc}>
-                A tenant receives a proposed lease renewal with significantly altered terms. Using LexiGuide AI, they upload both the original lease and the renewal proposal, then run cross-document analysis to identify what changed, where the obligations shifted, and what questions to raise with their solicitor.
+                A tenant receives a proposed lease renewal with significantly altered terms. Using LawGuide AI, they upload both the original lease and the renewal proposal, then run cross-document analysis to identify what changed, where the obligations shifted, and what questions to raise with their solicitor.
               </p>
               <p className={styles.scenarioDesc}>
                 This scenario is representative of typical use — individuals and small teams navigating complex document changes without immediate access to legal counsel.
@@ -142,7 +142,7 @@ export default function DemoPage() {
             <span className={styles.eyebrow}>Trust & Transparency</span>
             <h2 className={styles.sectionTitle}>Inspect the source behind findings</h2>
             <p className={styles.sectionDesc}>
-              LexiGuide AI labels the source and evidence status of statements so you can inspect them before relying on a conclusion.
+              LawGuide AI labels the source and evidence status of statements so you can inspect them before relying on a conclusion.
             </p>
           </div>
           <div className={styles.evidenceGrid}>

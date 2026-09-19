@@ -1,6 +1,6 @@
-# LexiGuide visual system
+# LawGuide visual system
 
-LexiGuide is a reading and preparation tool for people facing unfamiliar legal documents. The interface should feel like a calm, well-edited desk: clear hierarchy, generous margins, visible source material, and restrained colour. It must never imply that AI output is legal advice or that a citation proves an interpretation.
+LawGuide is a reading and preparation tool for people facing unfamiliar legal documents. The interface should feel like a calm, well-edited desk: clear hierarchy, generous margins, visible source material, and restrained colour. It must never imply that AI output is legal advice or that a citation proves an interpretation.
 
 ## Research
 

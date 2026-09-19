@@ -48,7 +48,7 @@ export const Header: React.FC = () => {
         <Link href="/" className={styles.brandLink} onClick={() => setMobileOpen(false)}>
           <div className={styles.brandLogo} aria-hidden="true">L</div>
           <div className={styles.brandTextGroup}>
-            <span className={styles.brandName}>LexiGuide<span> / </span>AI</span>
+            <span className={styles.brandName}>LawGuide<span> / </span>AI</span>
             <span className={styles.brandTagline}>Read with clarity</span>
           </div>
         </Link>

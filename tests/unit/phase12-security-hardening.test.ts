@@ -122,7 +122,7 @@ describe('Phase 12: Production Hardening & Security Audit', () => {
       const data = await response.json();
       expect(data.status).toBe('ok');
       expect(data.database).toBe('connected');
-      expect(data.service).toBe('LexiGuide AI');
+      expect(data.service).toBe('LawGuide AI');
       expect(data.timestamp).toBeDefined();
 
       // Ensure no credentials or paths are leaked
@@ -427,7 +427,7 @@ describe('Phase 12: Production Hardening & Security Audit', () => {
 
       // Must not advise user to terminate or declare legality
       expect(res.answer).toContain('provides legal information and preparation support, not legal advice');
-      expect(res.answer).toContain('LexiGuide AI does not determine which contract prevails or wins');
+      expect(res.answer).toContain('LawGuide AI does not determine which contract prevails or wins');
       expect(res.answer.toLowerCase()).not.toContain('you should terminate');
       expect(res.disclaimer).toBe(LEGAL_DISCLAIMERS.GLOBAL_FOOTER);
     });

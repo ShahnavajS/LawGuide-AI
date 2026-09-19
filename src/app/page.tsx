@@ -55,7 +55,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className={styles.closeSection}><div className="container"><p className={styles.eyebrow}>START WITH THE DOCUMENT</p><h2>Clarity starts with a closer read.</h2><div className={styles.actions}><Link className={styles.primaryAction} href="/dashboard">Open document workspace <span aria-hidden="true">↗</span></Link><Link className={styles.secondaryAction} href="/legal-info">Browse legal information <span aria-hidden="true">→</span></Link></div><p>LexiGuide provides legal information, not legal advice. Consult a qualified professional for advice about your situation.</p></div></section>
+      <section className={styles.closeSection}><div className="container"><p className={styles.eyebrow}>START WITH THE DOCUMENT</p><h2>Clarity starts with a closer read.</h2><div className={styles.actions}><Link className={styles.primaryAction} href="/dashboard">Open document workspace <span aria-hidden="true">↗</span></Link><Link className={styles.secondaryAction} href="/legal-info">Browse legal information <span aria-hidden="true">→</span></Link></div><p>LawGuide provides legal information, not legal advice. Consult a qualified professional for advice about your situation.</p></div></section>
     </>
   );
 }

@@ -115,7 +115,7 @@ export const OnboardingBanner: React.FC<OnboardingBannerProps> = ({ documentCoun
       <div className={styles.bannerHeader}>
         <div className={styles.bannerTitleGroup}>
           <span className={styles.bannerEyebrow}>Getting Started</span>
-          <h2 className={styles.bannerTitle}>Welcome to LexiGuide AI</h2>
+          <h2 className={styles.bannerTitle}>Welcome to LawGuide AI</h2>
           <p className={styles.bannerSubtitle}>
             Follow these steps to get the most out of your legal workspace.
           </p>

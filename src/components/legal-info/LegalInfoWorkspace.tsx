@@ -392,11 +392,11 @@ export const LegalInfoWorkspace: React.FC<LegalInfoWorkspaceProps> = ({
                 </div>
               </section>
 
-              {/* 4. What LexiGuide Cannot Determine (Limitations) */}
+              {/* 4. What LawGuide Cannot Determine (Limitations) */}
               <div className={styles.limitationsBox} role="alert">
                 <div className={styles.limitationsTitle}>
                   <span>⚠️</span>
-                  <span>What LexiGuide Cannot Determine</span>
+                  <span>What LawGuide Cannot Determine</span>
                 </div>
                 <ul className={styles.limitationsList}>
                   {dossier.importantLimitations.map((lim, idx) => (
@@ -518,7 +518,7 @@ export const LegalInfoWorkspace: React.FC<LegalInfoWorkspaceProps> = ({
                 </div>
 
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '0 0 1rem 0' }}>
-                  LexiGuide helps you prepare and organize your documents. For legal advice and representation, you can consult qualified private counsel or public legal aid authorities if eligible.
+                  LawGuide helps you prepare and organize your documents. For legal advice and representation, you can consult qualified private counsel or public legal aid authorities if eligible.
                 </p>
 
                 <div className={styles.legalAidGrid}>

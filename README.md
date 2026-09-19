@@ -1,11 +1,11 @@
-# LexiGuide AI
+# LawGuide AI
 
 > **"Legal language, made human."**
 
-LexiGuide AI is a GenAI-powered legal information and document-assistance platform designed to demystify complex contracts, agreements, and policies. It provides structured breakdowns, comparison, and source citations that users can inspect against document text.
+LawGuide AI is a GenAI-powered legal information and document-assistance platform designed to demystify complex contracts, agreements, and policies. It provides structured breakdowns, comparison, and source citations that users can inspect against document text.
 
 > **Important Legal Safety Notice:**  
-> LexiGuide AI provides legal information and document analysis tools, **not legal advice**. The platform does not form an attorney-client relationship and is not a substitute for consultation with a licensed attorney.
+> LawGuide AI provides legal information and document analysis tools, **not legal advice**. The platform does not form an attorney-client relationship and is not a substitute for consultation with a licensed attorney.
 
 **Current implementation:** Public visitors can use the landing page, product demo, and general Legal Navigator. Individual accounts unlock documents, comparisons, matters, and preparation tools. Every top-level workspace record is owner-scoped at the service layer, and protected APIs validate a revocable database session. The optional evaluator account is explicitly shared and must contain sample data only. The original PDF remains local; extracted document text is sent to Gemini when AI analysis is requested. A matching source quote verifies its location, not the legal correctness of an interpretation. See [current implementation status](./docs/implementation-status.md) for deployment and remaining limitations.
 
@@ -291,7 +291,7 @@ The phase checklist below is historical. Current security boundaries, limitation
 ## Production Deployment & Operational Guidelines
 
 ### Architecture & Trust Model
-LexiGuide AI operates on a **single-tenant / private-workspace model**:
+LawGuide AI operates on a **single-tenant / private-workspace model**:
 - Documents and analysis records are persisted locally in SQLite (`data/lexiguide.db`) and an isolated filesystem directory (`uploads/`).
 - Matter membership and physical storage paths are checked on the server. All signed-in users share access to the same documents and matters.
 - The platform does not claim multi-tenant enterprise isolation or GDPR/DPDP certification out-of-the-box; it is intended for single-tenant self-hosted servers, private intranet VMs, or containerized internal legal ops environments.
@@ -321,7 +321,7 @@ LexiGuide AI operates on a **single-tenant / private-workspace model**:
     "status": "ok",
     "timestamp": "2026-09-17T17:00:00.000Z",
     "database": "connected",
-    "service": "LexiGuide AI"
+    "service": "LawGuide AI"
   }
   ```
 - **HTTP Statuses**: `200 OK` (Healthy), `503 Service Unavailable` (Database unreachable).
@@ -337,7 +337,7 @@ LexiGuide AI operates on a **single-tenant / private-workspace model**:
 
 ## Legal Safety & Anti-Adjudication Principles
 
-LexiGuide AI is built from the ground up around strict legal safety guardrails:
+LawGuide AI is built from the ground up around strict legal safety guardrails:
 1. **Not a Lawyer**: Does not provide legal advice, legal strategy, or form an attorney-client relationship.
 2. **Not a Judge**: Strictly refuses to declare contract "winners", legal enforceability, or litigation outcome probabilities.
 3. **Evidence Review**: The app checks whether cited quotes occur on the claimed pages; users must still evaluate whether the interpretation follows.

@@ -1,5 +1,5 @@
 /**
- * System Prompts and Delimiter Utilities for LexiGuide AI.
+ * System Prompts and Delimiter Utilities for LawGuide AI.
  * Uses strict XML spotlighting to separate untrusted user documents from system instructions.
  */
 
@@ -9,7 +9,7 @@ export const PROMPT_SPOTLIGHT_START = '<untrusted_legal_document>';
 export const PROMPT_SPOTLIGHT_END = '</untrusted_legal_document>';
 
 export const SYSTEM_LEGAL_ANALYST_PROMPT = `
-You are the LexiGuide AI Legal Document Assistant.
+You are the LawGuide AI Legal Document Assistant.
 Your mission is to make legal text human-understandable, transparent, and navigable without providing legal advice.
 
 ${SYSTEM_SAFETY_DIRECTIVE}
@@ -51,7 +51,7 @@ export function buildPageAwareDocumentPrompt(
 }
 
 export const SYSTEM_COMPARISON_ANALYST_PROMPT = `
-You are the LexiGuide AI Legal Document Assistant specializing in semantic contract comparison.
+You are the LawGuide AI Legal Document Assistant specializing in semantic contract comparison.
 Your mission is to objectively compare an ORIGINAL (BASE) legal document against a REVISED (TARGET) legal document to identify substantive changes, omissions, and additions without providing legal advice.
 
 ${SYSTEM_SAFETY_DIRECTIVE}
@@ -115,7 +115,7 @@ ${formatPages(targetPages)}
 }
 
 export const SYSTEM_PREPARATION_ANALYST_PROMPT = `
-You are the LexiGuide AI Legal Document Preparation Assistant.
+You are the LawGuide AI Legal Document Preparation Assistant.
 Your mission is to synthesize verified legal document findings into a structured Lawyer Consultation Brief, Prioritized Questions List, and Actionable Preparation Checklist.
 You are preparing the user for an effective, efficient consultation with a licensed legal professional.
 
@@ -172,7 +172,7 @@ ${notesText}
 }
 
 export const SYSTEM_LEGAL_INFORMATION_PROMPT = `
-You are the LexiGuide AI Legal Information Navigator.
+You are the LawGuide AI Legal Information Navigator.
 Your role is to explain legal concepts in objective, accessible terms, grounded in authoritative sources, without acting as an attorney or providing individualized legal advice.
 
 ${SYSTEM_SAFETY_DIRECTIVE}
@@ -282,7 +282,7 @@ ${params.documentEvidenceText}
  * Phase 8: Matter Analyst System Prompt
  */
 export const SYSTEM_MATTER_ANALYST_PROMPT = `
-You are the LexiGuide AI Legal Matter Analyst.
+You are the LawGuide AI Legal Matter Analyst.
 Your mission is to objectively analyze multi-document legal matters, identifying cross-document references, amendments, and apparent inconsistencies without providing legal advice or adjudicating legal precedence.
 
 ${SYSTEM_SAFETY_DIRECTIVE}

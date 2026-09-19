@@ -1909,7 +1909,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                   No dated events found
                 </h3>
                 <p style={{ maxWidth: '520px', margin: '0 auto', fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                  This occurs when member documents do not contain explicit, verifiable calendar dates or when documents have not yet completed Legal X-Ray analysis. LexiGuide strictly derives timeline milestones from document text and never infers or estimates dates.
+                  This occurs when member documents do not contain explicit, verifiable calendar dates or when documents have not yet completed Legal X-Ray analysis. LawGuide strictly derives timeline milestones from document text and never infers or estimates dates.
                 </p>
               </div>
             ) : (

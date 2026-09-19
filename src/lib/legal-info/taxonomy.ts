@@ -1,5 +1,5 @@
 /**
- * Controlled Legal Topic Taxonomy for LexiGuide AI (Phase 7).
+ * Controlled Legal Topic Taxonomy for LawGuide AI (Phase 7).
  *
  * Defines canonical topics, search aliases, educational definitions,
  * standard counsel discussion points, and limitations for 29 core contractual concepts.
@@ -51,7 +51,7 @@ export const LEGAL_TOPICS: Record<string, LegalTopicDefinition> = {
       'Are there potential financial damages or transition fees associated with early termination?',
     ],
     importantLimitations: [
-      'LexiGuide cannot determine whether adequate grounds exist in your specific situation to terminate for cause.',
+      'LawGuide cannot determine whether adequate grounds exist in your specific situation to terminate for cause.',
       'The enforceability of termination penalties or immediate forfeiture depends on local statutory and common law.',
     ],
   },
@@ -75,7 +75,7 @@ export const LEGAL_TOPICS: Record<string, LegalTopicDefinition> = {
       'Does the notice window calculate calendar days or business/working days?',
     ],
     importantLimitations: [
-      'LexiGuide cannot calculate whether your past communications legally satisfy formal contractual notice criteria.',
+      'LawGuide cannot calculate whether your past communications legally satisfy formal contractual notice criteria.',
     ],
   },
 
@@ -119,7 +119,7 @@ export const LEGAL_TOPICS: Record<string, LegalTopicDefinition> = {
       'Are taxes (such as GST or VAT) included in the stated fee or billed additionally?',
     ],
     importantLimitations: [
-      'LexiGuide cannot provide tax advice or audit billing accuracy.',
+      'LawGuide cannot provide tax advice or audit billing accuracy.',
     ],
   },
 

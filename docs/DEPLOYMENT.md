@@ -1,4 +1,4 @@
-# LexiGuide AI — Production Deployment & Operational Runbook
+# LawGuide AI — Production Deployment & Operational Runbook
 
 > **Tagline:** "Legal language, made human."  
 > **Core Promise:** UNDERSTAND → COMPARE → PREPARE
@@ -7,7 +7,7 @@
 
 ## 1. Deployment Architecture & Trust Model
 
-LexiGuide AI is engineered as a persistent, account-based legal document application:
+LawGuide AI is engineered as a persistent, account-based legal document application:
 - **Application Layer**: Next.js 16 (Turbopack, React 19, TypeScript strict mode).
 - **Persistence Layer**: Embedded SQLite (`better-sqlite3` + `drizzle-orm`); production defaults to DELETE journal mode and development to WAL unless `SQLITE_JOURNAL_MODE` is set.
 - **File Storage**: Local filesystem storage isolated outside the public web root (`LocalStorageService`).
@@ -113,7 +113,7 @@ docker run -d \
 
 ## 5. Health Check & Operational Monitoring
 
-LexiGuide AI includes a zero-leak operational health check:
+LawGuide AI includes a zero-leak operational health check:
 - **Endpoint**: `GET /api/health`
 - **Method**: HTTP GET
 - **Healthy Response (HTTP 200)**:
@@ -122,7 +122,7 @@ LexiGuide AI includes a zero-leak operational health check:
     "status": "ok",
     "timestamp": "2026-09-17T17:00:00.000Z",
     "database": "connected",
-    "service": "LexiGuide AI"
+    "service": "LawGuide AI"
   }
   ```
 - **Degraded Response (HTTP 503)**:
@@ -131,7 +131,7 @@ LexiGuide AI includes a zero-leak operational health check:
     "status": "degraded",
     "timestamp": "2026-09-17T17:00:00.000Z",
     "database": "disconnected",
-    "service": "LexiGuide AI"
+    "service": "LawGuide AI"
   }
   ```
 - **Headers**: Enforces `Cache-Control: no-store, no-cache, must-revalidate`.
@@ -208,7 +208,7 @@ node scripts/restore.mjs ./backups/backup-2026-09-17T17-00-00-000Z
 
 ## 9. Recommended Final Demo Walkthrough (18-Step Script)
 
-When demonstrating LexiGuide AI to stakeholders, evaluators, or hackathon judges, follow this sequence:
+When demonstrating LawGuide AI to stakeholders, evaluators, or hackathon judges, follow this sequence:
 
 1. **Landing Page (`/`)**:
    - Introduce the core promise: *"Legal language, made human."*

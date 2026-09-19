@@ -1107,7 +1107,7 @@ export const PreparationWorkspace: React.FC<PreparationWorkspaceProps> = ({
         <div className={styles.emptyState}>
           <span className={styles.emptyIndex}>NEXT / 01</span>
           <h2>Bring the document. Leave with better questions.</h2>
-          <p>Select an analyzed document and describe your consultation goal. LexiGuide can organize document facts, dates, and questions for a qualified legal professional to review.</p>
+          <p>Select an analyzed document and describe your consultation goal. LawGuide can organize document facts, dates, and questions for a qualified legal professional to review.</p>
         </div>
       )}
     </div>

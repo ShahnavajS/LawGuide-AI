@@ -24,7 +24,7 @@ export async function GET() {
         status: ready ? 'ok' : 'degraded',
         timestamp,
         database: 'connected',
-        service: 'LexiGuide AI',
+        service: 'LawGuide AI',
       },
       {
         status: ready ? 200 : 503,
@@ -39,7 +39,7 @@ export async function GET() {
         status: 'degraded',
         timestamp,
         database: 'disconnected',
-        service: 'LexiGuide AI',
+        service: 'LawGuide AI',
       },
       {
         status: 503,

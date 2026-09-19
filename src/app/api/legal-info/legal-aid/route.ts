@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
       count: resources.length,
       resources,
       disclaimer:
-        'LexiGuide provides informational navigation to recognized statutory legal aid organizations. Contact organizations directly to confirm program eligibility.',
+        'LawGuide provides informational navigation to recognized statutory legal aid organizations. Contact organizations directly to confirm program eligibility.',
     });
   } catch (err: unknown) {
     return NextResponse.json({ success: false, ...formatSafeError(err) }, { status: 500 });

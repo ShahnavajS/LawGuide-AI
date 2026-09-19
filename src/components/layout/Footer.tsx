@@ -23,7 +23,7 @@ export const Footer: React.FC = () => {
 
         <div className={styles.grid}>
           <div className={styles.brandCol}>
-            <span className={styles.brandName}>LexiGuide AI</span>
+            <span className={styles.brandName}>LawGuide AI</span>
             <p className={styles.brandDesc}>
               Read complex documents with more clarity. Keep the source close, and bring better questions to a legal professional.
             </p>
@@ -72,7 +72,7 @@ export const Footer: React.FC = () => {
         </div>
 
         <div className={styles.bottom}>
-          <span>&copy; {new Date().getFullYear()} LexiGuide AI. Built for legal accessibility.</span>
+          <span>&copy; {new Date().getFullYear()} LawGuide AI. Built for legal accessibility.</span>
           <span>Legal language, made human.</span>
         </div>
       </div>

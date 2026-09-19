@@ -33,7 +33,7 @@ export default async function LoginPage({
             The evaluator account is shared and contains sample data. Use a personal account for private documents.
           </p>
         )}
-        <p className={styles.switchText}>New to LexiGuide? <Link href="/signup">Create an account</Link></p>
+        <p className={styles.switchText}>New to LawGuide? <Link href="/signup">Create an account</Link></p>
       </section>
     </div>
   );

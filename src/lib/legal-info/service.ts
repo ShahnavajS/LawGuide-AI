@@ -1,5 +1,5 @@
 /**
- * Legal Information Service for LexiGuide AI (Phase 7).
+ * Legal Information Service for LawGuide AI (Phase 7).
  *
  * Coordinates topic resolution, jurisdiction provenance, authoritative source lookup,
  * document-evidence grounding via CitationValidator, persistent SQLite caching,
@@ -147,7 +147,7 @@ export class LegalInformationService {
     const topicDef = this.resolveTopic(params.topic);
     if (!topicDef) {
       throw new Error(
-        `Unknown legal topic '${params.topic}'. Please select a valid concept from the LexiGuide taxonomy.`
+        `Unknown legal topic '${params.topic}'. Please select a valid concept from the LawGuide taxonomy.`
       );
     }
 
@@ -355,7 +355,7 @@ export class LegalInformationService {
       sources: sourceReferences,
       importantLimitations: [
         ...topicDef.importantLimitations,
-        'LexiGuide provides legal information and preparation assistance only; it does not determine legal enforceability or provide legal advice.',
+        'LawGuide provides legal information and preparation assistance only; it does not determine legal enforceability or provide legal advice.',
       ],
       questionsForCounsel: topicDef.standardQuestionsForCounsel,
       disclaimer:
@@ -549,7 +549,7 @@ export class LegalInformationService {
       ],
       limitations: [
         ...topic.importantLimitations,
-        'LexiGuide cannot provide legal advice or determine enforceability for your specific situation.',
+        'LawGuide cannot provide legal advice or determine enforceability for your specific situation.',
       ],
       disclaimer:
         'Educational overview from the app topic guide; linked resources have not been checked for this answer. Not legal advice.',

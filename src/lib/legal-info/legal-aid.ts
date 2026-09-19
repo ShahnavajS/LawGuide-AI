@@ -41,7 +41,7 @@ export const LEGAL_AID_RESOURCES: LegalAidResource[] = [
     eligibilityNotes:
       'Section 12 of the Act covers women, children, members of SC/ST, industrial workmen, persons with disabilities, persons in custody, and individuals with annual incomes below statutory state limits.',
     disclaimer:
-      'LexiGuide helps you organize document facts and formulate questions. Only the competent Legal Services Authority can determine formal eligibility for free legal representation.',
+      'LawGuide helps you organize document facts and formulate questions. Only the competent Legal Services Authority can determine formal eligibility for free legal representation.',
   },
   {
     id: 'TELE_LAW_INDIA',

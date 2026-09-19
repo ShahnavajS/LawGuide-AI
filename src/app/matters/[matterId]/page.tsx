@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { MatterWorkspace } from '@/components/matter';
 
 export const metadata: Metadata = {
-  title: 'Matter Workspace | LexiGuide AI',
+  title: 'Matter Workspace | LawGuide AI',
   description:
     'Multi-document legal case context, cross-document relationships, consistency checks, and attorney consultation preparation.',
 };
