@@ -89,11 +89,16 @@ export async function POST(request: NextRequest) {
     const message = error instanceof Error ? error.message : 'Failed to create account.';
     const isExists = message.includes('already exists');
     const isSecretMissing = message.includes('APP_SESSION_SECRET');
+    const publicMessage = isExists
+      ? 'An account with this email already exists.'
+      : isSecretMissing
+        ? 'Authentication is temporarily unavailable.'
+        : 'Could not create the account. Please try again.';
 
     if (isJson) {
       const status = isExists ? 409 : (isSecretMissing ? 503 : 400);
       const code = isExists ? 'ACCOUNT_EXISTS' : (isSecretMissing ? 'SERVER_NOT_CONFIGURED' : 'CREATE_FAILED');
-      return NextResponse.json({ error: { code, message } }, { status });
+      return NextResponse.json({ error: { code, message: publicMessage } }, { status });
     }
 
     const errCode = isExists ? 'exists' : (isSecretMissing ? 'server-error' : 'invalid');

@@ -9,7 +9,7 @@ import { LocalStorageService } from '@/lib/document/storage';
 import { AnalysisService } from '@/lib/analysis/service';
 import { LEGAL_INFO_MODES, JURISDICTION_SOURCE_TYPES, EVIDENCE_SOURCE_TYPES } from '@/lib/ai/safety';
 import { POST as legalInfoQueryHandler } from '@/app/api/legal-info/query/route';
-import { NextRequest } from 'next/server';
+import { authenticatedRequest } from '../helpers/authenticated-request';
 import path from 'path';
 import fs from 'fs/promises';
 
@@ -104,7 +104,7 @@ describe('Phase 7: LegalInformationService Layer', () => {
 
   it('returns a safe not-found response without echoing an unknown topic', async () => {
     const secretTopic = 'UNKNOWN_TOPIC_WITH_PRIVATE_CONTEXT_123';
-    const request = new NextRequest('http://localhost/api/legal-info/query', {
+    const request = authenticatedRequest('http://localhost/api/legal-info/query', {
       method: 'POST',
       body: JSON.stringify({ topic: secretTopic, question: 'What does this mean?' }),
       headers: { 'content-type': 'application/json' },

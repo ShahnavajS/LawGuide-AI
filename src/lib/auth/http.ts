@@ -1,22 +1,11 @@
 import type { NextRequest, NextResponse } from 'next/server';
 import { SESSION_COOKIE, SESSION_SECONDS } from '@/lib/security/workspace-auth';
+import { isTrustedMutationRequest } from '@/lib/security/request-security';
 
 const MAX_AUTH_FORM_BYTES = 16 * 1024;
 
 export function hasSameOrigin(request: NextRequest): boolean {
-  const origin = request.headers.get('origin');
-  if (!origin) return true;
-  try {
-    const originHost = new URL(origin).host;
-    const allowedHosts = new Set([
-      request.headers.get('host'),
-      request.headers.get('x-forwarded-host'),
-      request.nextUrl.host,
-    ].filter(Boolean));
-    return allowedHosts.has(originHost);
-  } catch {
-    return false;
-  }
+  return isTrustedMutationRequest(request);
 }
 
 export async function readAuthForm(request: NextRequest): Promise<URLSearchParams | null> {

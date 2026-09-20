@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { NextRequest } from 'next/server';
+import { authenticatedRequest } from '../helpers/authenticated-request';
 import { GET as GET_MATTERS, POST as POST_MATTERS } from '@/app/api/matters/route';
 import {
   GET as GET_MATTER_BY_ID,
@@ -33,7 +33,7 @@ describe('Phase 8: Matter API Routes', () => {
 
   describe('POST /api/matters', () => {
     it('creates a new matter successfully', async () => {
-      const req = new NextRequest('http://localhost:3000/api/matters', {
+      const req = authenticatedRequest('http://localhost:3000/api/matters', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -54,7 +54,7 @@ describe('Phase 8: Matter API Routes', () => {
     });
 
     it('returns 400 when title is missing or empty', async () => {
-      const req = new NextRequest('http://localhost:3000/api/matters', {
+      const req = authenticatedRequest('http://localhost:3000/api/matters', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: '' }),
@@ -66,7 +66,7 @@ describe('Phase 8: Matter API Routes', () => {
 
     it('returns a safe 400 for null or wrongly typed matter details', async () => {
       for (const payload of ['null', '{"title":42}']) {
-        const res = await POST_MATTERS(new NextRequest('http://localhost:3000/api/matters', {
+        const res = await POST_MATTERS(authenticatedRequest('http://localhost:3000/api/matters', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: payload,
@@ -79,7 +79,7 @@ describe('Phase 8: Matter API Routes', () => {
 
   describe('GET /api/matters', () => {
     it('returns list of matters filtered by status', async () => {
-      const req = new NextRequest('http://localhost:3000/api/matters?status=ACTIVE');
+      const req = authenticatedRequest('http://localhost:3000/api/matters?status=ACTIVE');
       const res = await GET_MATTERS(req);
       expect(res.status).toBe(200);
 
@@ -91,7 +91,7 @@ describe('Phase 8: Matter API Routes', () => {
 
   describe('GET, PATCH, DELETE /api/matters/[matterId]', () => {
     it('GET returns 200 and matter details for valid ID', async () => {
-      const req = new NextRequest(`http://localhost:3000/api/matters/${createdMatterId}`);
+      const req = authenticatedRequest(`http://localhost:3000/api/matters/${createdMatterId}`);
       const res = await GET_MATTER_BY_ID(req, {
         params: Promise.resolve({ matterId: createdMatterId }),
       });
@@ -102,7 +102,7 @@ describe('Phase 8: Matter API Routes', () => {
     });
 
     it('GET returns 404 for unknown matter ID', async () => {
-      const req = new NextRequest('http://localhost:3000/api/matters/nonexistent_matter_id');
+      const req = authenticatedRequest('http://localhost:3000/api/matters/nonexistent_matter_id');
       const res = await GET_MATTER_BY_ID(req, {
         params: Promise.resolve({ matterId: 'nonexistent_matter_id' }),
       });
@@ -110,7 +110,7 @@ describe('Phase 8: Matter API Routes', () => {
     });
 
     it('PATCH updates matter metadata', async () => {
-      const req = new NextRequest(`http://localhost:3000/api/matters/${createdMatterId}`, {
+      const req = authenticatedRequest(`http://localhost:3000/api/matters/${createdMatterId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ description: 'Updated description for test' }),
@@ -128,7 +128,7 @@ describe('Phase 8: Matter API Routes', () => {
 
   describe('Matter Documents & Relationships Routes', () => {
     it('POST /api/matters/[matterId]/documents validates document ID exists', async () => {
-      const req = new NextRequest(
+      const req = authenticatedRequest(
         `http://localhost:3000/api/matters/${createdMatterId}/documents`,
         {
           method: 'POST',
@@ -144,7 +144,7 @@ describe('Phase 8: Matter API Routes', () => {
     });
 
     it('PATCH /api/matters/[matterId]/documents/[documentId] handles missing membership', async () => {
-      const req = new NextRequest(
+      const req = authenticatedRequest(
         `http://localhost:3000/api/matters/${createdMatterId}/documents/doc_dummy`,
         {
           method: 'PATCH',
@@ -160,7 +160,7 @@ describe('Phase 8: Matter API Routes', () => {
     });
 
     it('DELETE /api/matters/[matterId]/documents/[documentId] handles non-member document gracefully', async () => {
-      const req = new NextRequest(
+      const req = authenticatedRequest(
         `http://localhost:3000/api/matters/${createdMatterId}/documents/doc_dummy`,
         { method: 'DELETE' }
       );
@@ -172,7 +172,7 @@ describe('Phase 8: Matter API Routes', () => {
     });
 
     it('GET /api/matters/[matterId]/relationships returns relationships list', async () => {
-      const req = new NextRequest(`http://localhost:3000/api/matters/${createdMatterId}/relationships`);
+      const req = authenticatedRequest(`http://localhost:3000/api/matters/${createdMatterId}/relationships`);
       const res = await GET_RELATIONSHIPS(req, {
         params: Promise.resolve({ matterId: createdMatterId }),
       });
@@ -183,7 +183,7 @@ describe('Phase 8: Matter API Routes', () => {
     });
 
     it('POST /api/matters/[matterId]/relationships/refresh refreshes relationships', async () => {
-      const req = new NextRequest(
+      const req = authenticatedRequest(
         `http://localhost:3000/api/matters/${createdMatterId}/relationships/refresh`,
         { method: 'POST' }
       );
@@ -197,7 +197,7 @@ describe('Phase 8: Matter API Routes', () => {
     });
 
     it('GET /api/matters/[matterId]/consistency returns consistency findings', async () => {
-      const req = new NextRequest(`http://localhost:3000/api/matters/${createdMatterId}/consistency`);
+      const req = authenticatedRequest(`http://localhost:3000/api/matters/${createdMatterId}/consistency`);
       const res = await GET_CONSISTENCY(req, {
         params: Promise.resolve({ matterId: createdMatterId }),
       });
@@ -210,7 +210,7 @@ describe('Phase 8: Matter API Routes', () => {
 
   describe('Matter Sub-Resources: Timeline, Search, Query, Notes', () => {
     it('GET /api/matters/[matterId]/timeline returns timeline events', async () => {
-      const req = new NextRequest(`http://localhost:3000/api/matters/${createdMatterId}/timeline`);
+      const req = authenticatedRequest(`http://localhost:3000/api/matters/${createdMatterId}/timeline`);
       const res = await GET_TIMELINE(req, {
         params: Promise.resolve({ matterId: createdMatterId }),
       });
@@ -221,7 +221,7 @@ describe('Phase 8: Matter API Routes', () => {
     });
 
     it('GET /api/matters/[matterId]/search searches across matter', async () => {
-      const req = new NextRequest(
+      const req = authenticatedRequest(
         `http://localhost:3000/api/matters/${createdMatterId}/search?q=agreement`
       );
       const res = await GET_SEARCH(req, {
@@ -235,7 +235,7 @@ describe('Phase 8: Matter API Routes', () => {
     });
 
     it('POST /api/matters/[matterId]/query handles matter Q&A safely', async () => {
-      const req = new NextRequest(
+      const req = authenticatedRequest(
         `http://localhost:3000/api/matters/${createdMatterId}/query`,
         {
           method: 'POST',
@@ -255,7 +255,7 @@ describe('Phase 8: Matter API Routes', () => {
 
     it('POST, GET, DELETE /api/matters/[matterId]/notes manages user notes', async () => {
       // 1. Create Note
-      const postReq = new NextRequest(
+      const postReq = authenticatedRequest(
         `http://localhost:3000/api/matters/${createdMatterId}/notes`,
         {
           method: 'POST',
@@ -276,7 +276,7 @@ describe('Phase 8: Matter API Routes', () => {
       expect(noteId).toBeDefined();
 
       // 2. List Notes
-      const getReq = new NextRequest(
+      const getReq = authenticatedRequest(
         `http://localhost:3000/api/matters/${createdMatterId}/notes`
       );
       const getRes = await GET_NOTES(getReq, {
@@ -287,7 +287,7 @@ describe('Phase 8: Matter API Routes', () => {
       expect(getBody.notes.some((n: { id: string }) => n.id === noteId)).toBe(true);
 
       // 3. Delete Note
-      const delReq = new NextRequest(
+      const delReq = authenticatedRequest(
         `http://localhost:3000/api/matters/${createdMatterId}/notes/${noteId}`,
         { method: 'DELETE' }
       );
@@ -300,7 +300,7 @@ describe('Phase 8: Matter API Routes', () => {
 
   describe('DELETE /api/matters/[matterId]', () => {
     it('deletes the matter', async () => {
-      const req = new NextRequest(`http://localhost:3000/api/matters/${createdMatterId}`, {
+      const req = authenticatedRequest(`http://localhost:3000/api/matters/${createdMatterId}`, {
         method: 'DELETE',
       });
       const res = await DELETE_MATTER(req, {
@@ -309,7 +309,7 @@ describe('Phase 8: Matter API Routes', () => {
       expect(res.status).toBe(200);
 
       // Verify 404 after deletion
-      const checkReq = new NextRequest(`http://localhost:3000/api/matters/${createdMatterId}`);
+      const checkReq = authenticatedRequest(`http://localhost:3000/api/matters/${createdMatterId}`);
       const checkRes = await GET_MATTER_BY_ID(checkReq, {
         params: Promise.resolve({ matterId: createdMatterId }),
       });

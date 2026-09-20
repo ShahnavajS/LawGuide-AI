@@ -1,5 +1,7 @@
 'use client';
 
+import { apiFetch } from '@/lib/api/client';
+
 import { useState } from 'react';
 import Link from 'next/link';
 import styles from '@/app/login/login.module.css';
@@ -62,7 +64,7 @@ export function SignupForm({ nextPath, initialError }: SignupFormProps) {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/signup', {
+      const response = await apiFetch('/api/auth/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

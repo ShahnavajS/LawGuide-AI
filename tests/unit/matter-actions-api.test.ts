@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import { NextRequest } from 'next/server';
+import { authenticatedRequest } from '../helpers/authenticated-request';
 import { POST as POST_MATTER } from '@/app/api/matters/route';
 import {
   GET as GET_ACTION_ITEMS,
@@ -28,7 +28,7 @@ describe('Phase 9: Matter Action Items & Counsel Workflow API Routes', () => {
 
   beforeAll(async () => {
     // Create test matter
-    const req = new NextRequest('http://localhost:3000/api/matters', {
+    const req = authenticatedRequest('http://localhost:3000/api/matters', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -44,7 +44,7 @@ describe('Phase 9: Matter Action Items & Counsel Workflow API Routes', () => {
 
   describe('Action Items API', () => {
     it('POST /api/matters/[matterId]/action-items > creates an action item', async () => {
-      const req = new NextRequest(`http://localhost:3000/api/matters/${matterId}/action-items`, {
+      const req = authenticatedRequest(`http://localhost:3000/api/matters/${matterId}/action-items`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -71,12 +71,12 @@ describe('Phase 9: Matter Action Items & Counsel Workflow API Routes', () => {
     it('rejects malformed action items and does not trust client provenance', async () => {
       const url = `http://localhost:3000/api/matters/${matterId}/action-items`;
       const params = { params: Promise.resolve({ matterId }) };
-      const malformed = await POST_ACTION_ITEM(new NextRequest(url, {
+      const malformed = await POST_ACTION_ITEM(authenticatedRequest(url, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: 'null',
       }), params);
       expect(malformed.status).toBe(400);
 
-      const spoofed = await POST_ACTION_ITEM(new NextRequest(url, {
+      const spoofed = await POST_ACTION_ITEM(authenticatedRequest(url, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: 'Manual question', description: '', sourceType: 'LEGAL_XRAY', userProvided: false }),
       }), params);
@@ -87,7 +87,7 @@ describe('Phase 9: Matter Action Items & Counsel Workflow API Routes', () => {
     });
 
     it('GET /api/matters/[matterId]/action-items > lists action items', async () => {
-      const req = new NextRequest(`http://localhost:3000/api/matters/${matterId}/action-items`);
+      const req = authenticatedRequest(`http://localhost:3000/api/matters/${matterId}/action-items`);
       const res = await GET_ACTION_ITEMS(req, {
         params: Promise.resolve({ matterId }),
       });
@@ -97,7 +97,7 @@ describe('Phase 9: Matter Action Items & Counsel Workflow API Routes', () => {
     });
 
     it('PATCH /api/matters/[matterId]/action-items/[itemId] > updates status', async () => {
-      const req = new NextRequest(
+      const req = authenticatedRequest(
         `http://localhost:3000/api/matters/${matterId}/action-items/${actionItemId}`,
         {
           method: 'PATCH',
@@ -117,7 +117,7 @@ describe('Phase 9: Matter Action Items & Counsel Workflow API Routes', () => {
     });
 
     it('POST /api/matters/[matterId]/action-items/generate > triggers generation', async () => {
-      const req = new NextRequest(
+      const req = authenticatedRequest(
         `http://localhost:3000/api/matters/${matterId}/action-items/generate`,
         {
           method: 'POST',
@@ -133,7 +133,7 @@ describe('Phase 9: Matter Action Items & Counsel Workflow API Routes', () => {
     });
 
     it('DELETE /api/matters/[matterId]/action-items/[itemId] > removes item', async () => {
-      const req = new NextRequest(
+      const req = authenticatedRequest(
         `http://localhost:3000/api/matters/${matterId}/action-items/${actionItemId}`,
         {
           method: 'DELETE',
@@ -151,7 +151,7 @@ describe('Phase 9: Matter Action Items & Counsel Workflow API Routes', () => {
 
   describe('Readiness & Counsel Questions API', () => {
     it('GET /api/matters/[matterId]/readiness > returns readiness report', async () => {
-      const req = new NextRequest(`http://localhost:3000/api/matters/${matterId}/readiness`);
+      const req = authenticatedRequest(`http://localhost:3000/api/matters/${matterId}/readiness`);
       const res = await GET_READINESS(req, {
         params: Promise.resolve({ matterId }),
       });
@@ -163,7 +163,7 @@ describe('Phase 9: Matter Action Items & Counsel Workflow API Routes', () => {
     });
 
     it('POST /api/matters/[matterId]/counsel-questions/generate > generates questions', async () => {
-      const req = new NextRequest(
+      const req = authenticatedRequest(
         `http://localhost:3000/api/matters/${matterId}/counsel-questions/generate`,
         {
           method: 'POST',
@@ -182,7 +182,7 @@ describe('Phase 9: Matter Action Items & Counsel Workflow API Routes', () => {
 
   describe('Brief Dossier & Activity Trail API', () => {
     it('POST /api/matters/[matterId]/brief > generates brief dossier', async () => {
-      const req = new NextRequest(`http://localhost:3000/api/matters/${matterId}/brief`, {
+      const req = authenticatedRequest(`http://localhost:3000/api/matters/${matterId}/brief`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ force: true }),
@@ -198,7 +198,7 @@ describe('Phase 9: Matter Action Items & Counsel Workflow API Routes', () => {
     });
 
     it('GET /api/matters/[matterId]/brief > gets cached brief dossier', async () => {
-      const req = new NextRequest(`http://localhost:3000/api/matters/${matterId}/brief`);
+      const req = authenticatedRequest(`http://localhost:3000/api/matters/${matterId}/brief`);
       const res = await GET_BRIEF(req, {
         params: Promise.resolve({ matterId }),
       });
@@ -209,7 +209,7 @@ describe('Phase 9: Matter Action Items & Counsel Workflow API Routes', () => {
     });
 
     it('GET /api/matters/[matterId]/activity > returns activity trail', async () => {
-      const req = new NextRequest(`http://localhost:3000/api/matters/${matterId}/activity?limit=10`);
+      const req = authenticatedRequest(`http://localhost:3000/api/matters/${matterId}/activity?limit=10`);
       const res = await GET_ACTIVITY(req, {
         params: Promise.resolve({ matterId }),
       });

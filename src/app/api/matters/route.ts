@@ -1,7 +1,8 @@
+import { apiErrorResponse } from '@/lib/api/response';
 import { withAuth } from '@/lib/auth/route';
 import { NextRequest, NextResponse } from 'next/server';
 import { getMatterService } from '@/lib/matter/service';
-import { formatSafeError, AppError, ValidationError } from '@/lib/utils/errors';
+import { ValidationError } from '@/lib/utils/errors';
 
 async function POSTHandler(request: NextRequest) {
   try {
@@ -40,9 +41,7 @@ async function POSTHandler(request: NextRequest) {
 
     return NextResponse.json({ matter }, { status: 201 });
   } catch (error) {
-    const safe = formatSafeError(error);
-    const status = error instanceof AppError ? error.statusCode : 500;
-    return NextResponse.json(safe, { status });
+    return apiErrorResponse(error);
   }
 }
 
@@ -58,9 +57,7 @@ async function GETHandler(request: NextRequest) {
 
     return NextResponse.json({ matters }, { status: 200 });
   } catch (error) {
-    const safe = formatSafeError(error);
-    const status = error instanceof AppError ? error.statusCode : 500;
-    return NextResponse.json(safe, { status });
+    return apiErrorResponse(error);
   }
 }
 

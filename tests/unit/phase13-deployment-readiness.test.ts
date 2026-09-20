@@ -109,6 +109,7 @@ describe('Phase 13: Deployment Readiness & Production Verification', () => {
         STORAGE_DIR: './uploads',
         GEMINI_API_KEY: 'AIzaSyD-validProductionKey1234567890',
         APP_SESSION_SECRET: 'independent-private-session-secret-over-32-characters',
+        APP_ORIGIN: 'https://lawguide.example',
       };
 
       const result = validateProductionConfig(validEnv);
@@ -130,6 +131,7 @@ describe('Phase 13: Deployment Readiness & Production Verification', () => {
       expect(result.errors.some((e) => e.includes('DATABASE_URL'))).toBe(true);
       expect(result.errors.some((e) => e.includes('STORAGE_DIR'))).toBe(true);
       expect(result.errors.some((e) => e.includes('APP_SESSION_SECRET'))).toBe(true);
+      expect(result.errors.some((e) => e.includes('APP_ORIGIN'))).toBe(true);
 
       // Verify no secret value is exposed in error output
       const errorJson = JSON.stringify(result.errors);
@@ -143,6 +145,7 @@ describe('Phase 13: Deployment Readiness & Production Verification', () => {
         STORAGE_DIR: './uploads',
         GEMINI_API_KEY: '',
         APP_SESSION_SECRET: 'independent-private-session-secret-over-32-characters',
+        APP_ORIGIN: 'https://lawguide.example',
       };
 
       const result = validateProductionConfig(offlineEnv);

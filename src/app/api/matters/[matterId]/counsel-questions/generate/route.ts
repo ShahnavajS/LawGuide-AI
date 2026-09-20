@@ -1,8 +1,10 @@
+import { apiErrorResponse } from '@/lib/api/response';
 import { withAuth } from '@/lib/auth/route';
 import { NextRequest, NextResponse } from 'next/server';
 import { getMatterService } from '@/lib/matter/service';
-import { formatSafeError, AppError, ValidationError } from '@/lib/utils/errors';
+import { ValidationError } from '@/lib/utils/errors';
 import { rateLimiter, getClientIdentifier } from '@/lib/security/rate-limiter';
+import { runSingleFlight } from '@/lib/utils/single-flight';
 
 async function POSTHandler(
   request: NextRequest,
@@ -34,13 +36,14 @@ async function POSTHandler(
     }
 
     const service = getMatterService();
-    const result = await service.generateCounselQuestions(matterId);
+    const result = await runSingleFlight(
+      `${clientIp}:counsel-questions:${matterId}`,
+      () => service.generateCounselQuestions(matterId)
+    );
 
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
-    const safe = formatSafeError(error);
-    const status = error instanceof AppError ? error.statusCode : 500;
-    return NextResponse.json(safe, { status });
+    return apiErrorResponse(error);
   }
 }
 

@@ -1,5 +1,7 @@
 'use client';
 
+import { apiFetch } from '@/lib/api/client';
+
 import { LinkButton } from '@/components/ui/Button/LinkButton';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -62,7 +64,7 @@ export const AddToMatterModal: React.FC<AddToMatterModalProps> = ({
       setIsLoading(true);
       setErrorMessage(null);
       try {
-        const res = await fetch('/api/matters?status=ACTIVE');
+        const res = await apiFetch('/api/matters?status=ACTIVE');
         const data = await res.json();
         if (!ignore && res.ok) {
           setMatters(data.matters || []);
@@ -84,7 +86,7 @@ export const AddToMatterModal: React.FC<AddToMatterModalProps> = ({
     setErrorMessage(null);
 
     try {
-      const res = await fetch(`/api/matters/${selectedMatterId}/documents`, {
+      const res = await apiFetch(`/api/matters/${selectedMatterId}/documents`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ documentId, role: selectedRole }),

@@ -1,5 +1,7 @@
 'use client';
 
+import { apiFetch } from '@/lib/api/client';
+
 import { useId, useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/Button/Button';
 import type { DocumentQuestionResponse } from '@/lib/document/query';
@@ -18,7 +20,7 @@ export function DocumentQuestionPanel({ documentId, onCitationClick }: { documen
     setAnswer(null);
     setLoading(true);
     try {
-      const response = await fetch(`/api/documents/${encodeURIComponent(documentId)}/query`, {
+      const response = await apiFetch(`/api/documents/${encodeURIComponent(documentId)}/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question }),

@@ -1,8 +1,10 @@
 'use client';
 
+import { apiFetch } from '@/lib/api/client';
+
 import { LinkButton } from '@/components/ui/Button/LinkButton';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import styles from './MatterWorkspace.module.css';
 import { Button } from '@/components/ui/Button/Button';
@@ -10,6 +12,8 @@ import { Spinner } from '@/components/ui/Spinner/Spinner';
 import { DocumentViewer } from '@/components/document/DocumentViewer';
 import { LegalInfoModal } from '@/components/legal-info/LegalInfoModal';
 import { Breadcrumb } from '@/components/ui/Breadcrumb/Breadcrumb';
+import { Modal } from '@/components/ui/Modal/Modal';
+import { MatterTabs, MATTER_TAB_TITLES, type MatterTabId } from './MatterTabs';
 import {
   MatterDetail,
   DocumentRelationshipItem,
@@ -39,37 +43,6 @@ interface MatterWorkspaceProps {
   matterId: string;
 }
 
-type TabType =
-  | 'overview'
-  | 'actionPlan'
-  | 'sourceMap'
-  | 'documents'
-  | 'timeline'
-  | 'relationships'
-  | 'consistency'
-  | 'search'
-  | 'ask'
-  | 'attention'
-  | 'questions'
-  | 'prepare'
-  | 'notes';
-
-const TAB_TITLES: Record<TabType, string> = {
-  overview: 'Overview',
-  actionPlan: 'Action Plan',
-  sourceMap: 'Source Map',
-  documents: 'Documents',
-  timeline: 'Timeline',
-  relationships: 'Relationships',
-  consistency: 'Consistency',
-  search: 'Search',
-  ask: 'Ask My Matter',
-  attention: 'Attention Areas',
-  questions: 'Questions for Counsel',
-  prepare: 'Counsel Brief',
-  notes: 'Notes',
-};
-
 interface AllDocumentItem {
   id: string;
   title: string;
@@ -90,7 +63,10 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
   const [matter, setMatter] = useState<MatterDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [tabError, setTabError] = useState<string | null>(null);
+  const [tabRetry, setTabRetry] = useState(0);
+  const loadedTabs = useRef(new Set<string>());
+  const [activeTab, setActiveTab] = useState<MatterTabId>('overview');
   const [copiedQuestionId, setCopiedQuestionId] = useState<string | null>(null);
 
   // Tab Data States
@@ -167,6 +143,10 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
   const [evidenceSearchQuery, setEvidenceSearchQuery] = useState<string>('');
   const [isLoadingSourceMap, setIsLoadingSourceMap] = useState<boolean>(true);
 
+  useEffect(() => {
+    loadedTabs.current.clear();
+  }, [refreshTrigger]);
+
   // 1. Fetch Matter Details & Core Phase 9/10 Data
   useEffect(() => {
     if (!matterId) return;
@@ -174,7 +154,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
 
     async function loadMatterDetails() {
       try {
-        const res = await fetch(`/api/matters/${matterId}`);
+        const res = await apiFetch(`/api/matters/${matterId}`);
         if (ignore) return;
         if (!res.ok) {
           throw new Error('Failed to load matter details.');
@@ -197,9 +177,9 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
     async function loadPhaseData() {
       try {
         const [actRes, readRes, actTrailRes] = await Promise.all([
-          fetch(`/api/matters/${matterId}/action-items`),
-          fetch(`/api/matters/${matterId}/readiness`),
-          fetch(`/api/matters/${matterId}/activity?limit=20`),
+          apiFetch(`/api/matters/${matterId}/action-items`),
+          apiFetch(`/api/matters/${matterId}/readiness`),
+          apiFetch(`/api/matters/${matterId}/activity?limit=20`),
         ]);
 
         if (ignore) return;
@@ -231,49 +211,42 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
   // 2. Fetch Tab Data on Tab Change
   useEffect(() => {
     if (!matterId) return;
+    const loaders: Partial<Record<MatterTabId, { url: string; apply: (data: Record<string, unknown>) => void }>> = {
+      timeline: { url: `/api/matters/${matterId}/timeline`, apply: (data) => setTimeline((data.timeline as MatterTimelineEvent[]) || []) },
+      relationships: { url: `/api/matters/${matterId}/relationships`, apply: (data) => setRelationships((data.relationships as DocumentRelationshipItem[]) || []) },
+      consistency: { url: `/api/matters/${matterId}/consistency`, apply: (data) => setConsistency((data.findings as ConsistencyFinding[]) || []) },
+      notes: { url: `/api/matters/${matterId}/notes`, apply: (data) => setNotes((data.notes as MatterNote[]) || []) },
+      actionPlan: { url: `/api/matters/${matterId}/action-items`, apply: (data) => setActionItems((data.items as MatterActionItem[]) || []) },
+      prepare: { url: `/api/matters/${matterId}/brief`, apply: (data) => setMatterBrief((data.brief as MatterBriefResponse) || null) },
+    };
+    const loader = loaders[activeTab];
+    const cacheKey = `${matterId}:${activeTab}:${refreshTrigger}`;
+    if (!loader || loadedTabs.current.has(cacheKey)) return;
 
-    if (activeTab === 'timeline') {
-      fetch(`/api/matters/${matterId}/timeline`)
-        .then((r) => r.json())
-        .then((d) => setTimeline(d.timeline || []))
-        .catch(() => {});
-    } else if (activeTab === 'relationships') {
-      fetch(`/api/matters/${matterId}/relationships`)
-        .then((r) => r.json())
-        .then((d) => setRelationships(d.relationships || []))
-        .catch(() => {});
-    } else if (activeTab === 'consistency') {
-      fetch(`/api/matters/${matterId}/consistency`)
-        .then((r) => r.json())
-        .then((d) => setConsistency(d.findings || []))
-        .catch(() => {});
-    } else if (activeTab === 'notes') {
-      fetch(`/api/matters/${matterId}/notes`)
-        .then((r) => r.json())
-        .then((d) => setNotes(d.notes || []))
-        .catch(() => {});
-    } else if (activeTab === 'actionPlan') {
-      fetch(`/api/matters/${matterId}/action-items`)
-        .then((r) => r.json())
-        .then((d) => setActionItems(d.items || []))
-        .catch(() => {});
-    } else if (activeTab === 'prepare') {
-      fetch(`/api/matters/${matterId}/brief`)
-        .then((r) => r.json())
-        .then((d) => setMatterBrief(d.brief || null))
-        .catch(() => {});
-    } else if (activeTab === 'questions' && counselQuestions.length === 0) {
-      fetch(`/api/matters/${matterId}/counsel-questions/generate`, { method: 'POST' })
-        .then((r) => r.json())
-        .then((d) => setCounselQuestions(d.questions || []))
-        .catch(() => {});
-    }
-  }, [matterId, activeTab, counselQuestions.length]);
+    const controller = new AbortController();
+    apiFetch(loader.url, { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`Could not load ${MATTER_TAB_TITLES[activeTab].toLowerCase()}.`);
+        return response.json() as Promise<Record<string, unknown>>;
+      })
+      .then((data) => {
+        loader.apply(data);
+        loadedTabs.current.add(cacheKey);
+      })
+      .catch((requestError: unknown) => {
+        if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) {
+          setTabError(requestError instanceof Error ? requestError.message : 'Could not load this section.');
+        }
+      });
+    return () => controller.abort();
+  }, [matterId, activeTab, refreshTrigger, tabRetry]);
 
   useEffect(() => {
     if (!matterId || activeTab !== 'sourceMap') return;
     let ignore = false;
-    fetch(`/api/matters/${matterId}/source-map`).then(async (mapResponse) => {
+    const controller = new AbortController();
+    apiFetch(`/api/matters/${matterId}/source-map`, { signal: controller.signal }).then(async (mapResponse) => {
+      if (!mapResponse.ok) throw new Error('Could not load the source map.');
       if (mapResponse.ok) {
         const data = (await mapResponse.json()) as MatterSourceMapResponse;
         if (!ignore) {
@@ -286,17 +259,24 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
           }
         }
       }
-    }).catch(() => {}).finally(() => {
+    }).catch((requestError: unknown) => {
+      if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) {
+        setTabError(requestError instanceof Error ? requestError.message : 'Could not load the source map.');
+      }
+    }).finally(() => {
       if (!ignore) setIsLoadingSourceMap(false);
     });
-    return () => { ignore = true; };
-  }, [matterId, activeTab, refreshTrigger]);
+    return () => {
+      ignore = true;
+      controller.abort();
+    };
+  }, [matterId, activeTab, refreshTrigger, tabRetry]);
 
   // Phase 9 Handlers: Action Items
   const handleToggleActionItemStatus = async (item: MatterActionItem) => {
     const nextStatus: ActionItemStatus = item.status === 'COMPLETED' ? 'OPEN' : 'COMPLETED';
     try {
-      const res = await fetch(`/api/matters/${matterId}/action-items/${item.id}`, {
+      const res = await apiFetch(`/api/matters/${matterId}/action-items/${item.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: nextStatus }),
@@ -313,7 +293,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
   const handleDeleteActionItem = async (itemId: string) => {
     if (!confirm('Are you sure you want to delete this action item?')) return;
     try {
-      const res = await fetch(`/api/matters/${matterId}/action-items/${itemId}`, {
+      const res = await apiFetch(`/api/matters/${matterId}/action-items/${itemId}`, {
         method: 'DELETE',
       });
       if (!res.ok) throw new Error('Failed to delete action item.');
@@ -327,7 +307,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
   const handleGenerateActionItems = async () => {
     try {
       setIsGeneratingActions(true);
-      const res = await fetch(`/api/matters/${matterId}/action-items/generate`, {
+      const res = await apiFetch(`/api/matters/${matterId}/action-items/generate`, {
         method: 'POST',
       });
       if (!res.ok) throw new Error('Failed to generate action items.');
@@ -347,7 +327,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
 
     try {
       setIsAddingAction(true);
-      const res = await fetch(`/api/matters/${matterId}/action-items`, {
+      const res = await apiFetch(`/api/matters/${matterId}/action-items`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -377,7 +357,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
   const handleGenerateCounselQuestions = async () => {
     try {
       setIsGeneratingCounselQuestions(true);
-      const res = await fetch(`/api/matters/${matterId}/counsel-questions/generate`, {
+      const res = await apiFetch(`/api/matters/${matterId}/counsel-questions/generate`, {
         method: 'POST',
       });
       if (!res.ok) throw new Error('Failed to generate counsel questions.');
@@ -393,7 +373,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
 
   const handleConvertQuestionToAction = async (q: CounselQuestionItem) => {
     try {
-      const res = await fetch(`/api/matters/${matterId}/action-items`, {
+      const res = await apiFetch(`/api/matters/${matterId}/action-items`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -431,7 +411,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
   const handleGenerateMatterBrief = async (force = false) => {
     try {
       setIsGeneratingBrief(true);
-      const res = await fetch(`/api/matters/${matterId}/brief`, {
+      const res = await apiFetch(`/api/matters/${matterId}/brief`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ force }),
@@ -466,7 +446,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
 
     try {
       setIsSearching(true);
-      const res = await fetch(
+      const res = await apiFetch(
         `/api/matters/${matterId}/search?q=${encodeURIComponent(searchQuery.trim())}`
       );
       if (!res.ok) throw new Error('Search request failed.');
@@ -486,7 +466,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
 
     try {
       setIsAsking(true);
-      const res = await fetch(`/api/matters/${matterId}/query`, {
+      const res = await apiFetch(`/api/matters/${matterId}/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: q.trim() }),
@@ -504,7 +484,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
   // Add Document to Matter
   const handleOpenAddDocModal = async () => {
     try {
-      const res = await fetch('/api/documents');
+      const res = await apiFetch('/api/documents');
       if (res.ok) {
         const data = await res.json();
         const existingDocIds = new Set((matter?.documents || []).map((d) => d.documentId));
@@ -528,7 +508,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
 
     try {
       setIsAddingDoc(true);
-      const res = await fetch(`/api/matters/${matterId}/documents`, {
+      const res = await apiFetch(`/api/matters/${matterId}/documents`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ documentId: selectedDocId, role: selectedRole }),
@@ -554,7 +534,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
     }
 
     try {
-      const res = await fetch(`/api/matters/${matterId}/documents/${docId}`, {
+      const res = await apiFetch(`/api/matters/${matterId}/documents/${docId}`, {
         method: 'DELETE',
       });
       if (!res.ok) throw new Error('Failed to remove document.');
@@ -570,7 +550,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
     status: 'CONFIRMED' | 'REJECTED'
   ) => {
     try {
-      const res = await fetch(`/api/matters/${matterId}/relationships/${relId}`, {
+      const res = await apiFetch(`/api/matters/${matterId}/relationships/${relId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
@@ -590,7 +570,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
   const handleRefreshRelationships = async () => {
     try {
       setIsRefreshingRels(true);
-      const res = await fetch(`/api/matters/${matterId}/relationships/refresh`, {
+      const res = await apiFetch(`/api/matters/${matterId}/relationships/refresh`, {
         method: 'POST',
       });
       if (!res.ok) throw new Error('Failed to refresh relationships.');
@@ -611,7 +591,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
 
     try {
       setIsAddingNote(true);
-      const res = await fetch(`/api/matters/${matterId}/notes`, {
+      const res = await apiFetch(`/api/matters/${matterId}/notes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -634,7 +614,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
   // Delete User Note
   const handleDeleteNote = async (noteId: string) => {
     try {
-      const res = await fetch(`/api/matters/${matterId}/notes/${noteId}`, {
+      const res = await apiFetch(`/api/matters/${matterId}/notes/${noteId}`, {
         method: 'DELETE',
       });
       if (!res.ok) throw new Error('Failed to delete note.');
@@ -674,7 +654,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
               { label: 'Home', href: '/' },
               { label: 'Matters', href: '/matters' },
               { label: matter.title },
-              ...(activeTab !== 'overview' ? [{ label: TAB_TITLES[activeTab] || activeTab }] : []),
+              ...(activeTab !== 'overview' ? [{ label: MATTER_TAB_TITLES[activeTab] }] : []),
             ]}
           />
         </div>
@@ -739,7 +719,14 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
           <div className={styles.metricBox}>
             <span className={styles.metricLabel}>Readiness</span>
             <div className={styles.readinessBarContainer}>
-              <div className={styles.readinessBar}>
+              <div
+                className={styles.readinessBar}
+                role="progressbar"
+                aria-label="Matter preparation readiness"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={matter.metrics.preparationReadyScore}
+              >
                 <div
                   className={styles.readinessFill}
                   style={{ width: `${matter.metrics.preparationReadyScore}%` }}
@@ -753,62 +740,38 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
         </div>
       </header>
 
-      {/* 12 Navigation Tabs */}
-      <nav className={styles.tabsNav} role="tablist" aria-label="Matter Workspace Sections">
-        {[
-          { id: 'overview', label: 'Overview' },
-          {
-            id: 'actionPlan',
-            label: 'Action Plan',
-            count: actionItems.filter((i) => i.status !== 'COMPLETED').length,
-          },
-          {
-            id: 'sourceMap',
-            label: 'Source Map',
-            count: sourceMapData?.coverage?.totalEvidenceItems,
-          },
-          { id: 'documents', label: 'Documents', count: matter.documents.length },
-          { id: 'timeline', label: 'Timeline' },
-          {
-            id: 'relationships',
-            label: 'Relationships',
-            count: matter.metrics.totalRelationships,
-          },
-          {
-            id: 'consistency',
-            label: 'Consistency',
-            count: matter.metrics.totalInconsistencies,
-          },
-          { id: 'search', label: 'Search Matter' },
-          { id: 'ask', label: 'Ask My Matter' },
-          {
-            id: 'attention',
-            label: 'Attention Areas',
-            count: matter.metrics.openAttentionAreas,
-          },
-          {
-            id: 'questions',
-            label: 'Lawyer Questions',
-            count: counselQuestions.length > 0 ? counselQuestions.length : matter.metrics.totalLawyerQuestions,
-          },
-          { id: 'prepare', label: 'Prepare Dossier' },
-          { id: 'notes', label: 'Notes' },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === tab.id}
-            className={`${styles.tabButton} ${activeTab === tab.id ? styles.tabButtonActive : ''}`}
-            onClick={() => setActiveTab(tab.id as TabType)}
-          >
-            <span>{tab.label}</span>
-            {tab.count !== undefined && tab.count > 0 && (
-              <span className={styles.badgeCount}>{tab.count}</span>
-            )}
-          </button>
-        ))}
-      </nav>
+      <MatterTabs
+        activeTab={activeTab}
+        onSelect={(tab) => {
+          setTabError(null);
+          setActiveTab(tab);
+        }}
+        counts={{
+          actionPlan: actionItems.filter((item) => item.status !== 'COMPLETED').length,
+          sourceMap: sourceMapData?.coverage.totalEvidenceItems,
+          documents: matter.documents.length,
+          relationships: matter.metrics.totalRelationships,
+          consistency: matter.metrics.totalInconsistencies,
+          attention: matter.metrics.openAttentionAreas,
+          questions: counselQuestions.length || matter.metrics.totalLawyerQuestions,
+        }}
+      />
+      {tabError && (
+        <div className={styles.tabError} role="alert">
+          <span>{tabError}</span>
+          <button type="button" onClick={() => {
+            setTabError(null);
+            setTabRetry((value) => value + 1);
+          }}>Retry</button>
+        </div>
+      )}
+
+      <section
+        id={`matter-panel-${activeTab}`}
+        role="tabpanel"
+        aria-labelledby={`matter-tab-${activeTab}`}
+        tabIndex={0}
+      >
 
       {/* Tab 1: Overview */}
       {activeTab === 'overview' && (
@@ -1257,7 +1220,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                   onClick={async () => {
                     setIsLoadingSourceMap(true);
                     try {
-                      const res = await fetch(`/api/matters/${matterId}/source-map`);
+                      const res = await apiFetch(`/api/matters/${matterId}/source-map`);
                       if (res.ok) {
                         const sm = (await res.json()) as MatterSourceMapResponse;
                         setSourceMapData(sm);
@@ -1345,30 +1308,31 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                     sourceMapData.documents.map((docNode) => {
                       const isDocSelected = selectedSourceDocId === docNode.documentId;
                       return (
-                        <div
+                        <article
                           key={docNode.documentId}
                           className={`${styles.sourceDocCard} ${
                             isDocSelected ? styles.sourceDocCardActive : ''
                           }`}
-                          onClick={() => {
-                            setSelectedSourceDocId(docNode.documentId);
-                            if (docNode.pagesWithEvidence.length > 0) {
-                              setSelectedSourcePage(docNode.pagesWithEvidence[0].pageNumber);
-                            } else {
-                              setSelectedSourcePage(1);
-                            }
-                          }}
                         >
-                          <div className={styles.sourceDocCardHeader}>
-                            <span className={styles.sourceDocTitle}>{docNode.title}</span>
-                            <span className={styles.roleBadge}>{docNode.role.replace(/_/g, ' ')}</span>
-                          </div>
-
-                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                            {docNode.totalEvidenceCount} evidence item
-                            {docNode.totalEvidenceCount === 1 ? '' : 's'} ·{' '}
-                            {docNode.verifiedEvidenceCount} verified
-                          </div>
+                          <button
+                            type="button"
+                            className={styles.sourceDocSelectButton}
+                            aria-pressed={isDocSelected}
+                            onClick={() => {
+                              setSelectedSourceDocId(docNode.documentId);
+                              setSelectedSourcePage(docNode.pagesWithEvidence[0]?.pageNumber || 1);
+                            }}
+                          >
+                            <span className={styles.sourceDocCardHeader}>
+                              <span className={styles.sourceDocTitle}>{docNode.title}</span>
+                              <span className={styles.roleBadge}>{docNode.role.replace(/_/g, ' ')}</span>
+                            </span>
+                            <span className={styles.sourceDocSummary}>
+                              {docNode.totalEvidenceCount} evidence item
+                              {docNode.totalEvidenceCount === 1 ? '' : 's'} ·{' '}
+                              {docNode.verifiedEvidenceCount} verified
+                            </span>
+                          </button>
 
                           {/* Page Pills Grid */}
                           {docNode.pagesWithEvidence.length > 0 ? (
@@ -1399,7 +1363,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                               No extracted evidence for this document.
                             </div>
                           )}
-                        </div>
+                        </article>
                       );
                     })
                   )}
@@ -2758,12 +2722,21 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
           </div>
         </div>
       )}
+      </section>
 
       {/* Side Slide-Over Document Viewer Drawer */}
       {viewerDocId && (
-        <aside className={styles.viewerDrawer} aria-label="Document Viewer Drawer">
+        <aside
+          className={styles.viewerDrawer}
+          role="dialog"
+          aria-modal="false"
+          aria-labelledby="matter-document-viewer-title"
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') closeViewer();
+          }}
+        >
           <div className={styles.drawerHeader}>
-            <h3 className={styles.drawerTitle}>📄 {viewerDocTitle}</h3>
+            <h3 id="matter-document-viewer-title" className={styles.drawerTitle}>📄 {viewerDocTitle}</h3>
             <button
               type="button"
               style={{
@@ -2774,7 +2747,8 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                 cursor: 'pointer',
               }}
               onClick={closeViewer}
-              aria-label="Close Viewer"
+              aria-label="Close document viewer"
+              autoFocus
             >
               ✕
             </button>
@@ -2791,37 +2765,11 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
 
       {/* Add Document to Matter Modal */}
       {isAddDocModalOpen && (
-        <div
-          className={styles.viewerDrawer}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            width: '100%',
-            maxWidth: '100%',
-            background: 'rgba(5, 8, 15, 0.75)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1200,
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setIsAddDocModalOpen(false);
-          }}
+        <Modal
+          isOpen={isAddDocModalOpen}
+          onClose={() => setIsAddDocModalOpen(false)}
+          title="Add Document to Matter"
         >
-          <div
-            style={{
-              background: '#111622',
-              border: '1px solid rgba(200, 162, 86, 0.35)',
-              borderRadius: '14px',
-              padding: '1.75rem',
-              width: '100%',
-              maxWidth: '520px',
-            }}
-          >
-            <h2 style={{ fontSize: '1.3rem', color: '#ffffff', margin: '0 0 1rem 0' }}>
-              Add Document to Matter
-            </h2>
-
             {allAvailableDocs.length === 0 ? (
               <div style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
                 All uploaded documents are already in this matter, or no documents have been
@@ -2834,6 +2782,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
               <form onSubmit={handleAddDocument}>
                 <div style={{ marginBottom: '1rem' }}>
                   <label
+                    htmlFor="matter-document-select"
                     style={{
                       display: 'block',
                       fontSize: '0.75rem',
@@ -2845,6 +2794,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                     Select Document *
                   </label>
                   <select
+                    id="matter-document-select"
                     value={selectedDocId}
                     onChange={(e) => setSelectedDocId(e.target.value)}
                     className={styles.searchInput}
@@ -2860,6 +2810,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
 
                 <div style={{ marginBottom: '1.5rem' }}>
                   <label
+                    htmlFor="matter-document-role"
                     style={{
                       display: 'block',
                       fontSize: '0.75rem',
@@ -2871,6 +2822,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                     Document Role in Matter
                   </label>
                   <select
+                    id="matter-document-role"
                     value={selectedRole}
                     onChange={(e) => setSelectedRole(e.target.value as MatterDocumentRole)}
                     className={styles.searchInput}
@@ -2899,46 +2851,20 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                 </div>
               </form>
             )}
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Add Action Item Modal */}
       {isAddActionModalOpen && (
-        <div
-          className={styles.viewerDrawer}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            width: '100%',
-            maxWidth: '100%',
-            background: 'rgba(5, 8, 15, 0.75)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1200,
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setIsAddActionModalOpen(false);
-          }}
+        <Modal
+          isOpen={isAddActionModalOpen}
+          onClose={() => setIsAddActionModalOpen(false)}
+          title="Create Action Item"
         >
-          <div
-            style={{
-              background: '#111622',
-              border: '1px solid rgba(200, 162, 86, 0.35)',
-              borderRadius: '14px',
-              padding: '1.75rem',
-              width: '100%',
-              maxWidth: '520px',
-            }}
-          >
-            <h2 style={{ fontSize: '1.3rem', color: '#ffffff', margin: '0 0 1rem 0' }}>
-              Create Action Item
-            </h2>
-
             <form onSubmit={handleCreateActionItem}>
               <div style={{ marginBottom: '1rem' }}>
                 <label
+                  htmlFor="matter-action-title"
                   style={{
                     display: 'block',
                     fontSize: '0.75rem',
@@ -2950,6 +2876,8 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                   Task Title *
                 </label>
                 <input
+                  aria-label="Note title"
+                  id="matter-action-title"
                   type="text"
                   required
                   placeholder="e.g. Clarify notice period with counsel..."
@@ -2962,6 +2890,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
 
               <div style={{ marginBottom: '1rem' }}>
                 <label
+                  htmlFor="matter-action-description"
                   style={{
                     display: 'block',
                     fontSize: '0.75rem',
@@ -2973,6 +2902,8 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                   Description & Context
                 </label>
                 <textarea
+                  aria-label="Note details and context"
+                  id="matter-action-description"
                   rows={3}
                   placeholder="Enter details, reference notes, or questions..."
                   value={newActionDesc}
@@ -2985,6 +2916,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                 <div>
                   <label
+                    htmlFor="matter-action-type"
                     style={{
                       display: 'block',
                       fontSize: '0.75rem',
@@ -2996,6 +2928,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                     Type
                   </label>
                   <select
+                    id="matter-action-type"
                     value={newActionType}
                     onChange={(e) => setNewActionType(e.target.value as ActionItemType)}
                     className={styles.searchInput}
@@ -3011,6 +2944,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
 
                 <div>
                   <label
+                    htmlFor="matter-action-priority"
                     style={{
                       display: 'block',
                       fontSize: '0.75rem',
@@ -3022,6 +2956,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                     Priority
                   </label>
                   <select
+                    id="matter-action-priority"
                     value={newActionPriority}
                     onChange={(e) => setNewActionPriority(e.target.value as ActionItemPriority)}
                     className={styles.searchInput}
@@ -3050,8 +2985,7 @@ export const MatterWorkspace: React.FC<MatterWorkspaceProps> = ({ matterId }) =>
                 </Button>
               </div>
             </form>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Phase 7 LegalInfoModal Integration */}

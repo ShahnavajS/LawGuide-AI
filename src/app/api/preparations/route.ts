@@ -1,7 +1,10 @@
+import { apiErrorResponse } from '@/lib/api/response';
 import { withAuth } from '@/lib/auth/route';
 import { NextRequest, NextResponse } from 'next/server';
 import { getPreparationService } from '@/lib/preparation/service';
-import { formatSafeError, AppError, ValidationError } from '@/lib/utils/errors';
+import { ValidationError } from '@/lib/utils/errors';
+import { getClientIdentifier } from '@/lib/security/rate-limiter';
+import { runSingleFlight } from '@/lib/utils/single-flight';
 
 async function POSTHandler(request: NextRequest) {
   try {
@@ -38,20 +41,23 @@ async function POSTHandler(request: NextRequest) {
     }
 
     const service = getPreparationService();
-    const preparation = await service.generatePreparation({
-      documentId,
-      comparisonId,
-      matterId,
-      purpose,
-      userNotes,
-      force: Boolean(force),
-    });
+    const clientId = getClientIdentifier(request);
+    const sourceKey = matterId || comparisonId || documentId;
+    const preparation = await runSingleFlight(
+      `${clientId}:preparation:${sourceKey}`,
+      () => service.generatePreparation({
+        documentId,
+        comparisonId,
+        matterId,
+        purpose,
+        userNotes,
+        force: Boolean(force),
+      })
+    );
 
     return NextResponse.json({ preparation }, { status: 200 });
   } catch (error) {
-    const safe = formatSafeError(error);
-    const status = error instanceof AppError ? error.statusCode : 500;
-    return NextResponse.json(safe, { status });
+    return apiErrorResponse(error);
   }
 }
 
@@ -71,9 +77,7 @@ async function GETHandler(request: NextRequest) {
 
     return NextResponse.json({ preparation }, { status: 200 });
   } catch (error) {
-    const safe = formatSafeError(error);
-    const status = error instanceof AppError ? error.statusCode : 500;
-    return NextResponse.json(safe, { status });
+    return apiErrorResponse(error);
   }
 }
 

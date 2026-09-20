@@ -11,6 +11,8 @@
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "verify": "npm run type-check && npm run lint && npm test && npm run build",
+    "security:audit": "npm audit --omit=dev --audit-level=high",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push"
   },

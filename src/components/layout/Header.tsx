@@ -1,5 +1,7 @@
 'use client';
 
+import { apiFetch } from '@/lib/api/client';
+
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -29,7 +31,7 @@ export const Header: React.FC = () => {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch('/api/auth/me', { cache: 'no-store', signal: controller.signal })
+    apiFetch('/api/auth/me', { cache: 'no-store', signal: controller.signal })
       .then((response) => response.ok ? response.json() : null)
       .then((payload) => setUser(payload?.user || null))
       .catch(() => undefined);

@@ -72,6 +72,16 @@ export function validateProductionConfig(env: Record<string, string | undefined>
   if (env.NODE_ENV === 'production' && !authConfiguration(env).configured) {
     errors.push('APP_SESSION_SECRET must be set to a strong, non-placeholder value of at least 32 characters.');
   }
+  if (env.NODE_ENV === 'production') {
+    try {
+      const origin = new URL(env.APP_ORIGIN || '');
+      if (!['http:', 'https:'].includes(origin.protocol) || origin.origin !== (env.APP_ORIGIN || '').replace(/\/$/, '')) {
+        throw new Error('invalid origin');
+      }
+    } catch {
+      errors.push('APP_ORIGIN must be the canonical HTTP(S) browser origin without a path.');
+    }
+  }
   if (env.NODE_ENV === 'production' && env.EVALUATOR_DEMO_ENABLED === 'true') {
     warnings.push('The shared evaluator demo account is enabled. Store only non-sensitive sample data in that account.');
   }

@@ -1,7 +1,8 @@
+import { apiErrorResponse } from '@/lib/api/response';
 import { withAuth } from '@/lib/auth/route';
 import { NextRequest, NextResponse } from 'next/server';
 import { getDocumentService } from '@/lib/document/service';
-import { formatSafeError, AppError, ValidationError } from '@/lib/utils/errors';
+import { ValidationError } from '@/lib/utils/errors';
 import { MAX_DOCUMENT_FILE_SIZE_BYTES } from '@/lib/document/validation';
 
 async function POSTHandler(request: NextRequest) {
@@ -48,9 +49,7 @@ async function POSTHandler(request: NextRequest) {
 
     return NextResponse.json({ document }, { status: 201 });
   } catch (error) {
-    const safe = formatSafeError(error);
-    const status = error instanceof AppError ? error.statusCode : 500;
-    return NextResponse.json(safe, { status });
+    return apiErrorResponse(error);
   }
 }
 

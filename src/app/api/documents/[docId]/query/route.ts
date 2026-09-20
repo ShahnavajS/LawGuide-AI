@@ -1,7 +1,8 @@
+import { apiErrorResponse } from '@/lib/api/response';
 import { withAuth } from '@/lib/auth/route';
 import { NextRequest, NextResponse } from 'next/server';
 import { answerDocumentQuestion } from '@/lib/document/query';
-import { formatSafeError, AppError, ValidationError } from '@/lib/utils/errors';
+import { ValidationError } from '@/lib/utils/errors';
 import { getClientIdentifier, rateLimiter } from '@/lib/security/rate-limiter';
 
 async function POSTHandler(request: NextRequest, { params }: { params: Promise<{ docId: string }> }) {
@@ -16,8 +17,7 @@ async function POSTHandler(request: NextRequest, { params }: { params: Promise<{
     const answer = await answerDocumentQuestion(docId, (body as { question: string }).question);
     return NextResponse.json(answer, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
-    const safe = formatSafeError(error);
-    return NextResponse.json(safe, { status: error instanceof AppError ? error.statusCode : 500 });
+    return apiErrorResponse(error);
   }
 }
 

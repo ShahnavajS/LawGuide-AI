@@ -1,5 +1,7 @@
 'use client';
 
+import { apiFetch } from '@/lib/api/client';
+
 import { LinkButton } from '@/components/ui/Button/LinkButton';
 
 import React, { useState, useEffect, use } from 'react';
@@ -41,7 +43,7 @@ export default function AnalyzePage({ params }: AnalyzePageProps) {
 
     async function initDocumentWorkspace() {
       try {
-        const res = await fetch(`/api/documents/${docId}`);
+        const res = await apiFetch(`/api/documents/${docId}`);
         if (ignore) return;
 
         if (res.status === 404) {
@@ -59,7 +61,7 @@ export default function AnalyzePage({ params }: AnalyzePageProps) {
           if (data.document.status === 'UPLOADED' && data.document.fileAvailable !== false) {
             setIsProcessing(true);
             try {
-              const procRes = await fetch(`/api/documents/${docId}/process`, {
+              const procRes = await apiFetch(`/api/documents/${docId}/process`, {
                 method: 'POST',
               });
               const procData = await procRes.json();
@@ -87,7 +89,7 @@ export default function AnalyzePage({ params }: AnalyzePageProps) {
           // If document is already READY, check for existing analysis
           if (data.document.status === 'READY') {
             try {
-              const anaRes = await fetch(`/api/documents/${docId}/analysis`);
+              const anaRes = await apiFetch(`/api/documents/${docId}/analysis`);
               const anaData = await anaRes.json();
               if (!ignore && anaRes.ok && anaData.analysis) {
                 setAnalysis(anaData.analysis);
@@ -125,7 +127,7 @@ export default function AnalyzePage({ params }: AnalyzePageProps) {
       setIsProcessing(true);
       setErrorMessage(null);
 
-      const res = await fetch(`/api/documents/${docId}/process`, {
+      const res = await apiFetch(`/api/documents/${docId}/process`, {
         method: 'POST',
       });
       const data = await res.json();
@@ -152,7 +154,7 @@ export default function AnalyzePage({ params }: AnalyzePageProps) {
       setIsAnalyzing(true);
       setAnalysisError(null);
 
-      const res = await fetch(`/api/documents/${docId}/analyze`, {
+      const res = await apiFetch(`/api/documents/${docId}/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ force }),

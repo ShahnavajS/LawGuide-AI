@@ -1,5 +1,7 @@
 'use client';
 
+import { apiFetch } from '@/lib/api/client';
+
 import { useState } from 'react';
 import styles from '@/app/login/login.module.css';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
@@ -31,7 +33,7 @@ export function LoginForm({ nextPath, demo, initialError }: LoginFormProps) {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await apiFetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

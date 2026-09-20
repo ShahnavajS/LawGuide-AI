@@ -1,8 +1,10 @@
+import { apiErrorResponse } from '@/lib/api/response';
 import { withAuth } from '@/lib/auth/route';
 import { NextRequest, NextResponse } from 'next/server';
 import { getMatterService } from '@/lib/matter/service';
-import { formatSafeError, AppError, ValidationError } from '@/lib/utils/errors';
+import { ValidationError } from '@/lib/utils/errors';
 import { rateLimiter, getClientIdentifier } from '@/lib/security/rate-limiter';
+import { runSingleFlight } from '@/lib/utils/single-flight';
 
 async function GETHandler(
   _request: NextRequest,
@@ -23,9 +25,7 @@ async function GETHandler(
 
     return NextResponse.json({ brief }, { status: 200 });
   } catch (error) {
-    const safe = formatSafeError(error);
-    const status = error instanceof AppError ? error.statusCode : 500;
-    return NextResponse.json(safe, { status });
+    return apiErrorResponse(error);
   }
 }
 
@@ -67,13 +67,14 @@ async function POSTHandler(
     }
 
     const service = getMatterService();
-    const brief = await service.generateMatterBrief(matterId, { force });
+    const brief = await runSingleFlight(
+      `${clientIp}:matter-brief:${matterId}`,
+      () => service.generateMatterBrief(matterId, { force })
+    );
 
     return NextResponse.json({ brief }, { status: 200 });
   } catch (error) {
-    const safe = formatSafeError(error);
-    const status = error instanceof AppError ? error.statusCode : 500;
-    return NextResponse.json(safe, { status });
+    return apiErrorResponse(error);
   }
 }
 

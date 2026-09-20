@@ -6,7 +6,7 @@
  */
 
 import { getDb, schema } from '@/lib/db';
-import { assertModelCollections } from '@/lib/ai/validate-output';
+import { assertModelCollections, parseStoredArtifact } from '@/lib/ai/validate-output';
 import { getCurrentUserId } from '@/lib/auth/context';
 import { getDocumentService, DocumentService } from '@/lib/document/service';
 import { geminiService, GeminiService } from '@/lib/ai/gemini';
@@ -90,6 +90,14 @@ export class ComparisonService {
     this.validator = customValidator || citationValidator;
   }
 
+  private parseStoredComparison(raw: string): ComparisonResult {
+    return parseStoredArtifact<ComparisonResult>(raw, {
+      strings: ['id', 'baseDocumentId', 'targetDocumentId', 'comparedAt', 'disclaimer', 'status'],
+      objects: ['summary', 'statistics', 'validationSummary'],
+      arrays: ['differences', 'lawyerQuestions'],
+    });
+  }
+
   /**
    * Retrieves an existing comparison by its unique ID.
    */
@@ -111,7 +119,7 @@ export class ComparisonService {
     }
 
     try {
-      return JSON.parse(record.comparisonDataJson) as ComparisonResult;
+      return this.parseStoredComparison(record.comparisonDataJson);
     } catch {
       return null;
     }
@@ -147,7 +155,7 @@ export class ComparisonService {
     }
 
     try {
-      return JSON.parse(record.comparisonDataJson) as ComparisonResult;
+      return this.parseStoredComparison(record.comparisonDataJson);
     } catch {
       return null;
     }

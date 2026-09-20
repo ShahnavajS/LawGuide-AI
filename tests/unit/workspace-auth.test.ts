@@ -14,7 +14,6 @@ const originalSecret = process.env.APP_SESSION_SECRET;
 afterEach(() => {
   if (originalSecret === undefined) delete process.env.APP_SESSION_SECRET;
   else process.env.APP_SESSION_SECRET = originalSecret;
-  delete process.env.TEST_ENFORCE_AUTH;
   vi.unstubAllEnvs();
 });
 
@@ -34,7 +33,11 @@ describe('account sessions', () => {
     delete process.env.APP_SESSION_SECRET;
     vi.stubEnv('NODE_ENV', 'production');
     expect(authConfiguration().configured).toBe(false);
-    expect(proxy(new NextRequest('http://localhost:3000/')).status).toBe(200);
+    const publicResponse = proxy(new NextRequest('http://localhost:3000/'));
+    expect(publicResponse.status).toBe(200);
+    expect(publicResponse.headers.get('content-security-policy')).toContain("script-src 'self' 'nonce-");
+    expect(publicResponse.headers.get('content-security-policy')).not.toContain("script-src 'self' 'unsafe-inline'");
+    expect(publicResponse.headers.get('content-security-policy')).toContain("form-action 'self'");
     expect(proxy(new NextRequest('http://localhost:3000/legal-info')).status).toBe(200);
     expect(proxy(new NextRequest('http://localhost:3000/api/documents')).status).toBe(503);
   });
@@ -53,7 +56,10 @@ describe('account sessions', () => {
 
   it('signs in the evaluator account and rejects oversized forms', async () => {
     process.env.APP_SESSION_SECRET = secret;
-    const headers = { 'content-type': 'application/x-www-form-urlencoded' };
+    const headers = {
+      'content-type': 'application/x-www-form-urlencoded',
+      origin: 'http://localhost:3000',
+    };
     const accepted = await login(new NextRequest('http://localhost:3000/api/auth/login', {
       method: 'POST',
       headers,

@@ -25,7 +25,7 @@ import { LEGAL_DISCLAIMERS, EvidenceSourceType } from '@/lib/ai/safety';
 import { generateId } from '@/lib/utils/id';
 import { AppError, NotFoundError, ValidationError } from '@/lib/utils/errors';
 import { eq } from 'drizzle-orm';
-import { assertCitedModelItems, assertModelCollections } from '@/lib/ai/validate-output';
+import { assertCitedModelItems, assertModelCollections, parseStoredArtifact } from '@/lib/ai/validate-output';
 
 interface RawLegalXRayOutput {
   overview?: {
@@ -142,7 +142,11 @@ export class AnalysisService {
     }
 
     try {
-      return JSON.parse(record.analysisDataJson) as LegalXRayAnalysis;
+      return parseStoredArtifact<LegalXRayAnalysis>(record.analysisDataJson, {
+        strings: ['documentId', 'analyzedAt', 'disclaimer'],
+        objects: ['overview', 'validationSummary'],
+        arrays: ['parties', 'keyDates', 'obligations', 'rights', 'financialTerms', 'materialClauses', 'attentionAreas', 'lawyerQuestions'],
+      });
     } catch {
       return null;
     }

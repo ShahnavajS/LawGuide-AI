@@ -107,7 +107,7 @@ Findings use five labels to show their source and review status. Labels do not e
 
 ### Prerequisites
 
-- **Node.js**: v20+ LTS (Tested on v24.21.0)
+- **Node.js**: v22+ LTS (Tested on v24.21.0)
 - **npm**: v10+
 
 ### 1. Clone & Install
@@ -135,12 +135,13 @@ GEMINI_MODEL=gemini-2.5-flash
 DATABASE_URL=./data/lexiguide.db
 STORAGE_DIR=./uploads
 APP_SESSION_SECRET=<at least 32 random characters in production>
+APP_ORIGIN=http://localhost:3000
 NODE_ENV=development
-# Optional shared evaluator sample account; disable for ordinary production use.
-EVALUATOR_DEMO_ENABLED=false
+# Shared evaluator sample account used for submission review.
+EVALUATOR_DEMO_ENABLED=true
 ```
 
-Existing migrations are applied when the database connection opens. `npm run db:generate` creates new migrations after a schema change; it is not required for first startup. Production requires `APP_SESSION_SECRET` and fails closed for private routes when it is absent or a placeholder. Development uses a local-only fallback secret. Set `EVALUATOR_DEMO_ENABLED=true` only when the shared sample workspace is required.
+Existing migrations are applied when the database connection opens. `npm run db:generate` creates new migrations after a schema change; it is not required for first startup. Production requires `APP_SESSION_SECRET` and a canonical `APP_ORIGIN`, and fails closed for private routes when the session secret is absent or a placeholder. Development uses a local-only fallback secret. The evaluator account remains enabled for submission review and must contain sample data only.
 
 ### 4. Start Development Server
 
@@ -162,6 +163,8 @@ Open [http://localhost:3000](http://localhost:3000) to view the landing page and
 | `npm run lint` | Runs ESLint |
 | `npm run type-check` | Runs TypeScript compiler validation (`tsc --noEmit`) |
 | `npm run test` | Runs unit test suite via Vitest |
+| `npm run verify` | Runs TypeScript, ESLint, tests, and the production build |
+| `npm run security:audit` | Audits production dependencies for high severity issues |
 | `npm run db:generate` | Generates SQL migrations using Drizzle Kit |
 
 ---
@@ -291,17 +294,17 @@ The phase checklist below is historical. Current security boundaries, limitation
 ## Production Deployment & Operational Guidelines
 
 ### Architecture & Trust Model
-LawGuide AI operates on a **single-tenant / private-workspace model**:
+LawGuide AI operates as an **account-isolated, single-process application**:
 - Documents and analysis records are persisted locally in SQLite (`data/lexiguide.db`) and an isolated filesystem directory (`uploads/`).
-- Matter membership and physical storage paths are checked on the server. All signed-in users share access to the same documents and matters.
-- The platform does not claim multi-tenant enterprise isolation or GDPR/DPDP certification out-of-the-box; it is intended for single-tenant self-hosted servers, private intranet VMs, or containerized internal legal ops environments.
+- Matter membership and physical storage paths are checked on the server. Documents, matters, comparisons, and preparation records are scoped to their owning account.
+- The platform does not claim enterprise identity, compliance certification, or horizontally scaled rate limiting out-of-the-box; it is intended for a persistent single-instance deployment.
 
 ### Deployment Requirements
 1. **Persistent Filesystem**:
    - The database file (`DATABASE_URL`) and document storage directory (`STORAGE_DIR`) **must reside on persistent, writable disk storage**.
    - **Do NOT deploy to ephemeral serverless platforms (e.g. basic Vercel serverless functions without persistent volumes)**, as SQLite files and uploaded PDFs will be discarded across function invocations.
 2. **Runtime Environment**:
-   - Node.js v20+ LTS or v24+ on Linux, macOS, or Windows Server.
+   - Node.js v22+ LTS on Linux, macOS, or Windows Server.
    - For containerized deployments (Docker), ensure the `data` and `uploads` folders are mounted as external persistent volumes:
      ```bash
      docker run -d -p 3000:8080 \

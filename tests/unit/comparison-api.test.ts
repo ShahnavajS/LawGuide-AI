@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterAll } from 'vitest';
-import { NextRequest } from 'next/server';
+import { authenticatedRequest } from '../helpers/authenticated-request';
 import { POST, GET as GET_QUERY } from '@/app/api/comparisons/route';
 import { GET as GET_BY_ID } from '@/app/api/comparisons/[comparisonId]/route';
 import { DocumentService } from '@/lib/document/service';
@@ -111,7 +111,7 @@ describe('Phase 5: Comparison API Routes', () => {
 
   describe('POST /api/comparisons', () => {
     it('returns 400 when body is invalid or empty', async () => {
-      const req = new NextRequest('http://localhost:3000/api/comparisons', {
+      const req = authenticatedRequest('http://localhost:3000/api/comparisons', {
         method: 'POST',
         body: 'invalid-json',
       });
@@ -123,7 +123,7 @@ describe('Phase 5: Comparison API Routes', () => {
     });
 
     it('returns 400 when comparing identical document IDs', async () => {
-      const req = new NextRequest('http://localhost:3000/api/comparisons', {
+      const req = authenticatedRequest('http://localhost:3000/api/comparisons', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ baseDocumentId: 'doc_same', targetDocumentId: 'doc_same' }),
@@ -150,7 +150,7 @@ describe('Phase 5: Comparison API Routes', () => {
       });
       await docService.processDocument(doc2.id);
 
-      const req = new NextRequest('http://localhost:3000/api/comparisons', {
+      const req = authenticatedRequest('http://localhost:3000/api/comparisons', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ baseDocumentId: doc1.id, targetDocumentId: doc2.id }),
@@ -168,7 +168,7 @@ describe('Phase 5: Comparison API Routes', () => {
 
   describe('GET /api/comparisons (by query params)', () => {
     it('returns 400 if query params are missing', async () => {
-      const req = new NextRequest('http://localhost:3000/api/comparisons?baseDocId=123');
+      const req = authenticatedRequest('http://localhost:3000/api/comparisons?baseDocId=123');
       const res = await GET_QUERY(req);
       expect(res.status).toBe(400);
     });
@@ -189,7 +189,7 @@ describe('Phase 5: Comparison API Routes', () => {
       await docService.processDocument(doc2.id);
 
       // Create comparison via POST
-      const postReq = new NextRequest('http://localhost:3000/api/comparisons', {
+      const postReq = authenticatedRequest('http://localhost:3000/api/comparisons', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ baseDocumentId: doc1.id, targetDocumentId: doc2.id }),
@@ -197,7 +197,7 @@ describe('Phase 5: Comparison API Routes', () => {
       await POST(postReq);
 
       // Retrieve via GET query
-      const getReq = new NextRequest(
+      const getReq = authenticatedRequest(
         `http://localhost:3000/api/comparisons?baseDocumentId=${doc1.id}&targetDocumentId=${doc2.id}`
       );
       const res = await GET_QUERY(getReq);
@@ -211,7 +211,7 @@ describe('Phase 5: Comparison API Routes', () => {
 
   describe('GET /api/comparisons/[comparisonId]', () => {
     it('returns 404 for non-existent comparison ID', async () => {
-      const req = new NextRequest('http://localhost:3000/api/comparisons/comp_nonexistent');
+      const req = authenticatedRequest('http://localhost:3000/api/comparisons/comp_nonexistent');
       const res = await GET_BY_ID(req, {
         params: Promise.resolve({ comparisonId: 'comp_nonexistent' }),
       });
@@ -233,7 +233,7 @@ describe('Phase 5: Comparison API Routes', () => {
       });
       await docService.processDocument(doc2.id);
 
-      const postReq = new NextRequest('http://localhost:3000/api/comparisons', {
+      const postReq = authenticatedRequest('http://localhost:3000/api/comparisons', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ baseDocumentId: doc1.id, targetDocumentId: doc2.id }),
@@ -242,7 +242,7 @@ describe('Phase 5: Comparison API Routes', () => {
       const postData = await postRes.json();
       const compId = postData.comparison.id;
 
-      const getReq = new NextRequest(`http://localhost:3000/api/comparisons/${compId}`);
+      const getReq = authenticatedRequest(`http://localhost:3000/api/comparisons/${compId}`);
       const res = await GET_BY_ID(getReq, {
         params: Promise.resolve({ comparisonId: compId }),
       });

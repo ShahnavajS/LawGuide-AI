@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# Multi-stage production Dockerfile for LexiGuide AI
+# Multi-stage production Dockerfile for LawGuide AI
 # Designed for persistent SQLite database and document filesystem persistence
 
 # -----------------------------------------------------------------------------

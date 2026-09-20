@@ -1,5 +1,7 @@
 'use client';
 
+import { apiFetch } from '@/lib/api/client';
+
 import { LinkButton } from '@/components/ui/Button/LinkButton';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -50,7 +52,7 @@ export const ComparisonWorkspace: React.FC<ComparisonWorkspaceProps> = ({
     let ignore = false;
     async function loadInitialDocuments() {
       try {
-        const res = await fetch('/api/documents');
+        const res = await apiFetch('/api/documents');
         if (ignore) return;
         if (res.ok) {
           const data = await res.json();
@@ -89,7 +91,7 @@ export const ComparisonWorkspace: React.FC<ComparisonWorkspaceProps> = ({
       setIsComparing(true);
       setErrorMessage(null);
 
-      const res = await fetch('/api/comparisons', {
+      const res = await apiFetch('/api/comparisons', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -122,7 +124,7 @@ export const ComparisonWorkspace: React.FC<ComparisonWorkspaceProps> = ({
     let ignore = false;
     async function autoLoadComparison() {
       try {
-        const res = await fetch('/api/comparisons', {
+        const res = await apiFetch('/api/comparisons', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

@@ -1,5 +1,7 @@
 'use client';
 
+import { apiFetch } from '@/lib/api/client';
+
 import React, { useState, useRef } from 'react';
 import styles from './DocumentUpload.module.css';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
@@ -79,7 +81,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('/api/documents/upload', {
+      const response = await apiFetch('/api/documents/upload', {
         method: 'POST',
         body: formData,
       });

@@ -1,5 +1,7 @@
 'use client';
 
+import { apiFetch } from '@/lib/api/client';
+
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -24,7 +26,7 @@ function getPdfBytes(fileUrl: string): Promise<Uint8Array> {
   }
 
   const request = (async () => {
-    const response = await fetch(fileUrl);
+    const response = await apiFetch(fileUrl);
     if (!response.ok) {
       throw new Error(response.status === 404
         ? 'The stored PDF is missing. Remove this record and upload a new copy.'

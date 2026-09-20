@@ -1,7 +1,8 @@
+import { apiErrorResponse } from '@/lib/api/response';
 import { withAuth } from '@/lib/auth/route';
 import { NextRequest, NextResponse } from 'next/server';
 import { getComparisonService } from '@/lib/comparison/service';
-import { formatSafeError, AppError, NotFoundError } from '@/lib/utils/errors';
+import { NotFoundError } from '@/lib/utils/errors';
 
 interface RouteContext {
   params: Promise<{ comparisonId: string }>;
@@ -19,9 +20,7 @@ async function GETHandler(_request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ comparison });
   } catch (error) {
-    const safe = formatSafeError(error);
-    const status = error instanceof AppError ? error.statusCode : 500;
-    return NextResponse.json(safe, { status });
+    return apiErrorResponse(error);
   }
 }
 

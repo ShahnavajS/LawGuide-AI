@@ -1,7 +1,10 @@
 'use client';
 
+import { apiFetch } from '@/lib/api/client';
+
 import { useState } from 'react';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
+import { useRouter } from 'next/navigation';
 
 interface SignOutButtonProps {
   className?: string;
@@ -9,6 +12,7 @@ interface SignOutButtonProps {
 
 export function SignOutButton({ className }: SignOutButtonProps) {
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   async function handleSignOut(event: React.MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
@@ -16,7 +20,7 @@ export function SignOutButton({ className }: SignOutButtonProps) {
     setLoading(true);
 
     try {
-      await fetch('/api/auth/logout', {
+      await apiFetch('/api/auth/logout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -26,7 +30,8 @@ export function SignOutButton({ className }: SignOutButtonProps) {
     } catch {
       // Proceed with redirect regardless
     } finally {
-      window.location.href = '/login';
+      router.replace('/login');
+      router.refresh();
     }
   }
 

@@ -1,8 +1,9 @@
+import { apiErrorResponse } from '@/lib/api/response';
 import { withAuth } from '@/lib/auth/route';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAnalysisService } from '@/lib/analysis/service';
-import { formatSafeError, AppError } from '@/lib/utils/errors';
 import { rateLimiter, getClientIdentifier } from '@/lib/security/rate-limiter';
+import { runSingleFlight } from '@/lib/utils/single-flight';
 
 interface RouteContext {
   params: Promise<{ docId: string }>;
@@ -42,12 +43,13 @@ async function POSTHandler(request: NextRequest, context: RouteContext) {
     }
 
     const service = getAnalysisService();
-    const analysis = await service.analyzeDocument(docId, { force });
+    const analysis = await runSingleFlight(
+      `${clientIp}:analysis:${docId}`,
+      () => service.analyzeDocument(docId, { force })
+    );
     return NextResponse.json({ analysis });
   } catch (error) {
-    const safe = formatSafeError(error);
-    const status = error instanceof AppError ? error.statusCode : 500;
-    return NextResponse.json(safe, { status });
+    return apiErrorResponse(error);
   }
 }
 
@@ -58,9 +60,7 @@ async function GETHandler(_request: NextRequest, context: RouteContext) {
     const analysis = await service.getAnalysis(docId);
     return NextResponse.json({ analysis });
   } catch (error) {
-    const safe = formatSafeError(error);
-    const status = error instanceof AppError ? error.statusCode : 500;
-    return NextResponse.json(safe, { status });
+    return apiErrorResponse(error);
   }
 }
 

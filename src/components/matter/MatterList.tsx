@@ -1,5 +1,7 @@
 'use client';
 
+import { apiFetch } from '@/lib/api/client';
+
 import { LinkButton } from '@/components/ui/Button/LinkButton';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -47,7 +49,7 @@ export const MatterList: React.FC = () => {
     let ignore = false;
     async function loadMatters() {
       try {
-        const res = await fetch(`/api/matters?status=${statusFilter}`);
+        const res = await apiFetch(`/api/matters?status=${statusFilter}`);
         if (ignore) return;
         if (!res.ok) {
           throw new Error('Failed to load legal matters.');
@@ -79,7 +81,7 @@ export const MatterList: React.FC = () => {
 
     try {
       setIsSubmitting(true);
-      const res = await fetch('/api/matters', {
+      const res = await apiFetch('/api/matters', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

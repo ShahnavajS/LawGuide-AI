@@ -2,7 +2,7 @@
  * Unit tests for Matter Consultation Brief Dossier (Phase 9).
  */
 
-import { describe, it, expect, beforeEach, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterAll, vi } from 'vitest';
 import { DocumentService } from '@/lib/document/service';
 import { LocalStorageService } from '@/lib/document/storage';
 import { AnalysisService } from '@/lib/analysis/service';
@@ -145,6 +145,26 @@ describe('Phase 9: Matter Brief Dossier Generation & Persistence', () => {
       sqlite.exec('DROP TRIGGER fail_matter_brief_replace');
     }
     expect((await matterService.getMatterBrief(matter.id))?.preparationId).toBe(original.preparationId);
+  });
+
+  it('builds one brief without triggering a hidden counsel-question provider call', async () => {
+    const generateStructured = vi.fn();
+    const configuredGemini = {
+      isConfigured: () => true,
+      generateStructured,
+    } as unknown as GeminiService;
+    const service = new MatterService(
+      docService,
+      analysisService,
+      configuredGemini,
+      new CitationValidator()
+    );
+    const matter = await service.createMatter({ title: 'Single operation brief' });
+
+    const brief = await service.generateMatterBrief(matter.id);
+
+    expect(brief.counselQuestions.length).toBeGreaterThan(0);
+    expect(generateStructured).not.toHaveBeenCalled();
   });
 
   it('does not promote unverified analysis claims into verified matter facts', async () => {

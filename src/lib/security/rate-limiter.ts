@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 /**
  * In-Memory Rate Limiter for LexiGuide AI (Phase 12).
  *
@@ -152,5 +154,7 @@ export function getClientIdentifier(request: Request): string {
   // expensive operations by the signed session instead of an untrusted IP.
   const cookie = request.headers.get('cookie') || '';
   const session = cookie.split(';').map((part) => part.trim()).find((part) => part.startsWith('lexiguide_session='));
-  return session ? session.slice(0, 120) : 'local-user';
+  if (!session) return 'local-user';
+  const token = session.slice(session.indexOf('=') + 1);
+  return `session:${createHash('sha256').update(token).digest('hex').slice(0, 32)}`;
 }

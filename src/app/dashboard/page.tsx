@@ -1,5 +1,7 @@
 'use client';
 
+import { apiFetch } from '@/lib/api/client';
+
 import React, { useState, useEffect } from 'react';
 import styles from './dashboard.module.css';
 import { DocumentUpload } from '@/components/document/DocumentUpload';
@@ -19,7 +21,7 @@ export default function DashboardPage() {
 
     async function loadWorkspace() {
       try {
-        const res = await fetch('/api/documents');
+        const res = await apiFetch('/api/documents');
         const data = await res.json();
 
         if (!ignore) {
@@ -53,7 +55,7 @@ export default function DashboardPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      const res = await fetch(`/api/documents/${id}`, {
+      const res = await apiFetch(`/api/documents/${id}`, {
         method: 'DELETE',
       });
 

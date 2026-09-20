@@ -1,5 +1,7 @@
 'use client';
 
+import { apiFetch } from '@/lib/api/client';
+
 import React, { useState, useEffect, useMemo } from 'react';
 import styles from './PreparationWorkspace.module.css';
 import { DocumentDto } from '@/lib/document/types';
@@ -71,7 +73,7 @@ export const PreparationWorkspace: React.FC<PreparationWorkspaceProps> = ({
     let ignore = false;
     async function loadSources() {
       try {
-        const res = await fetch('/api/documents');
+        const res = await apiFetch('/api/documents');
         if (ignore) return;
         if (res.ok) {
           const data = await res.json();
@@ -110,7 +112,7 @@ export const PreparationWorkspace: React.FC<PreparationWorkspaceProps> = ({
         if (initialDocId) params.set('documentId', initialDocId);
         if (initialComparisonId) params.set('comparisonId', initialComparisonId);
 
-        const res = await fetch(`/api/preparations?${params.toString()}`);
+        const res = await apiFetch(`/api/preparations?${params.toString()}`);
         if (ignore) return;
         if (res.ok) {
           const data = await res.json();
@@ -144,7 +146,7 @@ export const PreparationWorkspace: React.FC<PreparationWorkspaceProps> = ({
 
       const allNotes = userNoteInput.trim() ? [userNoteInput.trim()] : [];
 
-      const res = await fetch('/api/preparations', {
+      const res = await apiFetch('/api/preparations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -188,7 +190,7 @@ export const PreparationWorkspace: React.FC<PreparationWorkspaceProps> = ({
     });
 
     try {
-      await fetch(`/api/preparations/${preparation.id}/checklist`, {
+      await apiFetch(`/api/preparations/${preparation.id}/checklist`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ itemId, isCompleted: nextStatus }),

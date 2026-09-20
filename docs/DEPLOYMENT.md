@@ -51,8 +51,11 @@ STORAGE_DIR=./uploads
 # Required session-signing secret
 APP_SESSION_SECRET=<at least 32 random characters>
 
-# Optional shared evaluator sample workspace (normally disabled in production)
-EVALUATOR_DEMO_ENABLED=false
+# Canonical public browser origin used for mutation-source validation
+APP_ORIGIN=https://lawguide.example
+
+# Shared evaluator sample workspace used for submission review
+EVALUATOR_DEMO_ENABLED=true
 
 # Environment Mode
 NODE_ENV=production
@@ -184,7 +187,7 @@ node scripts/restore.mjs ./backups/backup-2026-09-17T17-00-00-000Z
 ### Pre-Deployment
 - [ ] Persistent volumes configured and mounted for `./data` and `./uploads`.
 - [ ] `APP_SESSION_SECRET` set to a real random value of at least 32 characters.
-- [ ] Evaluator demo account disabled, or confirmed to contain non-sensitive sample data only.
+- [ ] Evaluator demo account confirmed to contain non-sensitive sample data only.
 - [ ] `GEMINI_API_KEY` supplied if live AI analysis is required; without it only the documented local fallback is available.
 - [ ] `NODE_ENV=production` set.
 - [ ] Port `3000` accessible or configured behind reverse proxy (Nginx / Caddy / Cloudflare).

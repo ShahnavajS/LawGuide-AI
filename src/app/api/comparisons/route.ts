@@ -1,8 +1,10 @@
+import { apiErrorResponse } from '@/lib/api/response';
 import { withAuth } from '@/lib/auth/route';
 import { NextRequest, NextResponse } from 'next/server';
 import { getComparisonService } from '@/lib/comparison/service';
-import { formatSafeError, AppError, ValidationError } from '@/lib/utils/errors';
+import { ValidationError } from '@/lib/utils/errors';
 import { rateLimiter, getClientIdentifier } from '@/lib/security/rate-limiter';
+import { runSingleFlight } from '@/lib/utils/single-flight';
 
 async function POSTHandler(request: NextRequest) {
   try {
@@ -41,15 +43,14 @@ async function POSTHandler(request: NextRequest) {
     }
 
     const service = getComparisonService();
-    const comparison = await service.compareDocuments(baseDocumentId, targetDocumentId, {
-      force: Boolean(force),
-    });
+    const comparison = await runSingleFlight(
+      `${clientIp}:comparison:${baseDocumentId}:${targetDocumentId}`,
+      () => service.compareDocuments(baseDocumentId, targetDocumentId, { force: Boolean(force) })
+    );
 
     return NextResponse.json({ comparison });
   } catch (error) {
-    const safe = formatSafeError(error);
-    const status = error instanceof AppError ? error.statusCode : 500;
-    return NextResponse.json(safe, { status });
+    return apiErrorResponse(error);
   }
 }
 
@@ -68,9 +69,7 @@ async function GETHandler(request: NextRequest) {
 
     return NextResponse.json({ comparison });
   } catch (error) {
-    const safe = formatSafeError(error);
-    const status = error instanceof AppError ? error.statusCode : 500;
-    return NextResponse.json(safe, { status });
+    return apiErrorResponse(error);
   }
 }
 

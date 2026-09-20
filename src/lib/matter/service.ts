@@ -63,6 +63,7 @@ import { generateId } from '@/lib/utils/id';
 import { NotFoundError, ValidationError } from '@/lib/utils/errors';
 import { eq, and, inArray, like, sql, desc, asc } from 'drizzle-orm';
 import { getCurrentUserId } from '@/lib/auth/context';
+import { parseStoredArtifact } from '@/lib/ai/validate-output';
 
 export interface CreateMatterInput {
   title: string;
@@ -95,6 +96,13 @@ export class MatterService {
     this.analysisService = anaService || getAnalysisService();
     this.gemini = gemini || geminiService;
     this.validator = validator || citationValidator;
+  }
+
+  private parseStoredMatterBrief(raw: string): MatterBriefResponse {
+    return parseStoredArtifact<MatterBriefResponse>(raw, {
+      strings: ['matterId', 'preparationId', 'title', 'summary', 'disclaimer'],
+      arrays: ['parties', 'documents', 'timeline', 'keyFactualPoints', 'consistencySummary', 'counselQuestions', 'actionItems', 'userNotes'],
+    });
   }
 
   private assertMatterOwned(matterId: string): void {
@@ -2907,18 +2915,26 @@ export class MatterService {
 
       if (cached.length > 0 && cached[0].preparationDataJson) {
         try {
-          return JSON.parse(cached[0].preparationDataJson) as MatterBriefResponse;
+          return this.parseStoredMatterBrief(cached[0].preparationDataJson);
         } catch {
           // ignore parse error and re-synthesize
         }
       }
     }
 
-    const timeline = await this.getTimeline(matterId);
-    const consistency = await this.checkConsistency(matterId);
-    const counselQuestionsRes = await this.generateCounselQuestions(matterId);
-    const actionItems = await this.getActionItems(matterId);
-    const notes = await this.getNotes(matterId);
+    const [timeline, consistency, relationships, actionItems, notes] = await Promise.all([
+      this.getTimeline(matterId),
+      this.checkConsistency(matterId),
+      this.getRelationships(matterId),
+      this.getActionItems(matterId),
+      this.getNotes(matterId),
+    ]);
+    const counselQuestions = this.synthesizeDeterministicCounselQuestions(
+      matter,
+      relationships,
+      consistency,
+      notes
+    );
 
     // Extract parties and key factual points from member analyses
     const partiesSet = new Set<string>();
@@ -2993,7 +3009,7 @@ export class MatterService {
         finding: `"${c.sourceA.documentTitle}" (${c.sourceA.value}) vs "${c.sourceB.documentTitle}" (${c.sourceB.value})`,
         discussionPoint: `Discuss how the differing ${c.category.toLowerCase()} provisions interact under governing law.`,
       })),
-      counselQuestions: counselQuestionsRes.questions,
+      counselQuestions,
       actionItems: actionItems.map((ai) => ({
         id: ai.id,
         title: ai.title,
@@ -3069,7 +3085,7 @@ export class MatterService {
     }
 
     try {
-      return JSON.parse(records[0].preparationDataJson) as MatterBriefResponse;
+      return this.parseStoredMatterBrief(records[0].preparationDataJson);
     } catch {
       return null;
     }
@@ -3090,24 +3106,32 @@ export class MatterService {
       docMap.set(d.documentId, { title: d.title, pageCount: d.pageCount || 1 });
     }
 
-    const actionItems = await this.getActionItems(matterId);
-    const consistencyFindings = await this.checkConsistency(matterId);
-    const relationships = await this.getRelationships(matterId);
+    const [actionItems, consistencyFindings, relationships, userNotes] = await Promise.all([
+      this.getActionItems(matterId),
+      this.checkConsistency(matterId),
+      this.getRelationships(matterId),
+      this.getNotes(matterId),
+    ]);
     const counselQuestions = this.synthesizeDeterministicCounselQuestions(
-      matter, relationships, consistencyFindings, await this.getNotes(matterId)
+      matter, relationships, consistencyFindings, userNotes
     );
 
-    const pageCache = new Map<string, string>();
+    const pageRows = memberDocIds.length > 0
+      ? db.select({
+          documentId: schema.documentPages.documentId,
+          pageNumber: schema.documentPages.pageNumber,
+          text: schema.documentPages.text,
+        }).from(schema.documentPages)
+          .where(inArray(schema.documentPages.documentId, memberDocIds))
+          .all()
+      : [];
+    const pageCache = new Map(
+      pageRows.map((page) => [`${page.documentId}:${page.pageNumber}`, page.text || ''])
+    );
     const quoteIsOnPage = (documentId: string, pageNumber: number | null | undefined, quote: string | null | undefined): boolean => {
       if (!documentId || !pageNumber || !quote?.trim() || !docMap.has(documentId)) return false;
       const key = `${documentId}:${pageNumber}`;
-      if (!pageCache.has(key)) {
-        const row = db.select({ text: schema.documentPages.text }).from(schema.documentPages)
-          .where(and(eq(schema.documentPages.documentId, documentId), eq(schema.documentPages.pageNumber, pageNumber)))
-          .limit(1).get();
-        pageCache.set(key, row?.text || '');
-      }
-      return pageCache.get(key)!.replace(/\s+/g, ' ').includes(quote.trim().replace(/\s+/g, ' '));
+      return (pageCache.get(key) || '').replace(/\s+/g, ' ').includes(quote.trim().replace(/\s+/g, ' '));
     };
 
     const evidenceItems: MatterEvidenceItem[] = [];
@@ -3286,7 +3310,6 @@ export class MatterService {
     }
 
     // 4. Ingest User Notes (Strictly USER_PROVIDED)
-    const userNotes = await this.getNotes(matterId);
     for (const note of userNotes) {
       evidenceItems.push({
         id: `ev_note_${note.id}`,
@@ -3426,17 +3449,26 @@ export class MatterService {
       evidenceByDocument.set(item.documentId, group);
     }
 
-    for (const doc of matter.documents) {
-      // Query pages for this document
-      const pages = db
-        .select({
+    const documentIds = matter.documents.map((document) => document.documentId);
+    const allPages = documentIds.length > 0
+      ? db.select({
+          documentId: schema.documentPages.documentId,
           pageNumber: schema.documentPages.pageNumber,
           textLength: sql<number>`length(trim(${schema.documentPages.text}))`,
-        })
-        .from(schema.documentPages)
-        .where(eq(schema.documentPages.documentId, doc.documentId))
-        .orderBy(asc(schema.documentPages.pageNumber))
-        .all();
+        }).from(schema.documentPages)
+          .where(inArray(schema.documentPages.documentId, documentIds))
+          .orderBy(asc(schema.documentPages.documentId), asc(schema.documentPages.pageNumber))
+          .all()
+      : [];
+    const pagesByDocument = new Map<string, typeof allPages>();
+    for (const page of allPages) {
+      const pages = pagesByDocument.get(page.documentId) || [];
+      pages.push(page);
+      pagesByDocument.set(page.documentId, pages);
+    }
+
+    for (const doc of matter.documents) {
+      const pages = pagesByDocument.get(doc.documentId) || [];
 
       const docEvidence = evidenceByDocument.get(doc.documentId) || [];
       const evidenceByPage = new Map<number, MatterEvidenceItem[]>();

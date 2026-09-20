@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterAll } from 'vitest';
-import { NextRequest } from 'next/server';
+import { authenticatedRequest } from '../helpers/authenticated-request';
 import { POST, GET as GET_QUERY } from '@/app/api/preparations/route';
 import { GET as GET_BY_ID } from '@/app/api/preparations/[preparationId]/route';
 import { PATCH as PATCH_CHECKLIST } from '@/app/api/preparations/[preparationId]/checklist/route';
@@ -85,7 +85,7 @@ describe('Phase 6: Preparation API Routes', () => {
   describe('POST /api/preparations', () => {
     it('rejects null bodies and malformed notes with a client error', async () => {
       for (const body of ['null', JSON.stringify({ documentId: 'doc_example', userNotes: [123] })]) {
-        const req = new NextRequest('http://localhost:3000/api/preparations', {
+        const req = authenticatedRequest('http://localhost:3000/api/preparations', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body,
@@ -95,7 +95,7 @@ describe('Phase 6: Preparation API Routes', () => {
     });
 
     it('returns 400 when neither documentId nor comparisonId is provided', async () => {
-      const req = new NextRequest('http://localhost:3000/api/preparations', {
+      const req = authenticatedRequest('http://localhost:3000/api/preparations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
@@ -117,7 +117,7 @@ describe('Phase 6: Preparation API Routes', () => {
       await docService.processDocument(doc.id);
       await analysisService.analyzeDocument(doc.id);
 
-      const req = new NextRequest('http://localhost:3000/api/preparations', {
+      const req = authenticatedRequest('http://localhost:3000/api/preparations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -140,7 +140,7 @@ describe('Phase 6: Preparation API Routes', () => {
 
   describe('GET /api/preparations (by query params)', () => {
     it('returns 400 when no query parameters are provided', async () => {
-      const req = new NextRequest('http://localhost:3000/api/preparations', {
+      const req = authenticatedRequest('http://localhost:3000/api/preparations', {
         method: 'GET',
       });
 
@@ -158,7 +158,7 @@ describe('Phase 6: Preparation API Routes', () => {
       await analysisService.analyzeDocument(doc.id);
 
       // Create preparation first
-      const postReq = new NextRequest('http://localhost:3000/api/preparations', {
+      const postReq = authenticatedRequest('http://localhost:3000/api/preparations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ documentId: doc.id, purpose: 'Query test' }),
@@ -166,7 +166,7 @@ describe('Phase 6: Preparation API Routes', () => {
       await POST(postReq);
 
       // Query cached preparation
-      const queryReq = new NextRequest(
+      const queryReq = authenticatedRequest(
         `http://localhost:3000/api/preparations?documentId=${doc.id}`,
         { method: 'GET' }
       );
@@ -189,7 +189,7 @@ describe('Phase 6: Preparation API Routes', () => {
       await docService.processDocument(doc.id);
       await analysisService.analyzeDocument(doc.id);
 
-      const postReq = new NextRequest('http://localhost:3000/api/preparations', {
+      const postReq = authenticatedRequest('http://localhost:3000/api/preparations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ documentId: doc.id, purpose: 'ID test' }),
@@ -198,7 +198,7 @@ describe('Phase 6: Preparation API Routes', () => {
       const postData = await postRes.json();
       const prepId = postData.preparation.id;
 
-      const getReq = new NextRequest(`http://localhost:3000/api/preparations/${prepId}`);
+      const getReq = authenticatedRequest(`http://localhost:3000/api/preparations/${prepId}`);
       const res = await GET_BY_ID(getReq, { params: Promise.resolve({ preparationId: prepId }) });
       const data = await res.json();
 
@@ -207,7 +207,7 @@ describe('Phase 6: Preparation API Routes', () => {
     });
 
     it('returns 404 for non-existent preparation ID', async () => {
-      const req = new NextRequest('http://localhost:3000/api/preparations/prep_fake_999');
+      const req = authenticatedRequest('http://localhost:3000/api/preparations/prep_fake_999');
       const res = await GET_BY_ID(req, { params: Promise.resolve({ preparationId: 'prep_fake_999' }) });
 
       expect(res.status).toBe(404);
@@ -224,7 +224,7 @@ describe('Phase 6: Preparation API Routes', () => {
       await docService.processDocument(doc.id);
       await analysisService.analyzeDocument(doc.id);
 
-      const postReq = new NextRequest('http://localhost:3000/api/preparations', {
+      const postReq = authenticatedRequest('http://localhost:3000/api/preparations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ documentId: doc.id, purpose: 'Toggle test' }),
@@ -234,7 +234,7 @@ describe('Phase 6: Preparation API Routes', () => {
       const prepId = postData.preparation.id;
       const itemId = postData.preparation.checklist[0].id;
 
-      const patchReq = new NextRequest(
+      const patchReq = authenticatedRequest(
         `http://localhost:3000/api/preparations/${prepId}/checklist`,
         {
           method: 'PATCH',

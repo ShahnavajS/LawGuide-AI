@@ -7,7 +7,7 @@
  */
 
 import { getDb, schema } from '@/lib/db';
-import { assertModelCollections } from '@/lib/ai/validate-output';
+import { assertModelCollections, parseStoredArtifact } from '@/lib/ai/validate-output';
 import { getDocumentService, DocumentService } from '@/lib/document/service';
 import { getAnalysisService, AnalysisService } from '@/lib/analysis/service';
 import { getComparisonService, ComparisonService } from '@/lib/comparison/service';
@@ -120,6 +120,18 @@ export class PreparationService {
     this.validator = customValidator || citationValidator;
   }
 
+  private parseStoredPreparation(raw: string): PreparationBrief {
+    return parseStoredArtifact<PreparationBrief>(raw, {
+      strings: ['id', 'purpose', 'createdAt', 'updatedAt', 'disclaimer', 'status'],
+      objects: ['overview', 'validationSummary'],
+      arrays: [
+        'documentsUnderReview', 'keyFacts', 'keyDates', 'financialTerms', 'obligations',
+        'rights', 'attentionAreas', 'lawyerQuestions', 'missingInformation',
+        'documentsToBring', 'checklist', 'userNotes',
+      ],
+    });
+  }
+
   private assertMatterSources(matterId: string, documentId?: string, comparisonId?: string): string[] {
     const userId = getCurrentUserId();
     const db = getDb();
@@ -180,7 +192,7 @@ export class PreparationService {
     }
 
     try {
-      const brief = JSON.parse(record.preparationDataJson) as PreparationBrief;
+      const brief = this.parseStoredPreparation(record.preparationDataJson);
 
       // Apply checklist states from checklistStateJson if present
       if (record.checklistStateJson) {
@@ -275,7 +287,7 @@ export class PreparationService {
     }
 
     try {
-      const brief = JSON.parse(record.preparationDataJson) as PreparationBrief;
+      const brief = this.parseStoredPreparation(record.preparationDataJson);
       if (record.checklistStateJson) {
         const stateMap: Record<string, boolean> = JSON.parse(record.checklistStateJson);
         brief.checklist = brief.checklist.map((item) => ({

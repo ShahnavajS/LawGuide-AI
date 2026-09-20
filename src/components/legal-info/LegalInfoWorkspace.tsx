@@ -1,5 +1,7 @@
 'use client';
 
+import { apiFetch } from '@/lib/api/client';
+
 import React, { useState, useEffect, useMemo } from 'react';
 import styles from './LegalInfoWorkspace.module.css';
 import {
@@ -56,7 +58,7 @@ export const LegalInfoWorkspace: React.FC<LegalInfoWorkspaceProps> = ({
         if (selectedCountry) queryParams.set('country', selectedCountry);
 
         const url = `/api/legal-info/topics/${encodeURIComponent(selectedTopicId)}?${queryParams.toString()}`;
-        const res = await fetch(url);
+        const res = await apiFetch(url);
         if (ignore) return;
         const data = await res.json();
         if (ignore) return;
@@ -94,7 +96,7 @@ export const LegalInfoWorkspace: React.FC<LegalInfoWorkspaceProps> = ({
     setQaError(null);
 
     try {
-      const res = await fetch('/api/legal-info/query', {
+      const res = await apiFetch('/api/legal-info/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -187,6 +187,15 @@ describe('Phase 12: Production Hardening & Security Audit', () => {
       expect(getClientIdentifier(reqFallback)).toBe('local-user');
     });
 
+    it('hashes session credentials before using them as rate-limit keys', () => {
+      const request = new Request('http://localhost:3000/api/documents', {
+        headers: { cookie: 'lexiguide_session=private-session-value' },
+      });
+      const identifier = getClientIdentifier(request);
+      expect(identifier).toMatch(/^session:[a-f0-9]{32}$/);
+      expect(identifier).not.toContain('private-session-value');
+    });
+
     it('resets counters cleanly with rateLimiter.reset()', () => {
       const clientId = 'reset-client';
       for (let i = 0; i < 20; i++) {

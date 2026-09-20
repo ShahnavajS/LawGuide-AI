@@ -10,6 +10,7 @@ import { DEFAULT_AI_CONFIG, AIServiceConfig } from './config';
 import { SYSTEM_LEGAL_ANALYST_PROMPT } from './prompts';
 import { AIServiceError } from '@/lib/utils/errors';
 import { getServerConfig } from '@/lib/config/env';
+import { assertBoundedJsonValue } from './validate-output';
 
 export interface GenerateOptions {
   systemInstruction?: string;
@@ -20,89 +21,15 @@ export interface GenerateOptions {
 }
 
 /**
- * Safely parses JSON returned by the model, stripping markdown fences
- * and gracefully repairing common truncation anomalies (e.g. unclosed strings or missing brackets).
+ * Parses a complete JSON model response. Partial or decorated output is rejected
+ * so truncated legal results can never be mistaken for valid evidence.
  */
-export function parseOrRepairJson(rawText: string): unknown {
-  let str = (rawText || '').trim();
-  // Strip markdown code fences
-  str = str.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
-
-  const firstBrace = str.indexOf('{');
-  const firstBracket = str.indexOf('[');
-  let startIdx = 0;
-  if (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
-    startIdx = firstBrace;
-  } else if (firstBracket !== -1) {
-    startIdx = firstBracket;
+export function parseStrictJson(rawText: string): unknown {
+  const text = (rawText || '').trim();
+  if (!text || Buffer.byteLength(text, 'utf8') > 1_000_000) {
+    throw new Error('Model JSON response is empty or exceeds the size limit.');
   }
-  str = str.slice(startIdx);
-
-  try {
-    return JSON.parse(str);
-  } catch (initialErr) {
-    // Attempt progressive repair for cut-off / unterminated tokens
-    let inString = false;
-    let escaped = false;
-    const stack: string[] = [];
-    let repaired = '';
-
-    for (let i = 0; i < str.length; i++) {
-      const char = str[i];
-      repaired += char;
-      if (inString) {
-        if (char === '\\' && !escaped) {
-          escaped = true;
-        } else if (char === '"' && !escaped) {
-          inString = false;
-        } else {
-          escaped = false;
-        }
-      } else {
-        if (char === '"') {
-          inString = true;
-        } else if (char === '{' || char === '[') {
-          stack.push(char === '{' ? '}' : ']');
-        } else if (char === '}' || char === ']') {
-          if (stack.length > 0 && stack[stack.length - 1] === char) {
-            stack.pop();
-          }
-        }
-      }
-    }
-
-    if (inString) {
-      repaired += '"';
-    }
-
-    // Clean up trailing keys without values e.g. "key":
-    repaired = repaired.replace(/,\s*"[^"]*"\s*:\s*$/, '');
-    repaired = repaired.replace(/{\s*"[^"]*"\s*:\s*$/, '{');
-    // Clean up trailing commas before closing
-    repaired = repaired.replace(/,\s*$/, '');
-
-    // Close remaining open brackets
-    while (stack.length > 0) {
-      const closer = stack.pop()!;
-      repaired = repaired.replace(/,\s*$/, '') + closer;
-    }
-
-    try {
-      return JSON.parse(repaired);
-    } catch {
-      // Fallback: If still failing, try trimming to the last complete item
-      const lastCleanObject = repaired.lastIndexOf('},');
-      if (lastCleanObject !== -1) {
-        const truncated = repaired.substring(0, lastCleanObject + 1) + ']}';
-        try {
-          return JSON.parse(truncated);
-        } catch {
-          // Ignore
-        }
-      }
-      throw initialErr;
-    }
-  }
+  return JSON.parse(text);
 }
 
 export class GeminiService {
@@ -184,10 +111,11 @@ export class GeminiService {
         responseMimeType: 'application/json',
       });
 
-      const parsed = parseOrRepairJson(text);
+      const parsed = parseStrictJson(text);
       if (!parsed || typeof parsed !== 'object') {
         throw new Error('Model response must be a JSON object or array.');
       }
+      assertBoundedJsonValue(parsed);
       return parsed as T;
     } catch (error: unknown) {
       if (error instanceof AIServiceError) {

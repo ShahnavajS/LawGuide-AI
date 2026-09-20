@@ -1306,11 +1306,55 @@
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   padding: 0.85rem 1rem;
-  cursor: pointer;
   transition: all 0.2s;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+.tabError {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  color: var(--status-risk-high-text);
+  background: var(--status-risk-high-bg);
+  border: 1px solid var(--status-risk-high-border);
+  border-radius: var(--radius-md);
+}
+
+.tabError button {
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.sourceDocSelectButton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.sourceDocSelectButton:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
+}
+
+.sourceDocSummary {
+  font-size: 0.78rem;
+  color: var(--text-muted);
 }
 
 .sourceDocCard:hover {

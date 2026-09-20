@@ -1,7 +1,7 @@
+import { apiErrorResponse } from '@/lib/api/response';
 import { withAuth } from '@/lib/auth/route';
 import { NextRequest, NextResponse } from 'next/server';
 import { getDocumentService } from '@/lib/document/service';
-import { formatSafeError, AppError } from '@/lib/utils/errors';
 
 interface RouteContext {
   params: Promise<{ docId: string }>;
@@ -18,9 +18,7 @@ async function GETHandler(_request: NextRequest, context: RouteContext) {
       pages,
     });
   } catch (error) {
-    const safe = formatSafeError(error);
-    const status = error instanceof AppError ? error.statusCode : 500;
-    return NextResponse.json(safe, { status });
+    return apiErrorResponse(error);
   }
 }
 

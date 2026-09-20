@@ -75,10 +75,12 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.redirect(new URL(next, request.url), 303);
     setSessionCookie(response, request, session.token);
     return response;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Session creation failed.';
+  } catch {
     if (isJson) {
-      return NextResponse.json({ error: { code: 'SESSION_ERROR', message } }, { status: 500 });
+      return NextResponse.json(
+        { error: { code: 'SESSION_ERROR', message: 'Could not start a session. Please try again.' } },
+        { status: 500 }
+      );
     }
     const url = new URL('/login?error=server', request.url);
     return NextResponse.redirect(url, 303);

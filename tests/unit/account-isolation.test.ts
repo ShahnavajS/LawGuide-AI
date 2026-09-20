@@ -8,11 +8,11 @@ import { MatterService } from '@/lib/matter/service';
 import { ComparisonService } from '@/lib/comparison/service';
 import { PreparationService } from '@/lib/preparation/service';
 import { GET as listDocuments } from '@/app/api/documents/route';
+import { POST as createMatterRoute } from '@/app/api/matters/route';
 import { SESSION_COOKIE } from '@/lib/security/workspace-auth';
 import { generateId } from '@/lib/utils/id';
 
 afterEach(() => {
-  delete process.env.TEST_ENFORCE_AUTH;
 });
 
 describe('per-account workspace isolation', () => {
@@ -51,7 +51,19 @@ describe('per-account workspace isolation', () => {
       baseDocumentId: aliceDocId,
       targetDocumentId: aliceDocId,
       status: 'COMPLETED',
-      comparisonDataJson: JSON.stringify({ status: 'COMPLETED' }),
+      comparisonDataJson: JSON.stringify({
+        id: comparisonId,
+        baseDocumentId: aliceDocId,
+        targetDocumentId: aliceDocId,
+        summary: {},
+        statistics: {},
+        differences: [],
+        lawyerQuestions: [],
+        validationSummary: {},
+        comparedAt: now,
+        disclaimer: 'Information only.',
+        status: 'COMPLETED',
+      }),
       createdAt: now,
       updatedAt: now,
     }).run();
@@ -65,7 +77,28 @@ describe('per-account workspace isolation', () => {
       documentId: aliceDocId,
       briefKind: 'PREPARATION',
       status: 'COMPLETED',
-      preparationDataJson: JSON.stringify({ checklist: [] }),
+      preparationDataJson: JSON.stringify({
+        id: preparationId,
+        purpose: 'Prepare questions',
+        overview: {},
+        documentsUnderReview: [],
+        keyFacts: [],
+        keyDates: [],
+        financialTerms: [],
+        obligations: [],
+        rights: [],
+        attentionAreas: [],
+        lawyerQuestions: [],
+        missingInformation: [],
+        documentsToBring: [],
+        checklist: [],
+        userNotes: [],
+        validationSummary: {},
+        createdAt: now,
+        updatedAt: now,
+        disclaimer: 'Information only.',
+        status: 'COMPLETED',
+      }),
       createdAt: now,
       updatedAt: now,
     }).run();
@@ -74,7 +107,6 @@ describe('per-account workspace isolation', () => {
   });
 
   it('requires a valid database session and applies its owner at the API boundary', async () => {
-    process.env.TEST_ENFORCE_AUTH = 'true';
     const anonymous = await listDocuments(new NextRequest('http://localhost:3000/api/documents'));
     expect(anonymous.status).toBe(401);
 
@@ -91,5 +123,35 @@ describe('per-account workspace isolation', () => {
     expect(response.status).toBe(200);
     const payload = await response.json();
     expect(payload.documents).toEqual([]);
+  });
+
+  it('requires verified mutation headers after session authentication', async () => {
+    const suffix = generateId('csrf');
+    const user = await createAccount({
+      name: 'Mutation Owner',
+      email: `${suffix}@example.test`,
+      password: 'Strong-Mutation-2026!',
+    });
+    const session = createUserSession(user.id);
+    const cookie = `${SESSION_COOKIE}=${session.token}`;
+
+    const blocked = await createMatterRoute(new NextRequest('http://localhost:3000/api/matters', {
+      method: 'POST',
+      headers: { cookie, 'content-type': 'application/json' },
+      body: JSON.stringify({ title: 'Blocked mutation' }),
+    }));
+    expect(blocked.status).toBe(403);
+
+    const accepted = await createMatterRoute(new NextRequest('http://localhost:3000/api/matters', {
+      method: 'POST',
+      headers: {
+        cookie,
+        origin: 'http://localhost:3000',
+        'content-type': 'application/json',
+        'x-lawguide-request': '1',
+      },
+      body: JSON.stringify({ title: 'Accepted mutation' }),
+    }));
+    expect(accepted.status).toBe(201);
   });
 });
