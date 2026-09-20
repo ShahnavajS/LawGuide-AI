@@ -46,7 +46,10 @@ export class LocalStorageService implements DocumentStorageService {
       throw new Error('SECURITY_ERROR: Null byte detected in storage path.');
     }
 
-    const resolved = path.resolve(this.baseDir, storagePath);
+    // Normalize Windows backslashes to forward slashes for cross-platform traversal defense
+    const normalizedInput = storagePath.replace(/\\/g, '/');
+
+    const resolved = path.resolve(this.baseDir, normalizedInput);
     const normalizedBase = path.resolve(this.baseDir);
 
     // Verify resolved path is strictly within baseDir
