@@ -50,7 +50,7 @@ Final local results:
 
 - TypeScript: passed (`tsc --noEmit`).
 - ESLint: passed with no warnings or errors.
-- Vitest: **318 tests passed across 52 files**.
+- Vitest: **319 tests passed across 52 files**.
 - Next.js 16.3.5 production build: passed.
 - Production dependency audit: **0 vulnerabilities**.
 - Full dependency audit: 4 moderate advisories in the development-only `drizzle-kit` toolchain, with no high or critical advisories. npm's suggested remediation is an incompatible `drizzle-kit` downgrade and was not applied.

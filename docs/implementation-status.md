@@ -39,7 +39,7 @@ For Docker Compose, put a session secret in `.env`, configure `GEMINI_API_KEY` a
 ## Verification
 
 - `tsc --noEmit`: passed.
-- Vitest: the latest full run passed **318 tests across 52 files**, including protected-route coverage, mutation-origin enforcement, two-account ownership, session enforcement, isolation, single-flight behavior, rollback, evidence, bounded AI output, malformed input, migration, and privacy regressions. Protected route tests use signed database-backed sessions. Tests use an in-memory SQLite database and do not write the workspace SQLite file.
+- Vitest: the latest full run passed **319 tests across 52 files**, including protected-route coverage, browser Fetch Metadata and mutation-origin enforcement, two-account ownership, session enforcement, isolation, single-flight behavior, rollback, evidence, bounded AI output, malformed input, migration, and privacy regressions. Protected route tests use signed database-backed sessions. Tests use an in-memory SQLite database and do not write the workspace SQLite file.
 - Next.js 16.3.5 production build: passed without a font fetch.
 - Route-boundary tests: all private API route files are inventoried, and representative upload, delete, file, analysis, comparison, matter, and preparation handlers return 401 without a session.
 - ESLint: passed on 2026-09-21 after the final implementation edits.

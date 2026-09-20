@@ -36,4 +36,16 @@ describe('mutation request validation', () => {
       'x-lawguide-request': '1',
     }), { requireApiHeader: true })).toBe(false);
   });
+
+  it('accepts protected browser same-origin metadata when proxy headers omit the source', () => {
+    process.env.APP_ORIGIN = 'https://lawguide.example';
+    expect(isTrustedMutationRequest(mutation({
+      'sec-fetch-site': 'same-origin',
+      'x-lawguide-request': '1',
+    }), { requireApiHeader: true })).toBe(true);
+    expect(isTrustedMutationRequest(mutation({
+      'sec-fetch-site': 'same-site',
+      'x-lawguide-request': '1',
+    }), { requireApiHeader: true })).toBe(false);
+  });
 });

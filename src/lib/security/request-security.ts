@@ -26,6 +26,13 @@ export function isTrustedMutationRequest(
   const fetchSite = request.headers.get('sec-fetch-site');
   if (fetchSite === 'cross-site') return false;
 
+  // Fetch Metadata headers are controlled by the browser. A same-origin value
+  // remains reliable when a local proxy or embedded browser omits Origin and
+  // Referer. Private API mutations still require the application marker below.
+  if (fetchSite === 'same-origin') {
+    return !options.requireApiHeader || request.headers.get(API_REQUEST_HEADER) === '1';
+  }
+
   const source = request.headers.get('origin') || request.headers.get('referer');
   const allowedOrigin = expectedOrigin(request);
   if (!source || !allowedOrigin) return false;
