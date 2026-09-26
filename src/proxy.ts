@@ -53,7 +53,6 @@ function isPublicPath(pathname: string): boolean {
     pathname.startsWith('/api/legal-info/topics/') ||
     pathname.startsWith('/_next/') ||
     pathname === '/favicon.ico' ||
-    pathname === '/pdf.worker.min.mjs' ||
     (!pathname.startsWith('/api/') && /\.[a-zA-Z0-9]{2,8}$/.test(pathname))
   );
 }

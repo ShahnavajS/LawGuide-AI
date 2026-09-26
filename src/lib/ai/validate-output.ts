@@ -1,3 +1,5 @@
+import type { ZodType } from 'zod';
+
 const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
 export function assertBoundedJsonValue(value: unknown): void {
@@ -21,6 +23,12 @@ export function assertBoundedJsonValue(value: unknown): void {
       stack.push({ value: child, depth: current.depth + 1 });
     }
   }
+}
+
+/** Applies resource bounds first, then a named field-level runtime schema. */
+export function parseModelOutput<T>(schema: ZodType<T>, value: unknown): T {
+  assertBoundedJsonValue(value);
+  return schema.parse(value);
 }
 
 export function parseStoredArtifact<T>(

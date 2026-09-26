@@ -18,6 +18,7 @@ export interface GenerateOptions {
   maxOutputTokens?: number;
   timeout?: number;
   responseMimeType?: string;
+  responseJsonSchema?: unknown;
 }
 
 /**
@@ -69,6 +70,7 @@ export class GeminiService {
             maxOutputTokens: options?.maxOutputTokens ?? this.config.maxOutputTokens,
             httpOptions: { timeout },
             responseMimeType: options?.responseMimeType,
+            responseJsonSchema: options?.responseJsonSchema,
           },
         });
 

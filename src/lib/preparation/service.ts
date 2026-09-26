@@ -7,7 +7,8 @@
  */
 
 import { getDb, schema } from '@/lib/db';
-import { assertModelCollections, parseStoredArtifact } from '@/lib/ai/validate-output';
+import { parseModelOutput, parseStoredArtifact } from '@/lib/ai/validate-output';
+import { preparationModelSchema, preparationProviderSchema } from '@/lib/ai/runtime-schemas';
 import { getDocumentService, DocumentService } from '@/lib/document/service';
 import { getAnalysisService, AnalysisService } from '@/lib/analysis/service';
 import { getComparisonService, ComparisonService } from '@/lib/comparison/service';
@@ -462,9 +463,12 @@ ${prompt}
         rawOutput = await this.gemini.generateStructured<RawPreparationOutput>(
           userPrompt,
           'RawPreparationOutput',
-          { systemInstruction: SYSTEM_PREPARATION_ANALYST_PROMPT }
+          {
+            systemInstruction: SYSTEM_PREPARATION_ANALYST_PROMPT,
+            responseJsonSchema: preparationProviderSchema,
+          }
         );
-        assertModelCollections(rawOutput, ['keyFacts', 'keyDates', 'missingInformation', 'documentsToBring', 'lawyerQuestions', 'checklist']);
+        rawOutput = parseModelOutput(preparationModelSchema, rawOutput);
       } catch {
         rawOutput = this.buildOfflinePreparation(
           documentsUnderReview,

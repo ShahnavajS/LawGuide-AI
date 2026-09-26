@@ -9,10 +9,12 @@ import 'react-pdf/dist/Page/TextLayer.css';
 import styles from './DocumentViewer.module.css';
 import { Button } from '@/components/ui/Button/Button';
 
-// Use locally hosted static worker from public directory matching CSP 'self'
-if (typeof window !== 'undefined') {
-  pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
-}
+// Bundle the worker from the installed pdfjs-dist version in this same module,
+// as required by React-PDF. Next emits a version-matched, hashed local asset.
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
 
 const pdfBytesCache = new Map<string, Promise<Uint8Array>>();
 const MAX_CACHED_PDFS = 3;

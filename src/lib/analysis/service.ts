@@ -25,7 +25,8 @@ import { LEGAL_DISCLAIMERS, EvidenceSourceType } from '@/lib/ai/safety';
 import { generateId } from '@/lib/utils/id';
 import { AppError, NotFoundError, ValidationError } from '@/lib/utils/errors';
 import { eq } from 'drizzle-orm';
-import { assertCitedModelItems, assertModelCollections, parseStoredArtifact } from '@/lib/ai/validate-output';
+import { assertCitedModelItems, parseModelOutput, parseStoredArtifact } from '@/lib/ai/validate-output';
+import { legalXRayModelSchema, legalXRayProviderSchema } from '@/lib/ai/runtime-schemas';
 
 interface RawLegalXRayOutput {
   overview?: {
@@ -255,10 +256,14 @@ ${promptContent}
         raw = await this.gemini.generateStructured<RawLegalXRayOutput>(
           userPrompt,
           'RawLegalXRayOutput',
-          { systemInstruction: SYSTEM_LEGAL_ANALYST_PROMPT, timeout: 120_000 }
+          {
+            systemInstruction: SYSTEM_LEGAL_ANALYST_PROMPT,
+            timeout: 120_000,
+            responseJsonSchema: legalXRayProviderSchema,
+          }
         );
+        raw = parseModelOutput(legalXRayModelSchema, raw);
         assertCitedModelItems(raw, ['parties', 'keyDates', 'obligations', 'rights', 'financialTerms', 'materialClauses', 'attentionAreas'], pages.length);
-        assertModelCollections(raw, ['lawyerQuestions']);
         if (!raw.overview || typeof raw.overview !== 'object' || typeof raw.overview.summary !== 'string') {
           throw new Error('Model output is missing a structured overview.');
         }

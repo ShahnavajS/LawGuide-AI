@@ -6,7 +6,8 @@
  */
 
 import { getDb, schema } from '@/lib/db';
-import { assertModelCollections, parseStoredArtifact } from '@/lib/ai/validate-output';
+import { parseModelOutput, parseStoredArtifact } from '@/lib/ai/validate-output';
+import { comparisonModelSchema, comparisonProviderSchema } from '@/lib/ai/runtime-schemas';
 import { getCurrentUserId } from '@/lib/auth/context';
 import { getDocumentService, DocumentService } from '@/lib/document/service';
 import { geminiService, GeminiService } from '@/lib/ai/gemini';
@@ -287,9 +288,12 @@ ${dualPrompt}
         raw = await this.gemini.generateStructured<RawComparisonOutput>(
           userPrompt,
           'RawComparisonOutput',
-          { systemInstruction: SYSTEM_COMPARISON_ANALYST_PROMPT }
+          {
+            systemInstruction: SYSTEM_COMPARISON_ANALYST_PROMPT,
+            responseJsonSchema: comparisonProviderSchema,
+          }
         );
-        assertModelCollections(raw, ['differences', 'lawyerQuestions'], 200);
+        raw = parseModelOutput(comparisonModelSchema, raw);
         if (!Array.isArray(raw.differences)) throw new Error('Comparison output lacks differences.');
         for (const difference of raw.differences) {
           if (!['ADDED', 'REMOVED', 'MODIFIED', 'UNCHANGED'].includes(difference.type)) throw new Error('Unknown comparison change type.');

@@ -2,12 +2,12 @@
 
 ## 2026-09-17 audit corrections
 
-**2026-09-18 implementation update:** See [implementation-status.md](./implementation-status.md). The app now uses a system font, has a private-workspace proxy, and Compose maps host 3000 to container 8080. The historical bullets below describe the pre-fix audit.
+**2026-09-26 implementation update:** See [implementation-status.md](./implementation-status.md). The app now uses a system font, protects the private workspace at both route and domain boundaries, validates structured AI output with Zod, and bundles the PDF worker from its installed package. The historical bullets below describe the pre-fix audit.
 
 This is a historical stack record. The current code review is [review-findings.md](./review-findings.md), and the independent design baseline is [independent-research.md](./independent-research.md).
 
 - Development used Node 24.21.0; the Dockerfile uses Node 22.
-- Gemini structured responses are prompted as JSON, parsed, and cast to a TypeScript type. There is no runtime output-schema enforcement.
+- At the 2026-09-17 audit, Gemini responses were only prompted JSON; this is superseded by the current provider and Zod validation described below.
 - XML document delimiters are a prompt instruction, not a security boundary.
 - SQLite uses WAL in local development and DELETE journal by default in production.
 - The accessibility styles do not establish WCAG conformance; modal focus behavior needs repair.
@@ -29,7 +29,8 @@ This is a historical stack record. The current code review is [review-findings.m
 |:---|:---|:---|
 | **Google Gemini** | Configurable (`gemini-2.5-flash` default) | Primary GenAI model for legal analysis, structured output, and evidence citations |
 | **@google/genai** | 2.22.0 | Official Google Generative AI unified SDK |
-| **Structured Output** | Prompted JSON plus JSON.parse | TypeScript cast only; runtime schema validation is pending |
+| **Structured Output** | Gemini JSON Schema + Zod 4 | Provider-constrained output with strict application-side runtime validation |
+| **Zod** | 4.6.5 | Single source for AI field types, enums, collection limits, and provider JSON Schema |
 | **XML Spotlighting** | Prompt-only guardrail | Marks document text as untrusted for the model; not an enforceable security boundary |
 
 ## Database & Persistence

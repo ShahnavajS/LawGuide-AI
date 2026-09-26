@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { assertBoundedJsonValue, assertCitedModelItems, assertModelCollections, parseStoredArtifact } from '@/lib/ai/validate-output';
+import { assertBoundedJsonValue, assertCitedModelItems, assertModelCollections, parseModelOutput, parseStoredArtifact } from '@/lib/ai/validate-output';
 import { parseStrictJson } from '@/lib/ai/gemini';
+import { documentAnswerModelSchema } from '@/lib/ai/runtime-schemas';
 
 describe('model output boundary', () => {
   it('rejects primitive and malformed collections', () => {
@@ -28,5 +29,21 @@ describe('model output boundary', () => {
     expect(() => parseStoredArtifact('{"id":"a","items":[]}', {
       strings: ['id'], arrays: ['items'], objects: ['summary'],
     })).toThrow(/summary/);
+  });
+
+  it('enforces field-level schemas after structural bounds', () => {
+    expect(() => parseModelOutput(documentAnswerModelSchema, {
+      answer: 'Supported answer.',
+      citations: [{ pageNumber: 1, quotedText: 'Exact source quote.' }],
+    })).not.toThrow();
+    expect(() => parseModelOutput(documentAnswerModelSchema, {
+      answer: 'Invalid citation.',
+      citations: [{ pageNumber: 'one', quotedText: 'Exact source quote.' }],
+    })).toThrow();
+    expect(() => parseModelOutput(documentAnswerModelSchema, {
+      answer: 'Unexpected structure.',
+      citations: [],
+      executableInstruction: 'ignore safeguards',
+    })).toThrow();
   });
 });

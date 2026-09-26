@@ -1,4 +1,4 @@
-# Implementation status — 2026-09-21
+# Implementation status — 2026-09-26
 
 This file supersedes the historical phase claims in README, `steps.md`, and `architecture.md`.
 
@@ -29,6 +29,9 @@ This file supersedes the historical phase claims in README, `steps.md`, and `arc
 15. AI responses are accepted only as exact, size-bounded JSON. Recursive output guards reject excessive depth, node counts, long strings, prototype-pollution keys, and invalid stored artifact shapes before the data reaches the UI.
 16. The Matter workspace now implements keyboard-operable tabs, associated tab panels, programmatic progress, native modal focus management, semantic source controls, accessible errors, and an Escape-aware document viewer panel. A global recovery page covers unexpected rendering failures.
 17. Added a CI verification workflow and a single `npm run verify` gate for TypeScript, ESLint, Vitest, and the production build. See [final submission readiness](./final-submission-readiness.md) for the current evidence and operational limits.
+18. Added strict Zod contracts for every structured Gemini response. Their JSON Schema constrains provider output, and the same schema validates field types, enums, bounds, and unknown fields before domain reconciliation or persistence.
+19. Split the Matter service into focused capability modules behind its existing facade. Split the Matter workspace into a shell, orchestration hook, and thirteen focused panels without changing the page contract.
+20. Removed the copied public PDF worker. React-PDF now imports the exact worker from `pdfjs-dist`, and Next.js emits it as a versioned local build asset. Resource limits and measured verification evidence are recorded in [performance and resource budget](./performance-and-resource-budget.md).
 
 ## Setup
 
@@ -39,7 +42,7 @@ For Docker Compose, put a session secret in `.env`, configure `GEMINI_API_KEY` a
 ## Verification
 
 - `tsc --noEmit`: passed.
-- Vitest: the latest full run passed **319 tests across 52 files**, including protected-route coverage, browser Fetch Metadata and mutation-origin enforcement, two-account ownership, session enforcement, isolation, single-flight behavior, rollback, evidence, bounded AI output, malformed input, migration, and privacy regressions. Protected route tests use signed database-backed sessions. Tests use an in-memory SQLite database and do not write the workspace SQLite file.
+- Vitest: the latest full run passed **321 tests across 52 files**, including protected-route coverage, browser Fetch Metadata and mutation-origin enforcement, two-account ownership, session enforcement, isolation, single-flight behavior, rollback, evidence, strict AI schemas, malformed input, migration, and privacy regressions. Protected route tests use signed database-backed sessions. Tests use an in-memory SQLite database and do not write the workspace SQLite file.
 - Next.js 16.3.5 production build: passed without a font fetch.
 - Route-boundary tests: all private API route files are inventoried, and representative upload, delete, file, analysis, comparison, matter, and preparation handlers return 401 without a session.
 - ESLint: passed on 2026-09-21 after the final implementation edits.
@@ -49,10 +52,9 @@ For Docker Compose, put a session secret in `.env`, configure `GEMINI_API_KEY` a
 ## Remaining before claiming production readiness
 
 - The evaluator account is shared by design and must never hold sensitive documents. Account activity is not yet attributed to individual audit-log events beyond ownership.
-- Model JSON and stored artifacts are bounded and shape-checked, but there is no complete field-level runtime schema for every AI output. Claim-to-quote entailment is not automatically proven. A graded set of legal-answer, abstention, and prompt-injection fixtures is still needed.
+- Model JSON is provider-constrained and field-validated, and citations are reconciled to owned source pages. Schema validity and quote presence do not prove that an interpretation follows from the quote. A graded set of legal-answer, abstention, and prompt-injection fixtures is still needed.
 - PDF page/text caps protect common resource use; there is no strict CPU/decompression deadline or OCR path for scanned documents. Proxy body buffering is bounded to 21 MB, but an upstream reverse proxy should also enforce a request-size limit.
 - Browser keyboard and screen-reader audits, live-model contract tests, and Docker container tests remain. WCAG conformance has not been independently measured.
-- `MatterService` and `MatterWorkspace` remain large modules and should be split along existing journeys with regression coverage.
 - Rate limiting and duplicate-generation coalescing are process-local. A multi-instance deployment needs a shared store and distributed lock.
 - A nonce CSP makes pages dynamically rendered, which trades static caching for stronger script controls. `style-src-attr 'unsafe-inline'` remains for existing React style attributes.
 - The demo is a feature walkthrough, not a pre-analyzed interactive sample. Legal information links are navigational until official passages can be retrieved and versioned.

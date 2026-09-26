@@ -10,6 +10,28 @@ afterEach(() => {
 });
 
 describe('Gemini failure privacy', () => {
+  it('forwards the runtime contract as the provider response schema', async () => {
+    const generateContent = vi.fn().mockResolvedValue({ text: '{"answer":"Supported","citations":[]}' });
+    vi.mocked(getGeminiClient).mockReturnValue({ models: { generateContent } } as unknown as ReturnType<typeof getGeminiClient>);
+    const responseJsonSchema = {
+      type: 'object',
+      properties: { answer: { type: 'string' }, citations: { type: 'array' } },
+      required: ['answer', 'citations'],
+      additionalProperties: false,
+    };
+
+    await new GeminiService().generateStructured('Answer from the source.', 'DocumentAnswer', {
+      responseJsonSchema,
+    });
+
+    expect(generateContent).toHaveBeenCalledWith(expect.objectContaining({
+      config: expect.objectContaining({
+        responseMimeType: 'application/json',
+        responseJsonSchema,
+      }),
+    }));
+  });
+
   it('does not log or return provider errors containing document text', async () => {
     const secret = 'Confidential client clause 12345';
     const generateContent = vi.fn()

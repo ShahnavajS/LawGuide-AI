@@ -1,4 +1,4 @@
-# Final submission readiness — 2026-09-21
+# Final submission readiness — 2026-09-26
 
 This report records the implemented changes and the evidence available from the repository. It does not predict or guarantee an external evaluator score.
 
@@ -19,12 +19,16 @@ This report records the implemented changes and the evidence available from the 
 - Independent matter reads run concurrently. Source-map and evidence synchronization batch page metadata and text instead of issuing a query per citation or document.
 - Matter tab requests use cancellation, successful-result caching, and explicit retry states.
 - Identical in-flight analysis, comparison, matter brief, question, and preparation requests coalesce within one application process.
+- Runtime resource limits, avoided work, database indexes, build timings, and remaining deployment measurements are recorded in [performance and resource budget](./performance-and-resource-budget.md).
 
 ## Code quality
 
 - A shared API client owns mutation headers, and a shared route response helper owns safe error envelopes.
 - Matter tab semantics and keyboard behavior live in a focused `MatterTabs` component instead of the main workspace.
 - Strict AI parsing and persisted-artifact validation are centralized.
+- Every structured Gemini workflow supplies a Zod-derived JSON Schema to the provider and validates the response against the same strict field-level contract before use.
+- The Matter domain now exposes a small compatibility facade over focused core, intelligence, query, action, preparation, and evidence capabilities. The Matter workspace is split into an orchestration hook and focused tab panels.
+- React-PDF imports its worker from the installed `pdfjs-dist` package, so Turbopack emits a version-matched hashed asset and the repository no longer carries a copied worker file.
 - CI runs the same `npm run verify` gate used locally: TypeScript, ESLint, Vitest, and a production build. A separate production dependency audit rejects high-severity advisories.
 - A global error boundary provides a consistent recovery path for unexpected render failures.
 
@@ -50,7 +54,7 @@ Final local results:
 
 - TypeScript: passed (`tsc --noEmit`).
 - ESLint: passed with no warnings or errors.
-- Vitest: **319 tests passed across 52 files**.
+- Vitest: **321 tests passed across 52 files**.
 - Next.js 16.3.5 production build: passed.
 - Production dependency audit: **0 vulnerabilities**.
 - Full dependency audit: 4 moderate advisories in the development-only `drizzle-kit` toolchain, with no high or critical advisories. npm's suggested remediation is an incompatible `drizzle-kit` downgrade and was not applied.

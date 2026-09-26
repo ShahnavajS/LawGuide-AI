@@ -44,6 +44,7 @@ Findings use five labels to show their source and review status. Labels do not e
 - **Framework**: Next.js 16 (App Router, Turbopack, React 19, Strict TypeScript)
 - **Styling**: Vanilla CSS and CSS Modules with paper-and-ink design tokens (no Tailwind or graphics runtime). See [design system](./DESIGN.md) and [frontend research](./docs/frontend-research.md).
 - **AI Engine**: Google Gemini via `@google/genai` (Configurable model, default `gemini-2.5-flash`)
+- **AI Contracts**: Zod 4 runtime schemas supplied to Gemini and revalidated before use
 - **Database**: SQLite (`better-sqlite3` + `drizzle-orm`); production defaults to DELETE journal mode, development to WAL
 - **Document Persistence**: Decoupled filesystem storage abstraction (`LocalStorageService`)
 - **Testing**: Vitest for unit tests
@@ -90,7 +91,7 @@ Findings use five labels to show their source and review status. Labels do not e
 │       ├── document/            # Storage & processor interfaces (PDF.js text extractor)
 │       ├── evidence/            # Citation models & anti-fabrication validator
 │       ├── legal-info/          # Taxonomy, authoritative sources, validator, legal-aid, service
-│       ├── matter/              # Matter domain service, cross-document intelligence, Q&A
+│       ├── matter/              # Focused Matter capabilities behind a stable service facade
 │       ├── preparation/         # Brief synthesis, checklist engine, service
 │       └── utils/               # Secure ID and error handling utilities
 ├── tests/                       # Vitest unit and route tests with isolated in-memory SQLite
@@ -100,6 +101,8 @@ Findings use five labels to show their source and review status. Labels do not e
 ├── next.config.ts               # Security headers and proxy body budget
 └── vitest.config.mts            # Unit testing configuration
 ```
+
+See [performance and resource budget](./docs/performance-and-resource-budget.md) for enforced limits, caching and batching behavior, measured verification evidence, and the single-instance scaling boundary.
 
 ---
 
